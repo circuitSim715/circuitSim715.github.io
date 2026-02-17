@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulic Pro - Ultimate UI</title>
+    <style>
+        * { user-select: none; box-sizing: border-box; touch-action: none; }
+        body { margin: 0; background: #050505; color: #00ff41; font-family: 'Courier New', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* UI SUPERIOR REORGANIZADA */
+        #ui-top { padding: 10px; background: #111; display: flex; justify-content: flex-start; gap: 5px; border-bottom: 1px solid #222; z-index: 10; overflow-x: auto; }
+        #ui-sub { padding: 8px; background: #1a1a1a; display: flex; gap: 6px; border-bottom: 2px solid #00ff41; min-height: 45px; overflow-x: auto; align-items: center; z-index: 9; }
+        
+        /* Botones de Categoría */
+        .cat-btn { padding: 8px 12px; background: #000; border: 1px solid #444; color: #aaa; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; flex-shrink: 0; }
+        .cat-btn.active { background: #00ff41; color: #000; border-color: #00ff41; box-shadow: 0 0 10px rgba(0,255,65,0.4); }
+        
+        /* Botones de Componentes */
+        .spawn-btn { padding: 6px 10px; background: #222; border: 1px solid #555; color: #ddd; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; flex-shrink: 0; white-space: nowrap; }
+        .spawn-btn:active { background: #fff; color: #000; }
+        
+        .clear-btn { margin-left: auto; border-color: #e74c3c; color: #e74c3c; background: #111; } 
+        .clear-btn:active { background: #e74c3c; color: #fff; }
+
+        #canvas-container { flex: 1; position: relative; overflow: hidden; background: #050505; }
+        canvas { width: 100%; height: 100%; display: block; }
+        
+        /* ZOOM */
+        #zoom-controls { position: absolute; right: 15px; top: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 20; }
+        .zoom-btn { padding: 10px; font-size: 16px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: #111; border: 2px solid #3498db; color: #3498db; border-radius: 50%; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
+        .zoom-btn:active { background: #3498db; color: #000; transform: scale(0.9); }
+
+        /* CONTROLES VIRTUALES */
+        #virtual-controls { background: #111; height: 180px; display: flex; justify-content: space-between; padding: 10px; border-top: 2px solid #222; z-index: 10; }
+        .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(2, 50px); gap: 8px; }
+        .btn-v { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .btn-up { grid-column: 2; } .btn-left { grid-column: 1; grid-row: 2; } .btn-down { grid-column: 2; grid-row: 2; } .btn-right { grid-column: 3; grid-row: 2; }
+        
+        .actions { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 8px; }
+        .btn-action { width: 55px; height: 55px; border-radius: 50%; font-weight: bold; font-size: 9px; color: white; border: none; }
+        .btn-click { background: #2ecc71; } .btn-del { background: #e74c3c; } 
+        .btn-use { background: #f1c40f; color: black; } .btn-cfg { background: #9b59b6; } .btn-rot { background: #e67e22; }
+        .btn-sel { background: #3498db; }
+        .btn-action:active { transform: scale(0.9); }
+        
+        /* MODAL */
+        #modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid #00ff41; padding: 20px; text-align: center; z-index: 100; border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,65,0.2); }
+        #modal input { width: 100px; padding: 5px; background: #000; color: #00ff41; border: 1px solid #00ff41; text-align: center; margin: 10px 0; font-size: 16px; font-family: monospace; }
+        .modal-btn { padding: 8px 15px; background: #1a1a1a; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; margin: 5px; border-radius: 4px; }
+        .modal-btn-rep { border-color: #f1c40f; color: #f1c40f; }
+        .modal-btn-toggle { border-color: #3498db; color: #3498db; }
+    </style>
+</head>
+<body>
+
+<div id="ui-top">
+    <button class="cat-btn" onclick="selectCategory('active', this)">ACTIVOS</button>
+    <button class="cat-btn" onclick="selectCategory('passive', this)">PASIVOS</button>
+    <button class="cat-btn" onclick="selectCategory('digital', this)">DIGITALES</button>
+    <button class="clear-btn" onclick="clearAll()">BORRAR TODO</button> 
+</div>
+
+<div id="ui-sub">
+    <span style="color:#444; font-size:10px;">SELECCIONA UNA CATEGORÍA ARRIBA</span>
+</div>
+
+<div id="canvas-container">
+    <div id="zoom-controls">
+        <button class="zoom-btn" onclick="camera.zoom = Math.min(3.0, camera.zoom + 0.2)">🔎+</button>
+        <button class="zoom-btn" onclick="camera.zoom = 1.0" style="font-size: 12px;">1x</button>
+        <button class="zoom-btn" onclick="camera.zoom = Math.max(0.4, camera.zoom - 0.2)">🔎-</button>
+    </div>
+    
+    <canvas id="circuitCanvas"></canvas>
+    
+    <div id="modal">
+        <h3 id="m-title" style="margin:0 0 10px 0;">Configurar</h3>
+        <input type="number" id="m-val"> <span id="m-unit"></span><br>
+        <button class="modal-btn modal-btn-toggle" id="m-toggle" onclick="toggleCompType()" style="display:none;">TIPO: NPN</button>
+        <br>
+        <button class="modal-btn" onclick="saveCfg()">GUARDAR</button>
+        <button class="modal-btn" onclick="closeCfg()">CERRAR</button>
+        <button class="modal-btn modal-btn-rep" id="m-repair" onclick="repairCfg()" style="display:none;">REPARAR</button>
+    </div>
+</div>
+
+<div id="virtual-controls">
+    <div class="dpad">
+        <div class="btn-v btn-up" id="vUp">▲</div>
+        <div class="btn-v btn-left" id="vLeft">◀</div>
+        <div class="btn-v btn-down" id="vDown">▼</div>
+        <div class="btn-v btn-right" id="vRight">▶</div>
+    </div>
+    <div class="actions">
+        <button class="btn-action btn-click" id="vClick">CABLE</button>
+        <button class="btn-action btn-use" id="vUse">USAR</button>
+        <button class="btn-action btn-rot" id="vRot">ROTAR</button>
+        <button class="btn-action btn-cfg" id="vCfg">AJUSTAR</button>
+        <button class="btn-action btn-del" id="vDel">BORRAR</button>
+        <button class="btn-action btn-sel" id="vSel">SELECT</button>
+    </div>
+</div>
+
+<script>
+    // --- LÓGICA DE UI CATEGORIZADA ---
+    const componentLists = {
+        'active': [
+            { id: 'BATTERY', label: 'BATERÍA' },
+            { id: 'LED', label: 'LED' },
+            { id: 'MOTOR', label: 'MOTOR' },
+            { id: 'TRANSISTOR', label: 'TRANSISTOR' },
+            { id: 'RELAY', label: 'RELÉ' }
+        ],
+        'passive': [
+            { id: 'SWITCH', label: 'INTERRUPTOR' },
+            { id: 'PUSH_BTN', label: 'BOTÓN' },
+            { id: 'RESISTOR', label: 'RESISTENCIA' },
+            { id: 'CAPACITOR', label: 'CONDENSADOR' }
+        ],
+        'digital': [
+            { id: 'AND', label: 'AND' },
+            { id: 'OR', label: 'OR' },
+            { id: 'XOR', label: 'XOR' },
+            { id: 'NOT', label: 'NOT' },
+            { id: 'MUX', label: 'MULTIPLEXOR' } // FIX Lógico aplicado
+        ]
+    };
+
+    function selectCategory(cat, btnElement) {
+        // Estilos botones
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        if(btnElement) btnElement.classList.add('active');
+
+        // Generar sub-barra
+        const sub = document.getElementById('ui-sub');
+        sub.innerHTML = '';
+        
+        componentLists[cat].forEach(comp => {
+            const btn = document.createElement('button');
+            btn.className = 'spawn-btn';
+            btn.innerText = comp.label;
+            btn.onclick = () => spawn(comp.id);
+            // Color especial para digitales
+            if (cat === 'digital') btn.style.borderColor = '#3498db'; 
+            sub.appendChild(btn);
+        });
+    }
+    
+    // Iniciar con Activos por defecto
+    selectCategory('active', document.querySelector('.cat-btn'));
+
+
+    // --- MOTOR FÍSICO (CORE) ---
+    const canvas = document.getElementById('circuitCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvas-container');
+    let components = [], connections = [];
+    const vMouse = { x: 0, y: 0, speed: 12, isDown: false, lastDown: false, moving: {}, selectionMode: false };
+    let draggingComp = null, drawingCable = null, rotAnim = 0, time = 0;
+    let targetCfg = null;
+    let selectionBox = null; 
+    let selectedItems = []; 
+    
+    let camera = { x: 0, y: 0, zoom: 1.0 };
+
+    function resize() { 
+        canvas.width = container.clientWidth; 
+        canvas.height = container.clientHeight; 
+    }
+    window.addEventListener('resize', resize); resize();
+
+    const bind = (id, k) => {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); vMouse.moving[k] = true; });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); vMouse.moving[k] = false; });
+        el.addEventListener('mousedown', () => vMouse.moving[k] = true);
+        el.addEventListener('mouseup', () => vMouse.moving[k] = false);
+    };
+    bind('vUp', 'up'); bind('vDown', 'down'); bind('vLeft', 'left'); bind('vRight', 'right');
+
+    const setupBtn = (id, fn) => {
+        const el = document.getElementById(id);
+        el.addEventListener('mousedown', () => fn(true)); el.addEventListener('mouseup', () => fn(false));
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); fn(true); }); el.addEventListener('touchend', (e) => { e.preventDefault(); fn(false); });
+    };
+    setupBtn('vClick', (v) => vMouse.isDown = v);
+    
+    setupBtn('vSel', (v) => {
+        vMouse.selectionMode = v;
+        if (v) { selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 }; } 
+        else {
+            if (selectionBox && Math.abs(selectionBox.w) > 5) applySelection();
+            selectionBox = null;
+        }
+    });
+
+    function clearAll() {
+        if(confirm("¿Borrar todo el circuito?")) {
+            components = []; connections = []; selectedItems = []; drawingCable = null;
+        }
+    }
+
+    function applySelection() {
+        if (!selectionBox) return;
+        let bx = selectionBox.w > 0 ? selectionBox.x : selectionBox.x + selectionBox.w;
+        let by = selectionBox.h > 0 ? selectionBox.y : selectionBox.y + selectionBox.h;
+        let bw = Math.abs(selectionBox.w); let bh = Math.abs(selectionBox.h);
+        components.filter(c => c.x + c.w > bx && c.x < bx + bw && c.y + c.h > by && c.y < by + bh).forEach(c => {
+            if(!selectedItems.includes(c)) { c.selected = true; selectedItems.push(c); }
+        });
+    }
+
+    function distToSegment(p, v, w) {
+        const l2 = (w.x - v.x)**2 + (w.y - v.y)**2;
+        if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        const projection = { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+        return Math.hypot(p.x - projection.x, p.y - projection.y);
+    }
+
+    document.getElementById('vDel').addEventListener('click', () => {
+        if (selectedItems.length > 0) {
+            components = components.filter(c => !selectedItems.includes(c));
+            connections = connections.filter(conn => components.includes(conn.a.c) && components.includes(conn.b.c));
+            selectedItems = []; return; 
+        }
+        let cableDeleted = false;
+        connections = connections.filter(conn => {
+            if(cableDeleted) return true;
+            const p1 = {x: conn.a.c.x + conn.a.n.x, y: conn.a.c.y + conn.a.n.y};
+            const p2 = {x: conn.b.c.x + conn.b.n.x, y: conn.b.c.y + conn.b.n.y};
+            if (distToSegment(vMouse, p1, p2) < 10) { cableDeleted = true; return false; }
+            return true;
+        });
+        if(!cableDeleted) {
+            components = components.filter(c => !(vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h));
+            connections = connections.filter(conn => components.includes(conn.a.c) && components.includes(conn.b.c));
+        }
+    });
+
+    document.getElementById('vRot').addEventListener('click', () => {
+        if(selectedItems.length > 0) { selectedItems.forEach(c => { if(c.type !== 'WAYPOINT') rotateComponent(c); }); } 
+        else {
+            const hit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
+            if (hit && hit.type !== 'WAYPOINT') rotateComponent(hit);
+        }
+    });
+
+    function rotateComponent(c) {
+        c.rotation = (c.rotation + 1) % 4;
+        const cx = c.w / 2; const cy = c.h / 2;
+        c.nodes.forEach(n => { const dx = n.x - cx; const dy = n.y - cy; n.x = cx - dy; n.y = cy + dx; });
+        [c.w, c.h] = [c.h, c.w];
+    }
+    
+    const vUseBtn = document.getElementById('vUse');
+    const handleUse = (active) => {
+        components.filter(c => c.type === 'PUSH_BTN').forEach(c => {
+            if(vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h) c.closed = active;
+            if(!active) c.closed = false;
+        });
+        if (active) {
+            components.forEach(c => { 
+                if(c.type==='SWITCH' && vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h) c.closed = !c.closed; 
+            });
+        }
+    };
+    vUseBtn.addEventListener('mousedown', () => handleUse(true));
+    vUseBtn.addEventListener('mouseup', () => handleUse(false));
+    vUseBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleUse(true); });
+    vUseBtn.addEventListener('touchend', (e) => { e.preventDefault(); handleUse(false); });
+
+
+    document.getElementById('vCfg').addEventListener('click', () => {
+        if (selectedItems.length > 1) return;
+        const hit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
+        if (hit) openCfg(hit);
+    });
+
+    function openCfg(c) { 
+        targetCfg=c; 
+        document.getElementById('modal').style.display='block'; 
+        document.getElementById('m-title').innerText=c.type; 
+        const isBatResCap = c.type==='BATTERY'||c.type==='RESISTOR'||c.type==='CAPACITOR';
+        document.getElementById('m-val').style.display=isBatResCap?'inline-block':'none'; 
+        if(isBatResCap) document.getElementById('m-val').value=c.val||0; 
+        
+        let unit = '';
+        if(c.type==='BATTERY') unit='V';
+        else if(c.type==='RESISTOR') unit='Ω';
+        else if(c.type==='CAPACITOR') unit='uF';
+        document.getElementById('m-unit').innerText=unit; 
+        
+        document.getElementById('m-repair').style.display=c.burned?'inline-block':'none';
+        
+        const toggleBtn = document.getElementById('m-toggle');
+        if (c.type === 'TRANSISTOR') {
+            toggleBtn.style.display = 'inline-block';
+            toggleBtn.innerText = "TIPO: " + c.mode;
+        } else {
+            toggleBtn.style.display = 'none';
+        }
+    }
+    
+    function toggleCompType() {
+        if (targetCfg && targetCfg.type === 'TRANSISTOR') {
+            targetCfg.mode = targetCfg.mode === 'NPN' ? 'PNP' : 'NPN';
+            document.getElementById('m-toggle').innerText = "TIPO: " + targetCfg.mode;
+        }
+    }
+
+    function closeCfg() { document.getElementById('modal').style.display='none'; targetCfg=null; }
+    
+    function saveCfg() { 
+        if(targetCfg && (targetCfg.type === 'BATTERY' || targetCfg.type === 'RESISTOR' || targetCfg.type === 'CAPACITOR')) { 
+            targetCfg.val = Math.max(0.1, parseFloat(document.getElementById('m-val').value) || 0); 
+        } 
+        closeCfg(); 
+    }
+    
+    function repairCfg() { if(targetCfg) targetCfg.burned=false; closeCfg(); }
+
+    function spawn(type) {
+        const comp = { type, x: vMouse.x-50, y: vMouse.y-30, w: 100, h: 60, nodes: [], state: 0, active: false, burned: false, rotation: 0, selected: false };
+        if (type === 'BATTERY') { comp.nodes = [{id:'+', x:0, y:30}, {id:'-', x:100, y:30}]; comp.val = 9; }
+        else if (type === 'LED') comp.nodes = [{id:'A', x:0, y:30}, {id:'C', x:100, y:30}];
+        else if (type === 'MOTOR') comp.nodes = [{id:'M1', x:0, y:30}, {id:'M2', x:100, y:30}];
+        else if (type === 'SWITCH' || type === 'PUSH_BTN') { comp.closed = false; comp.nodes = [{id:'1', x:0, y:30}, {id:'2', x:100, y:30}]; } 
+        else if (type === 'CAPACITOR') { comp.nodes = [{id:'+', x:0, y:30}, {id:'-', x:100, y:30}]; comp.charge = 0; comp.val = 10; }
+        else if (type === 'TRANSISTOR') { comp.nodes = [{id:'C', x:20, y:10}, {id:'B', x:20, y:50}, {id:'E', x:80, y:30}]; comp.mode = 'NPN'; }
+        else if (type === 'RESISTOR') { comp.nodes = [{id:'R1', x:0, y:30}, {id:'R2', x:100, y:30}]; comp.val = 330; }
+        else if (type === 'RELAY') {
+            comp.nodes = [{id:'C+', x:10, y:15}, {id:'C-', x:10, y:45}, {id:'COM', x:90, y:20}, {id:'NO', x:90, y:40}];
+            comp.coilState = false; 
+        }
+        else if (type === 'MUX') {
+            // A=0, B=1, S=2, OUT=3
+            comp.nodes = [{id:'A', x:0, y:15}, {id:'B', x:0, y:45}, {id:'S', x:50, y:50}, {id:'OUT', x:100, y:30}];
+        }
+        else if (type === 'AND' || type === 'OR' || type === 'XOR') comp.nodes = [{id:'I1', x:0, y:15}, {id:'I2', x:0, y:45}, {id:'OUT', x:100, y:30}]; 
+        else if (type === 'NOT') comp.nodes = [{id:'PWR', x:0, y:15}, {id:'IN', x:0, y:45}, {id:'OUT', x:100, y:30}];
+        else if (type === 'WAYPOINT') { comp.x = vMouse.x-5; comp.y = vMouse.y-5; comp.w=10; comp.h=10; comp.nodes=[{id:'W', x:5, y:5}]; }
+        components.push(comp);
+        return comp;
+    }
+
+    function updatePhysics() {
+        components.forEach(c => { 
+            c.state = 0; 
+            if(c.type !== 'CAPACITOR') c.active = false; 
+            if(c.type === 'RELAY') c.coilActiveThisFrame = false; 
+        });
+        connections.forEach(conn => { conn.active = false; conn.flowDir = 1; });
+
+        components.filter(c => c.type === 'CAPACITOR').forEach(cap => {
+            if (cap.charge > 0) cap.isSource = true;
+            else { cap.isSource = false; cap.active = false; }
+        });
+
+        // 1. PROPAGACIÓN DE SEÑAL (Voltaje)
+        components.forEach(c => c.nodes.forEach(n => n.signal = false));
+        components.filter(c => (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource)) && !c.burned).forEach(src => {
+            let startNode = src.type === 'BATTERY' ? src.nodes[0] : src.nodes[0]; 
+            let q = [startNode]; startNode.signal = true;
+            
+            while(q.length > 0) {
+                let curr = q.shift();
+                connections.forEach(conn => {
+                    let next = null; if (conn.a.n === curr) next = conn.b.n; if (conn.b.n === curr) next = conn.a.n;
+                    if (next && !next.signal) { next.signal = true; q.push(next); }
+                });
+                const comp = components.find(c => c.nodes.includes(curr));
+                if (comp && !comp.burned) {
+                    if ((comp.type === 'SWITCH' || comp.type === 'PUSH_BTN') && !comp.closed) continue;
+                    
+                    if (comp.type === 'RELAY') {
+                        if ((curr === comp.nodes[2] || curr === comp.nodes[3]) && !comp.coilState) continue;
+                    }
+                    
+                    // --- CORRECCIÓN LÓGICA MUX EN PROPAGACIÓN DE SEÑAL ---
+                    if (comp.type === 'MUX') {
+                        const sel = comp.nodes[2].signal; // Estado del selector
+                        
+                        // Si S es TRUE: Solo pasa B <-> OUT. (A aislado)
+                        // Si S es FALSE: Solo pasa A <-> OUT. (B aislado)
+                        
+                        // Entrando por A (0)
+                        if (curr === comp.nodes[0]) {
+                            // Si select es false, pasamos a OUT. Si es true, A está muerto.
+                            if (!sel && !comp.nodes[3].signal) { comp.nodes[3].signal=true; q.push(comp.nodes[3]); }
+                        }
+                        // Entrando por B (1)
+                        else if (curr === comp.nodes[1]) {
+                            // Si select es true, pasamos a OUT. Si es false, B está muerto.
+                            if (sel && !comp.nodes[3].signal) { comp.nodes[3].signal=true; q.push(comp.nodes[3]); }
+                        }
+                        // Entrando por OUT (3)
+                        else if (curr === comp.nodes[3]) {
+                            // Regresa la señal a B si sel=true, a A si sel=false
+                            let dest = sel ? comp.nodes[1] : comp.nodes[0];
+                            if(!dest.signal) { dest.signal=true; q.push(dest); }
+                        }
+                        // Selector (2) no pasa señal al circuito principal
+                        continue; 
+                    }
+                    // -----------------------------------------------------
+
+                    if (comp.type === 'LED' && curr !== comp.nodes[0]) continue;
+                    if (comp.type === 'CAPACITOR' && curr !== comp.nodes[0]) continue; 
+                    if (comp.type === 'TRANSISTOR') continue;
+                    if (['AND', 'OR', 'NOT', 'XOR'].includes(comp.type)) continue;
+                    comp.nodes.forEach(n => { if (!n.signal) { n.signal = true; q.push(n); } });
+                }
+            }
+        });
+
+        // 2. PATHFINDING DE CORRIENTE
+        components.filter(c => (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource)) && !c.burned).forEach(bat => {
+            let foundPaths = [];
+            function dfs(currentNode, currentPath, visitedNodes) {
+                if (currentNode === bat.nodes[1]) { foundPaths.push([...currentPath]); return; }
+                connections.forEach(conn => {
+                    if (conn.a.n === currentNode && !visitedNodes.includes(conn.b.n)) dfs(conn.b.n, [...currentPath, {t: 'wire', c: conn, dir: 1}], [...visitedNodes, conn.b.n]);
+                    if (conn.b.n === currentNode && !visitedNodes.includes(conn.a.n)) dfs(conn.a.n, [...currentPath, {t: 'wire', c: conn, dir: -1}], [...visitedNodes, conn.a.n]);
+                });
+                const comp = components.find(c => c.nodes.includes(currentNode));
+                if (comp && comp !== bat && !comp.burned) {
+                    let outNodes = [];
+                    let direction = (currentNode === comp.nodes[0]) ? 1 : -1;
+                    
+                    if (comp.type === 'TRANSISTOR') {
+                        if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[2]);
+                        else if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]);
+                    }
+                    else if (['AND', 'OR', 'NOT', 'XOR'].includes(comp.type)) { if (currentNode === comp.nodes[0] || currentNode === comp.nodes[1]) outNodes.push(comp.nodes[2]); } 
+                    else if (comp.type === 'RELAY') {
+                        if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[1]);
+                        if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
+                        if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[3]);
+                        if (currentNode === comp.nodes[3]) outNodes.push(comp.nodes[2]);
+                    }
+                    // --- CORRECCIÓN LÓGICA MUX EN CAMINOS DE CORRIENTE ---
+                    else if (comp.type === 'MUX') {
+                        const sel = comp.nodes[2].signal; // Usar el estado calculado en BFS
+                        // A=0, B=1, OUT=3.
+                        // Solo permitimos añadir nodos a outNodes si el selector coincide
+                        if (currentNode === comp.nodes[0] && !sel) outNodes.push(comp.nodes[3]); // A -> OUT (Solo si !sel)
+                        if (currentNode === comp.nodes[1] && sel) outNodes.push(comp.nodes[3]);  // B -> OUT (Solo si sel)
+                        if (currentNode === comp.nodes[3]) {
+                            if (sel) outNodes.push(comp.nodes[1]); // OUT -> B
+                            else outNodes.push(comp.nodes[0]);     // OUT -> A
+                        }
+                    }
+                    // -----------------------------------------------------
+                    else { outNodes.push(comp.nodes.find(n => n !== currentNode)); }
+
+                    outNodes.forEach(otherNode => {
+                        if (otherNode && !visitedNodes.includes(otherNode)) {
+                            let canCross = false;
+                            if (comp.type === 'RESISTOR' || comp.type === 'MOTOR' || comp.type === 'WAYPOINT') canCross = true;
+                            if ((comp.type === 'SWITCH' || comp.type === 'PUSH_BTN') && comp.closed) canCross = true;
+                            
+                            if (comp.type === 'RELAY') {
+                                if ((currentNode === comp.nodes[0] && otherNode === comp.nodes[1]) || (currentNode === comp.nodes[1] && otherNode === comp.nodes[0])) canCross = true;
+                                if ((currentNode === comp.nodes[2] && otherNode === comp.nodes[3]) || (currentNode === comp.nodes[3] && otherNode === comp.nodes[2])) {
+                                    if(comp.coilState) canCross = true;
+                                }
+                            }
+                            
+                            // En el MUX, la lógica de filtrado ya se hizo al llenar outNodes.
+                            if (comp.type === 'MUX') canCross = true;
+
+                            if (comp.type === 'LED' && direction === 1) canCross = true; 
+                            if (comp.type === 'CAPACITOR' && bat.type === 'BATTERY') canCross = true;
+                            if (comp.type === 'AND' && comp.nodes[0].signal && comp.nodes[1].signal) canCross = true;
+                            if (comp.type === 'OR' && (comp.nodes[0].signal || comp.nodes[1].signal)) canCross = true;
+                            if (comp.type === 'XOR' && ((comp.nodes[0].signal && !comp.nodes[1].signal) || (!comp.nodes[0].signal && comp.nodes[1].signal))) canCross = true;
+                            if (comp.type === 'NOT' && currentNode === comp.nodes[0] && !comp.nodes[1].signal) canCross = true;
+                            
+                            if (comp.type === 'TRANSISTOR') {
+                                const baseSignal = comp.nodes[1].signal;
+                                if (comp.mode === 'NPN') { if (baseSignal) canCross = true; } 
+                                else { if (!baseSignal) canCross = true; }
+                            }
+
+                            if (canCross) dfs(otherNode, [...currentPath, {t: 'comp', comp, dir: direction}], [...visitedNodes, otherNode]);
+                        }
+                    });
+                }
+            }
+            dfs(bat.nodes[0], [], [bat.nodes[0]]);
+            
+            if (foundPaths.length > 0) {
+                if (bat.type === 'CAPACITOR') bat.charge -= 2.0; 
+
+                foundPaths.forEach(path => {
+                    let rSum = 0.1; 
+                    let ledCount = 0; let pathComps = [];
+                    path.forEach(step => {
+                        if (step.t === 'comp') {
+                            pathComps.push(step.comp);
+                            if (step.comp.type === 'RESISTOR') rSum += step.comp.val;
+                            if (step.comp.type === 'RELAY') rSum += 50; 
+                            if (step.comp.type === 'LED') ledCount++;
+                            if (['AND', 'OR', 'NOT', 'XOR', 'MUX'].includes(step.comp.type)) rSum += 10;
+                            if (step.comp.type === 'CAPACITOR' && bat.type === 'BATTERY') {
+                                let chargeRate = 50 / (step.comp.val || 10);
+                                step.comp.charge = Math.min(100, step.comp.charge + chargeRate); 
+                                step.comp.active = true; 
+                            }
+                        }
+                    });
+                    let vNet = bat.val - (ledCount * 2); let current = vNet > 0 ? (vNet / rSum) : 0; let popped = false;
+                    
+                    if (current > 0) {
+                        if (bat.type === 'BATTERY' && current > 5.0) { bat.burned = true; popped = true; }
+                        pathComps.forEach(c => {
+                            if (c.type === 'LED' && current > 0.035) { c.burned = true; popped = true; }
+                            if (c.type === 'RESISTOR' && (current * current * c.val) > 0.5) { c.burned = true; popped = true; }
+                            if (['AND', 'OR', 'NOT', 'XOR', 'MUX'].includes(c.type) && current > 0.2) { c.burned = true; popped = true; }
+                            if (c.type === 'TRANSISTOR' && current > 1.0) { c.burned = true; popped = true; }
+                        });
+                    }
+                    if (!popped && current > 0) {
+                        bat.active = true;
+                        path.forEach(step => {
+                            if (step.t === 'wire') { step.c.active = true; step.c.flowDir = step.dir; }
+                            if (step.t === 'comp') {
+                                step.comp.active = true;
+                                if (step.comp.type === 'LED') step.comp.state = 1;
+                                if (step.comp.type === 'MOTOR') step.comp.state = step.dir;
+                                if (step.comp.type === 'RELAY') step.comp.coilActiveThisFrame = true;
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        
+        components.filter(c => c.type === 'RELAY').forEach(r => {
+            r.coilState = r.coilActiveThisFrame;
+        });
+    }
+
+    function drawGrid(camX, camY, zoom) {
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 1 / zoom; 
+        const size = 50;
+        const halfW = (canvas.width / 2) / zoom; const halfH = (canvas.height / 2) / zoom;
+        const startX = Math.floor((camX - halfW) / size) * size - size; const endX = camX + halfW + size;
+        const startY = Math.floor((camY - halfH) / size) * size - size; const endY = camY + halfH + size;
+        ctx.beginPath();
+        for(let x = startX; x < endX; x += size) { ctx.moveTo(x, startY); ctx.lineTo(x, endY); }
+        for(let y = startY; y < endY; y += size) { ctx.moveTo(startX, y); ctx.lineTo(endX, y); }
+        ctx.stroke();
+    }
+
+    function draw() {
+        if(targetCfg == null) {
+            if (vMouse.moving.up) vMouse.y -= vMouse.speed; if (vMouse.moving.down) vMouse.y += vMouse.speed;
+            if (vMouse.moving.left) vMouse.x -= vMouse.speed; if (vMouse.moving.right) vMouse.x += vMouse.speed;
+        }
+
+        const edgeMargin = 50; 
+        let screenMouseX = (vMouse.x - camera.x) * camera.zoom + canvas.width / 2;
+        let screenMouseY = (vMouse.y - camera.y) * camera.zoom + canvas.height / 2;
+
+        if (screenMouseX < edgeMargin) camera.x -= (edgeMargin - screenMouseX) / camera.zoom;
+        if (screenMouseX > canvas.width - edgeMargin) camera.x += (screenMouseX - (canvas.width - edgeMargin)) / camera.zoom;
+        if (screenMouseY < edgeMargin) camera.y -= (edgeMargin - screenMouseY) / camera.zoom;
+        if (screenMouseY > canvas.height - edgeMargin) camera.y += (screenMouseY - (canvas.height - edgeMargin)) / camera.zoom;
+
+        if (vMouse.selectionMode && vMouse.isDown && selectionBox) {
+            selectionBox.w = vMouse.x - selectionBox.x;
+            selectionBox.h = vMouse.y - selectionBox.y;
+        }
+
+        if (vMouse.isDown && !vMouse.lastDown && targetCfg == null && !vMouse.selectionMode) {
+            let clickOnSomething = false; let nHit = null;
+            components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c, n}; }));
+            if (nHit) { drawingCable = nHit; clickOnSomething = true; } 
+            else {
+                let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
+                if (compHit) {
+                    clickOnSomething = true;
+                    if (selectedItems.includes(compHit)) { draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; } 
+                    else { selectedItems.forEach(c => c.selected = false); selectedItems = []; draggingComp = {c: compHit, ox:vMouse.x-compHit.x, oy:vMouse.y-compHit.y}; }
+                }
+            }
+            if (!clickOnSomething && selectedItems.length > 0) { selectedItems.forEach(c => c.selected = false); selectedItems = []; }
+        } else if (!vMouse.isDown && vMouse.lastDown) {
+            if (drawingCable) {
+                let targetHit = null;
+                components.forEach(c => c.nodes.forEach(n => { if (c!==drawingCable.c && Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) targetHit = {c, n}; }));
+                if (targetHit) connections.push({a:drawingCable, b:targetHit});
+                else { const waypoint = spawn('WAYPOINT'); connections.push({a:drawingCable, b:{c:waypoint, n:waypoint.nodes[0]}}); }
+            }
+            draggingComp = drawingCable = null;
+        }
+
+        if (draggingComp) { 
+            if (draggingComp.group) {
+                const dx = vMouse.x - draggingComp.ox; const dy = vMouse.y - draggingComp.oy;
+                selectedItems.forEach(c => { c.x += dx; c.y += dy; });
+                draggingComp.ox = vMouse.x; draggingComp.oy = vMouse.y;
+            } else { draggingComp.c.x = vMouse.x-draggingComp.ox; draggingComp.c.y = vMouse.y-draggingComp.oy; }
+        }
+        vMouse.lastDown = vMouse.isDown;
+        
+        updatePhysics();
+        rotAnim += 0.2; time += 0.5;
+
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(camera.zoom, camera.zoom);
+        ctx.translate(-camera.x, -camera.y);
+
+        drawGrid(camera.x, camera.y, camera.zoom);
+
+        connections.forEach(conn => {
+            ctx.strokeStyle = conn.active ? "#00ff41" : "#333";
+            ctx.lineWidth = 3; 
+            if (conn.active) { ctx.setLineDash([8, 8]); ctx.lineDashOffset = -time * conn.flowDir; } else { ctx.setLineDash([]); }
+            ctx.beginPath(); ctx.moveTo(conn.a.c.x+conn.a.n.x, conn.a.c.y+conn.a.n.y); ctx.lineTo(conn.b.c.x+conn.b.n.x, conn.b.c.y+conn.b.n.y); ctx.stroke();
+            ctx.setLineDash([]);
+        });
+
+        if (drawingCable) { ctx.strokeStyle = "#888"; ctx.beginPath(); ctx.moveTo(drawingCable.c.x+drawingCable.n.x, drawingCable.c.y+drawingCable.n.y); ctx.lineTo(vMouse.x, vMouse.y); ctx.stroke(); }
+
+        components.forEach(c => {
+            if (c.type === 'WAYPOINT') {
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(c.x+c.nodes[0].x, c.y+c.nodes[0].y, 4, 0, Math.PI*2); ctx.fill(); return; 
+            }
+
+            ctx.save();
+            ctx.translate(c.x + c.w/2, c.y + c.h/2);
+            ctx.rotate(c.rotation * Math.PI/2);
+            ctx.translate(-(c.x + c.w/2), -(c.y + c.h/2));
+
+            if(c.selected || selectedItems.includes(c)) {
+                let drawW = (c.rotation % 2 === 0) ? c.w : c.h; let drawH = (c.rotation % 2 === 0) ? c.h : c.w;
+                ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
+                ctx.strokeRect(c.x-5, c.y-5, drawW+10, drawH+10); ctx.setLineDash([]);
+            }
+
+            ctx.fillStyle = "#111"; ctx.strokeStyle = c.burned ? "#e74c3c" : "#444"; ctx.lineWidth = 2;
+            let drawW = (c.rotation % 2 === 0) ? c.w : c.h; let drawH = (c.rotation % 2 === 0) ? c.h : c.w;
+            ctx.fillRect(c.x, c.y, drawW, drawH); ctx.strokeRect(c.x, c.y, drawW, drawH);
+            if(c.burned) { ctx.fillStyle = "#e74c3c"; ctx.font = "bold 12px Arial"; ctx.fillText("¡QUEMADO!", c.x+5, c.y-5); }
+
+            if (c.type === 'LED') {
+                ctx.strokeStyle = c.state && !c.burned ? "yellow" : (c.burned ? "#311" : "#555");
+                if (c.state && !c.burned) { ctx.shadowBlur = 10; ctx.shadowColor = "yellow"; }
+                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+20); ctx.lineTo(c.x+40, c.y+40); ctx.lineTo(c.x+60, c.y+30); ctx.closePath(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+60, c.y+20); ctx.lineTo(c.x+60, c.y+40); ctx.stroke(); ctx.shadowBlur = 0;
+            } else if (c.type === 'MOTOR') {
+                ctx.strokeStyle = c.state !== 0 && !c.burned ? "#00ff41" : "#555";
+                ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 15, 0, Math.PI*2); ctx.stroke();
+                ctx.fillStyle = "white"; ctx.font = "12px monospace"; ctx.fillText("M", c.x+47, c.y+34);
+                if (c.state !== 0 && !c.burned) {
+                    ctx.save(); ctx.translate(c.x+50, c.y+30); ctx.rotate(rotAnim * c.state); ctx.strokeStyle = "yellow"; 
+                    ctx.beginPath(); ctx.arc(0,0, 22, 0, Math.PI*0.7); ctx.stroke(); ctx.fillStyle = "yellow"; 
+                    ctx.beginPath(); ctx.moveTo(22,-5); ctx.lineTo(28,5); ctx.lineTo(16,5); ctx.fill(); ctx.restore();
+                }
+            } else if (c.type === 'SWITCH' || c.type === 'PUSH_BTN') {
+                ctx.strokeStyle = "white"; ctx.beginPath(); ctx.moveTo(c.x+20, c.y+30);
+                if (c.closed) ctx.lineTo(c.x+80, c.y+30); else ctx.lineTo(c.x+60, c.y+10); ctx.stroke();
+                if(c.type === 'PUSH_BTN') { ctx.beginPath(); ctx.arc(c.x+50, c.y+50, 4, 0, Math.PI*2); ctx.fill(); }
+            } else if (c.type === 'RELAY') {
+                ctx.strokeStyle = c.coilState ? "#00ff41" : "#888"; 
+                ctx.beginPath(); 
+                ctx.moveTo(c.x+10, c.y+15); 
+                for(let i=0; i<4; i++) { ctx.arc(c.x+10, c.y+20+(i*6), 3, Math.PI*1.5, Math.PI*0.5, false); ctx.arc(c.x+10, c.y+23+(i*6), 3, Math.PI*0.5, Math.PI*1.5, true); }
+                ctx.lineTo(c.x+10, c.y+45); 
+                ctx.stroke();
+
+                ctx.strokeStyle = "white"; 
+                ctx.beginPath(); ctx.moveTo(c.x+90, c.y+20); 
+                if (c.coilState) ctx.lineTo(c.x+90, c.y+40); 
+                else ctx.lineTo(c.x+80, c.y+35); 
+                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+90, c.y+40); ctx.lineTo(c.x+90, c.y+45); ctx.stroke();
+
+                ctx.fillStyle = "#aaa"; ctx.font="8px Arial"; ctx.fillText("COIL", c.x+15, c.y+30); ctx.fillText("SW", c.x+70, c.y+30);
+            } 
+            else if (c.type === 'MUX') {
+                ctx.strokeStyle = "#3498db"; ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(c.x+20, c.y+10); ctx.lineTo(c.x+80, c.y+20); ctx.lineTo(c.x+80, c.y+40); ctx.lineTo(c.x+20, c.y+50);
+                ctx.closePath(); ctx.stroke();
+                
+                // Indicador visual de qué canal está activo
+                const sel = c.nodes[2].signal;
+                ctx.fillStyle = sel ? "#222" : "#00ff41"; ctx.beginPath(); ctx.arc(c.x+30, c.y+20, 3, 0, Math.PI*2); ctx.fill(); // A
+                ctx.fillStyle = sel ? "#00ff41" : "#222"; ctx.beginPath(); ctx.arc(c.x+30, c.y+40, 3, 0, Math.PI*2); ctx.fill(); // B
+
+                ctx.fillStyle = "#3498db"; ctx.font = "bold 10px monospace"; ctx.fillText("MUX", c.x+35, c.y+33);
+                ctx.fillStyle = "#aaa"; ctx.font = "8px monospace"; 
+                ctx.fillText("A", c.x+5, c.y+15); ctx.fillText("B", c.x+5, c.y+45); ctx.fillText("S", c.x+45, c.y+55); ctx.fillText("Q", c.x+85, c.y+33);
+            }
+            else if (c.type === 'BATTERY') {
+                ctx.fillStyle = "#00ff41"; ctx.font = "12px monospace"; ctx.fillText(`BAT ${c.val}V`, c.x+25, c.y+35);
+            } else if (c.type === 'CAPACITOR') {
+                ctx.fillStyle = `rgb(0, ${Math.min(255, c.charge*2.55)}, 0)`; 
+                ctx.fillRect(c.x+40, c.y+10, 20, 40); ctx.strokeStyle = "#fff"; ctx.strokeRect(c.x+40, c.y+10, 20, 40);
+                ctx.fillStyle = "#fff"; ctx.font = "10px monospace"; ctx.fillText(`${Math.floor(c.charge)}%`, c.x+35, c.y+65);
+                ctx.font = "9px monospace"; ctx.fillText(`${c.val}uF`, c.x+35, c.y+8);
+                ctx.beginPath(); ctx.moveTo(c.x+35, c.y+15); ctx.lineTo(c.x+35, c.y+45); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+45, c.y+15); ctx.lineTo(c.x+45, c.y+45); ctx.stroke();
+            } else if (c.type === 'TRANSISTOR') {
+                ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 20, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+15); ctx.lineTo(c.x+40, c.y+45); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+30); ctx.lineTo(c.x+20, c.y+50); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+20); ctx.lineTo(c.x+60, c.y+10); ctx.lineTo(c.x+60, c.y+10); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+40); ctx.lineTo(c.x+80, c.y+30); ctx.stroke();
+                
+                ctx.fillStyle = "#fff";
+                if (c.mode === 'NPN') {
+                     ctx.beginPath(); ctx.moveTo(c.x+70, c.y+32); ctx.lineTo(c.x+60, c.y+35); ctx.lineTo(c.x+62, c.y+28); ctx.fill();
+                } else {
+                    ctx.beginPath(); ctx.moveTo(c.x+45, c.y+39); ctx.lineTo(c.x+55, c.y+36); ctx.lineTo(c.x+53, c.y+43); ctx.fill();
+                }
+                ctx.font = "10px monospace"; ctx.fillText(c.mode, c.x+35, c.y+33);
+                ctx.fillStyle = "#aaa"; ctx.font="8px Arial"; ctx.fillText("C", c.x+25, c.y+15); ctx.fillText("E", c.x+70, c.y+25); ctx.fillText("B", c.x+25, c.y+45);
+            } else if (c.type === 'RESISTOR') {
+                ctx.strokeStyle = c.burned ? "#e74c3c" : "#888"; ctx.beginPath();
+                ctx.moveTo(c.x+20, c.y+30); ctx.lineTo(c.x+30, c.y+20); ctx.lineTo(c.x+40, c.y+40);
+                ctx.lineTo(c.x+50, c.y+20); ctx.lineTo(c.x+60, c.y+40); ctx.lineTo(c.x+70, c.y+30); ctx.stroke();
+                ctx.fillStyle = "#00ff41"; ctx.font = "10px monospace"; ctx.fillText(`${c.val}Ω`, c.x+35, c.y+15);
+            } else if (['AND','OR','NOT','XOR'].includes(c.type)) {
+                ctx.strokeStyle = c.active && !c.burned ? "#3498db" : (c.burned ? "#e74c3c" : "#555");
+                if (c.type === 'AND') { ctx.beginPath(); ctx.moveTo(c.x+30, c.y+15); ctx.lineTo(c.x+60, c.y+15); ctx.arc(c.x+60, c.y+30, 15, -Math.PI/2, Math.PI/2); ctx.lineTo(c.x+30, c.y+45); ctx.closePath(); ctx.stroke(); }
+                else if (c.type === 'OR') { ctx.beginPath(); ctx.moveTo(c.x+30, c.y+15); ctx.quadraticCurveTo(c.x+50, c.y+15, c.x+70, c.y+30); ctx.quadraticCurveTo(c.x+50, c.y+45, c.x+30, c.y+45); ctx.quadraticCurveTo(c.x+45, c.y+30, c.x+30, c.y+15); ctx.stroke(); }
+                else if (c.type === 'XOR') { 
+                    ctx.beginPath(); ctx.moveTo(c.x+35, c.y+15); ctx.quadraticCurveTo(c.x+55, c.y+15, c.x+70, c.y+30); ctx.quadraticCurveTo(c.x+55, c.y+45, c.x+35, c.y+45); ctx.quadraticCurveTo(c.x+50, c.y+30, c.x+35, c.y+15); ctx.stroke(); 
+                    ctx.beginPath(); ctx.moveTo(c.x+28, c.y+15); ctx.quadraticCurveTo(c.x+43, c.y+30, c.x+28, c.y+45); ctx.stroke();
+                }
+                else if (c.type === 'NOT') { 
+                    ctx.beginPath(); ctx.moveTo(c.x+30, c.y+15); ctx.lineTo(c.x+70, c.y+30); ctx.lineTo(c.x+30, c.y+45); ctx.closePath(); ctx.stroke(); 
+                    ctx.beginPath(); ctx.arc(c.x+73, c.y+30, 3, 0, Math.PI*2); ctx.stroke();
+                    ctx.fillStyle = "#aaa"; ctx.font = "8px Arial"; ctx.fillText("PWR", c.x+5, c.y+12); ctx.fillText("IN", c.x+5, c.y+55);
+                }
+                ctx.fillStyle = "#3498db"; ctx.font = "bold 12px monospace"; ctx.fillText(c.type, c.x+(c.type==='NOT'?40:35), c.y+33);
+            }
+            ctx.restore();
+
+            c.nodes.forEach(n => {
+                ctx.fillStyle = (n.id==='+'||n.id==='A'||n.id==='M1'||n.id==='R1'||n.id==='I1'||n.id==='I2'||n.id==='PWR'||n.id==='IN'||n.id==='C+') ? "#00ff41" : "#ff3131";
+                if (c.type === 'TRANSISTOR' || c.type === 'MUX' || n.id==='S' || n.id==='COM') ctx.fillStyle = "#3498db"; 
+                if (c.type === 'RELAY' && n.id === 'NO') ctx.fillStyle = "#ff3131";
+                ctx.beginPath(); ctx.arc(c.x+n.x, c.y+n.y, 6, 0, Math.PI*2); ctx.fill();
+                if(n.signal) { ctx.strokeStyle="#00ff41"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(c.x+n.x, c.y+n.y, 8, 0, Math.PI*2); ctx.stroke(); }
+            });
+        });
+        
+        if (selectionBox) {
+            ctx.strokeStyle = "#3498db"; ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
+            ctx.strokeRect(selectionBox.x, selectionBox.y, selectionBox.w, selectionBox.h);
+            ctx.fillStyle = "rgba(52, 152, 219, 0.2)"; ctx.fillRect(selectionBox.x, selectionBox.y, selectionBox.w, selectionBox.h); ctx.setLineDash([]);
+        }
+
+        ctx.strokeStyle = "white"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(vMouse.x, vMouse.y, 10, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(vMouse.x-15, vMouse.y); ctx.lineTo(vMouse.x+15, vMouse.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(vMouse.x, vMouse.y-15); ctx.lineTo(vMouse.x, vMouse.y+15); ctx.stroke();
+
+        ctx.restore();
+
+        ctx.fillStyle = "rgba(0, 255, 65, 0.3)";
+        ctx.font = "bold 12px monospace";
+        ctx.textAlign = "right";
+        ctx.fillText("Simulic Pro Ultimate UI", canvas.width - 15, canvas.height - 15);
+        ctx.textAlign = "left"; 
+
+        requestAnimationFrame(draw);
+    }
+    draw();
+</script>
+</body>
+</html>
