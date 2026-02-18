@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulic Pro - Radion Update</title>
+    <title>Simulic Pro - Radion 1.1 (Logic Update)</title>
     <style>
         * { user-select: none; box-sizing: border-box; touch-action: none; }
         body { margin: 0; background: #050505; color: #00ff41; font-family: 'Courier New', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -42,8 +42,7 @@
         
         #modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid #00ff41; padding: 20px; text-align: center; z-index: 100; border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,65,0.2); width: 300px; }
         #modal input { width: 100px; padding: 5px; background: #000; color: #00ff41; border: 1px solid #00ff41; text-align: center; margin: 10px 0; font-size: 16px; font-family: monospace; }
-        /* ESTILO AÑADIDO PARA CÓDIGO */
-        #m-code-area { width: 100%; height: 120px; background: #000; color: #fff; border: 1px solid #555; font-family: monospace; font-size: 12px; text-align: left; padding: 5px; margin-bottom: 10px; resize: none; display: none; }
+        #m-code-area { width: 100%; height: 150px; background: #000; color: #fff; border: 1px solid #555; font-family: monospace; font-size: 11px; text-align: left; padding: 5px; margin-bottom: 10px; resize: none; display: none; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
         
         .modal-btn { padding: 8px 15px; background: #1a1a1a; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; margin: 5px; border-radius: 4px; }
         .modal-btn-rep { border-color: #f1c40f; color: #f1c40f; }
@@ -56,7 +55,8 @@
     <button class="cat-btn" onclick="selectCategory('active', this)">ACTIVOS</button>
     <button class="cat-btn" onclick="selectCategory('passive', this)">PASIVOS</button>
     <button class="cat-btn" onclick="selectCategory('digital', this)">DIGITALES</button>
-    <button class="cat-btn" onclick="selectCategory('boards', this)">PLACAS</button> <button class="clear-btn" onclick="clearAll()">BORRAR TODO</button> 
+    <button class="cat-btn" onclick="selectCategory('boards', this)">PLACAS</button>
+    <button class="clear-btn" onclick="clearAll()">BORRAR TODO</button> 
 </div>
 <div id="ui-sub">
     <span style="color:#444; font-size:10px;">SELECCIONA UNA CATEGORÍA ARRIBA</span>
@@ -71,11 +71,8 @@
     <canvas id="circuitCanvas"></canvas>
     <div id="modal">
         <h3 id="m-title" style="margin:0 0 10px 0;">Configurar</h3>
-        
         <input type="number" id="m-val"> <span id="m-unit"></span>
-        
-        <textarea id="m-code-area" placeholder="Escribe código LOG aquí..."></textarea>
-        
+        <textarea id="m-code-area" spellcheck="false" placeholder="Escribe código LOG aquí..."></textarea>
         <br>
         <button class="modal-btn modal-btn-toggle" id="m-toggle" onclick="toggleCompType()" style="display:none;">TIPO: NPN</button>
         <br>
@@ -126,7 +123,6 @@
             { id: 'NOT', label: 'NOT' },
             { id: 'MUX', label: 'MULTIPLEXOR' }
         ],
-        // NUEVA CATEGORÍA
         'boards': [
             { id: 'RADION', label: 'RADION 1.0' }
         ]
@@ -287,11 +283,12 @@
         if (c.type === 'TRANSISTOR') { toggleBtn.style.display = 'inline-block'; toggleBtn.innerText = "TIPO: " + c.mode; } 
         else { toggleBtn.style.display = 'none'; }
 
-        // --- MANEJO DEL CÓDIGO DE RADION ---
         const codeArea = document.getElementById('m-code-area');
         if (c.type === 'RADION') {
             codeArea.style.display = 'block';
             codeArea.value = c.code;
+            // Al abrir config, reseteamos la máquina para que el usuario vea los cambios al instante si edita
+            c.intState = { pc: 0, wait: 0, vars: {} }; 
         } else {
             codeArea.style.display = 'none';
         }
@@ -311,9 +308,9 @@
             if (targetCfg.type === 'BATTERY' || targetCfg.type === 'RESISTOR' || targetCfg.type === 'CAPACITOR') { 
                 targetCfg.val = Math.max(0.1, parseFloat(document.getElementById('m-val').value) || 0); 
             } 
-            // GUARDAR CÓDIGO DE RADION
             if (targetCfg.type === 'RADION') {
                 targetCfg.code = document.getElementById('m-code-area').value;
+                targetCfg.intState = { pc: 0, wait: 0, vars: {} }; // Reiniciar intérprete con nuevo código
             }
         }
         closeCfg(); 
@@ -340,56 +337,105 @@
             comp.nodes = [{id:'VCC', x:20, y:10}, {id:'GND', x:20, y:50}, {id:'OUT', x:80, y:30}];
             comp.lastTick = 0; comp.clockState = false;
         }
-        // --- AÑADIDO: RADION 1.0 ---
         else if (type === 'RADION') {
-            comp.w = 110; comp.h = 90; // Un poco más grande
-            // Nodos: VCC(0), GND_IN(1), GND_AUX(2), D1(3), D2(4)
+            comp.w = 110; comp.h = 90;
             comp.nodes = [
                 {id:'VCC', x:15, y:15}, {id:'GND', x:15, y:45},
-                {id:'G', x:15, y:75}, // Pin GND extra para componentes
-                {id:'D1', x:95, y:30}, {id:'D2', x:95, y:60}
+                {id:'G', x:15, y:75}, {id:'D1', x:95, y:30}, {id:'D2', x:95, y:60}
             ];
-            // Código por defecto
-            comp.code = "start<\npin1=D1\npin2=D2\npin1;HIGH\nend>";
-            // Estado interno del simulador
+            // --- NUEVO CÓDIGO POR DEFECTO: INTERMITENTE ---
+            comp.code = "start<\npin1=D1\npin1;HIGH\ndelay 500\npin1;LOW\ndelay 500\nloop\nend>";
             comp.memory = { d1: false, d2: false };
+            comp.intState = { pc: 0, wait: 0, vars: {} }; // Estado del intérprete
         }
-        // ---------------------------
         else if (type === 'WAYPOINT') { comp.x = vMouse.x-5; comp.y = vMouse.y-5; comp.w=10; comp.h=10; comp.nodes=[{id:'W', x:5, y:5}]; }
         components.push(comp);
         return comp;
     }
 
-    // --- LOGICA INTERPRETE LOG (Simple) ---
+    // --- INTÉRPRETE DE LOG MEJORADO (CON DELAY Y LOOP) ---
     function runRadionLogic(c) {
+        // Reiniciar si no tiene energía o está quemado
         if (!c.active || c.burned) {
             c.memory.d1 = false; c.memory.d2 = false;
+            c.intState = { pc: 0, wait: 0, vars: {} };
             return;
         }
-        if (!c.code.includes('start<') || !c.code.includes('end>')) return;
+
+        // Inicializar estado si no existe
+        if (!c.intState) c.intState = { pc: 0, wait: 0, vars: {} };
         
-        const lines = c.code.split('\n');
-        let pinMap = {}; // Mapea nombre de variable -> 'D1' o 'D2'
+        // Verificar Delay
+        const now = Date.now();
+        if (c.intState.wait > now) return; // Si está esperando, no hace nada este frame
+
+        const rawLines = c.code.split('\n');
         
-        lines.forEach(line => {
-            line = line.trim();
-            if (line.includes('=')) {
-                // Definición: pin1=D1
+        // Ejecutamos hasta X instrucciones por frame para velocidad, pero paramos si hay delay
+        let instructionsExecuted = 0;
+        const maxInstructions = 20; // Limite para evitar congelamiento por bucles infinitos sin delay
+
+        while(instructionsExecuted < maxInstructions) {
+            // Fin del código
+            if (c.intState.pc >= rawLines.length) break;
+
+            let line = rawLines[c.intState.pc].trim();
+            
+            // Ignorar líneas vacías o comentarios
+            if (!line || line.startsWith('//')) {
+                c.intState.pc++;
+                continue;
+            }
+
+            if (line.includes('start<')) {
+                 // Etiqueta de inicio, solo pasamos
+                 c.intState.pc++;
+            }
+            else if (line.includes('end>')) {
+                 // Fin del programa, paramos ejecución
+                 break; 
+            }
+            else if (line === 'loop') {
+                 // COMANDO LOOP: Busca 'start<' y salta
+                 const startIndex = rawLines.findIndex(l => l.trim().includes('start<'));
+                 c.intState.pc = startIndex !== -1 ? startIndex + 1 : 0;
+                 instructionsExecuted++;
+                 // No hacemos return aquí para que el bucle sea instantáneo si no hay delay
+            }
+            else if (line.startsWith('delay')) {
+                 // COMANDO DELAY: delay 500
+                 const parts = line.split(' ');
+                 const ms = parseInt(parts[1]) || 100;
+                 c.intState.wait = now + ms;
+                 c.intState.pc++;
+                 return; // Salimos de la función por este frame
+            }
+            else if (line.includes('=')) {
+                // Asignación: pin1=D1
                 const parts = line.split('=');
-                if (parts.length === 2) pinMap[parts[0].trim()] = parts[1].trim();
-            } else if (line.includes(';')) {
+                if (parts.length === 2) c.intState.vars[parts[0].trim()] = parts[1].trim();
+                c.intState.pc++;
+            }
+            else if (line.includes(';')) {
                 // Acción: pin1;HIGH
                 const parts = line.split(';');
-                if (parts.length === 2) {
-                    const varName = parts[0].trim();
-                    const state = parts[1].trim(); // HIGH o LOW
-                    const physicalPin = pinMap[varName];
-                    
-                    if (physicalPin === 'D1') c.memory.d1 = (state === 'HIGH');
-                    if (physicalPin === 'D2') c.memory.d2 = (state === 'HIGH');
-                }
+                const varName = parts[0].trim();
+                const state = parts[1].trim();
+                
+                // Buscar qué pin físico es esa variable
+                const physicalPin = c.intState.vars[varName];
+                
+                if (physicalPin === 'D1') c.memory.d1 = (state === 'HIGH');
+                if (physicalPin === 'D2') c.memory.d2 = (state === 'HIGH');
+                c.intState.pc++;
             }
-        });
+            else {
+                // Comando desconocido, avanzar
+                c.intState.pc++;
+            }
+            
+            instructionsExecuted++;
+        }
     }
 
     function updatePhysics() {
@@ -407,24 +453,22 @@
 
         components.forEach(c => c.nodes.forEach(n => n.signal = false));
         
-        // --- 1. DETECCIÓN DE FUENTES Y PROPAGACIÓN (BFS) ---
-        // Añado RADION al filtro. Se considera fuente si sus pines internos están en HIGH gracias al código.
+        // Fuentes
         const sources = components.filter(c => 
             (c.type === 'BATTERY' || 
              (c.type === 'CAPACITOR' && c.isSource) || 
              (c.type === 'RSK90' && c.clockState) ||
-             (c.type === 'RADION' && (c.memory.d1 || c.memory.d2))) // Radion es fuente si D1 o D2 son HIGH
+             (c.type === 'RADION' && (c.memory.d1 || c.memory.d2))) 
             && !c.burned
         );
 
         sources.forEach(src => {
             let startNodes = [];
-            
             if (src.type === 'BATTERY' || src.type === 'CAPACITOR') startNodes.push(src.nodes[0]);
-            else if (src.type === 'RSK90') startNodes.push(src.nodes[2]); // OUT
+            else if (src.type === 'RSK90') startNodes.push(src.nodes[2]);
             else if (src.type === 'RADION') {
-                if (src.memory.d1) startNodes.push(src.nodes[3]); // D1
-                if (src.memory.d2) startNodes.push(src.nodes[4]); // D2
+                if (src.memory.d1) startNodes.push(src.nodes[3]);
+                if (src.memory.d2) startNodes.push(src.nodes[4]);
             }
 
             startNodes.forEach(startNode => {
@@ -452,7 +496,6 @@
                         if (comp.type === 'LED' && curr !== comp.nodes[0]) continue;
                         if (comp.type === 'CAPACITOR' && curr !== comp.nodes[0]) continue; 
                         if (comp.type === 'TRANSISTOR') continue;
-                        // Radion y RSK90 no dejan pasar la señal de VCC a sus salidas "gratis", tienen lógica interna
                         if (['AND', 'OR', 'NOT', 'XOR', 'RSK90', 'RADION'].includes(comp.type)) continue; 
                         comp.nodes.forEach(n => { if (!n.signal) { n.signal = true; q.push(n); } });
                     }
@@ -460,7 +503,6 @@
             });
         });
 
-        // --- 2. CÁLCULO DE CORRIENTE Y CONSUMO (DFS) ---
         components.filter(c => (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource)) && !c.burned).forEach(bat => {
             let foundPaths = [];
             function dfs(currentNode, currentPath, visitedNodes) {
@@ -497,28 +539,19 @@
                         if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
                         if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]); 
                     }
-                    // --- RADION 1.0 PATHS ---
-                    // Permite el paso de VCC(0) a GND(1).
-                    // Permite el paso de VCC(0) a D1/D2 si están en HIGH (para cerrar circuito con cargas).
-                    // Todos los GNDs (1 y 2) están conectados internamente.
                     else if (comp.type === 'RADION') {
-                        // VCC a GNDs (alimentación de la placa)
                         if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); }
-                        // GNDs entre sí
                         if (currentNode === comp.nodes[1]) { outNodes.push(comp.nodes[2]); outNodes.push(comp.nodes[0]); }
                         if (currentNode === comp.nodes[2]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[0]); }
-                        
-                        // Pines de salida D1/D2
                         if (comp.memory.d1) {
-                             if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[3]); // VCC -> D1
-                             if (currentNode === comp.nodes[3]) outNodes.push(comp.nodes[0]); // D1 -> VCC
+                             if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[3]); 
+                             if (currentNode === comp.nodes[3]) outNodes.push(comp.nodes[0]); 
                         }
                         if (comp.memory.d2) {
-                             if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[4]); // VCC -> D2
-                             if (currentNode === comp.nodes[4]) outNodes.push(comp.nodes[0]); // D2 -> VCC
+                             if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[4]); 
+                             if (currentNode === comp.nodes[4]) outNodes.push(comp.nodes[0]); 
                         }
                     }
-                    // ------------------------
                     else { outNodes.push(comp.nodes.find(n => n !== currentNode)); }
 
                     outNodes.forEach(otherNode => {
@@ -545,17 +578,12 @@
                                 if (comp.clockState && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[2]) || (currentNode === comp.nodes[2] && otherNode === comp.nodes[0]))) canCross = true;
                             }
 
-                            // --- RADION CROSS CHECK ---
                             if (comp.type === 'RADION') {
-                                // Siempre hay camino entre VCC y GNDs (resistencia interna)
                                 const isPwr = (n) => n === comp.nodes[0] || n === comp.nodes[1] || n === comp.nodes[2];
                                 if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
-
-                                // Salidas activas
                                 if (comp.memory.d1 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[3]) || (currentNode === comp.nodes[3] && otherNode === comp.nodes[0]))) canCross = true;
                                 if (comp.memory.d2 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[4]) || (currentNode === comp.nodes[4] && otherNode === comp.nodes[0]))) canCross = true;
                             }
-                            // --------------------------
 
                             if (comp.type === 'TRANSISTOR') {
                                 const baseSignal = comp.nodes[1].signal;
@@ -578,9 +606,7 @@
                             if (step.comp.type === 'RESISTOR') rSum += step.comp.val;
                             if (step.comp.type === 'RELAY') rSum += 50; 
                             if (step.comp.type === 'RSK90') rSum += 1000;
-                            // Resistencia interna de la placa
                             if (step.comp.type === 'RADION') rSum += 1200; 
-
                             if (step.comp.type === 'LED') ledCount++;
                             if (['AND', 'OR', 'NOT', 'XOR', 'MUX'].includes(step.comp.type)) rSum += 10;
                             if (step.comp.type === 'CAPACITOR' && bat.type === 'BATTERY') {
@@ -631,9 +657,8 @@
             }
         });
 
-        // --- EJECUCIÓN LÓGICA RADION ---
         components.filter(c => c.type === 'RADION').forEach(c => {
-            runRadionLogic(c); // Ejecuta el intérprete cada frame
+            runRadionLogic(c); 
         });
     }
 
@@ -739,8 +764,7 @@
             ctx.fillStyle = "#111"; ctx.strokeStyle = c.burned ? "#e74c3c" : "#444"; ctx.lineWidth = 2;
             let drawW = (c.rotation % 2 === 0) ? c.w : c.h; let drawH = (c.rotation % 2 === 0) ? c.h : c.w;
             
-            // Si es RADION, dibujo especial
-            if(c.type === 'RADION') ctx.fillStyle = "#27ae60"; // PCB Verde
+            if(c.type === 'RADION') ctx.fillStyle = "#27ae60"; 
             else ctx.fillStyle = "#111";
 
             ctx.fillRect(c.x, c.y, drawW, drawH); ctx.strokeRect(c.x, c.y, drawW, drawH);
@@ -793,28 +817,19 @@
                 ctx.fillStyle = "#e67e22"; ctx.font = "bold 10px monospace"; ctx.fillText("RSK90", c.x+35, c.y+25);
                 ctx.fillStyle = "#aaa"; ctx.font = "8px monospace"; ctx.fillText("VCC", c.x+18, c.y+18); ctx.fillText("GND", c.x+18, c.y+45); ctx.fillText("OUT", c.x+60, c.y+33);
             }
-            // --- DRAW RADION 1.0 ---
             else if (c.type === 'RADION') {
                 ctx.strokeStyle = c.active ? "#00ff41" : "#111"; ctx.lineWidth = 2;
-                // Chip central
                 ctx.fillStyle = "#111"; ctx.fillRect(c.x+35, c.y+20, 40, 40);
                 ctx.strokeStyle = "#555"; ctx.strokeRect(c.x+35, c.y+20, 40, 40);
-                
-                // Texto
                 ctx.fillStyle = "#fff"; ctx.font = "bold 10px monospace"; ctx.fillText("RADION", c.x+38, c.y+35);
                 ctx.font = "9px monospace"; ctx.fillText("1.0", c.x+45, c.y+50);
-                
-                // Etiquetas pines
                 ctx.fillStyle = "#000"; ctx.font = "9px monospace";
                 ctx.fillText("VCC", c.x+20, c.y+20); ctx.fillText("GND", c.x+20, c.y+50); ctx.fillText("GND", c.x+20, c.y+80);
                 ctx.fillText("D1", c.x+80, c.y+35); ctx.fillText("D2", c.x+80, c.y+65);
-                
-                // Led de estado (si hay código corriendo)
                 if (c.active && !c.burned) {
                     ctx.fillStyle = "#00ff41"; ctx.beginPath(); ctx.arc(c.x+90, c.y+10, 2, 0, Math.PI*2); ctx.fill();
                 }
             }
-            // -----------------------
             else if (c.type === 'BATTERY') {
                 ctx.fillStyle = "#00ff41"; ctx.font = "12px monospace"; ctx.fillText(`BAT ${c.val}V`, c.x+25, c.y+35);
             } else if (c.type === 'CAPACITOR') {
@@ -882,7 +897,7 @@
 
         ctx.restore();
         ctx.fillStyle = "rgba(0, 255, 65, 0.3)"; ctx.font = "bold 12px monospace"; ctx.textAlign = "right";
-        ctx.fillText("Simulic Pro 1.2 + RADION", canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
+        ctx.fillText("Simulic Pro 1.2 + RADION (Logic Update)", canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
 
         requestAnimationFrame(draw);
     }
