@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulic Pro - Desktop Mode</title>
+    <title>Simulic Pro - Manual Update</title>
     <style>
         * { user-select: none; box-sizing: border-box; touch-action: none; }
         body { margin: 0; background: #050505; color: #00ff41; font-family: 'Courier New', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -15,6 +15,12 @@
         .cat-btn { padding: 8px 12px; background: #000; border: 1px solid #444; color: #aaa; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; flex-shrink: 0; }
         .cat-btn.active { background: #00ff41; color: #000; border-color: #00ff41; box-shadow: 0 0 10px rgba(0,255,65,0.4); }
         
+        .cat-btn-demo { border-color: #9b59b6; color: #9b59b6; }
+        .cat-btn-demo.active { background: #9b59b6; color: #fff; box-shadow: 0 0 10px rgba(155, 89, 182, 0.4); }
+
+        .cat-btn-manual { border-color: #f1c40f; color: #f1c40f; }
+        .cat-btn-manual:active { background: #f1c40f; color: #000; }
+
         .spawn-btn { padding: 6px 10px; background: #222; border: 1px solid #555; color: #ddd; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; flex-shrink: 0; white-space: nowrap; }
         .spawn-btn:active { background: #fff; color: #000; }
         
@@ -50,22 +56,33 @@
         .modal-btn-rep { border-color: #f1c40f; color: #f1c40f; }
         .modal-btn-toggle { border-color: #3498db; color: #3498db; }
 
+        /* PANTALLA DE MANUAL */
+        #manual-screen { display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: rgba(10,10,10,0.95); border: 2px solid #f1c40f; z-index: 300; padding: 20px; overflow-y: auto; color: #ddd; box-shadow: 0 0 50px rgba(0,0,0,0.9); }
+        #manual-screen h2 { color: #f1c40f; border-bottom: 1px solid #f1c40f; padding-bottom: 10px; }
+        #manual-screen h4 { color: #00ff41; margin-top: 20px; margin-bottom: 5px; }
+        #manual-screen p, #manual-screen li { font-size: 13px; line-height: 1.5; color: #ccc; }
+        #manual-screen code { background: #222; padding: 2px 5px; color: #e67e22; border-radius: 3px; }
+        #manual-screen .close-manual { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; border: none; padding: 5px 10px; cursor: pointer; font-weight: bold; }
+
         /* MENÚ CONTEXTUAL (CLICK DERECHO) */
         #context-menu { display: none; position: absolute; background: #222; border: 1px solid #00ff41; z-index: 200; box-shadow: 2px 2px 10px rgba(0,0,0,0.8); border-radius: 4px; min-width: 120px; }
         .ctx-item { padding: 8px 12px; color: #eee; cursor: pointer; font-size: 12px; border-bottom: 1px solid #333; }
         .ctx-item:hover { background: #00ff41; color: #000; }
         .ctx-item:last-child { border-bottom: none; }
 
-        /* CLASE PARA OCULTAR CONTROLES */
         .desktop-mode #virtual-controls { display: none !important; }
         .desktop-mode #zoom-controls { top: auto; bottom: 20px; right: 20px; }
     </style>
 </head>
-<body class=""> <div id="ui-top">
+<body class="">
+
+<div id="ui-top">
     <button class="cat-btn" onclick="selectCategory('active', this)">ACTIVOS</button>
     <button class="cat-btn" onclick="selectCategory('passive', this)">PASIVOS</button>
     <button class="cat-btn" onclick="selectCategory('digital', this)">DIGITALES</button>
     <button class="cat-btn" onclick="selectCategory('boards', this)">PLACAS</button>
+    <button class="cat-btn cat-btn-demo" onclick="selectCategory('demos', this)">★ DEMOS</button>
+    <button class="cat-btn cat-btn-manual" onclick="toggleManual()">📖 MANUAL</button>
     <button class="clear-btn mode-btn" onclick="toggleMode()" id="btnMode">📱 MÓVIL</button>
     <button class="clear-btn" onclick="clearAll()">BORRAR TODO</button> 
 </div>
@@ -91,6 +108,37 @@
         <button class="modal-btn" onclick="saveCfg()">GUARDAR</button>
         <button class="modal-btn" onclick="closeCfg()">CERRAR</button>
         <button class="modal-btn modal-btn-rep" id="m-repair" onclick="repairCfg()" style="display:none;">REPARAR</button>
+    </div>
+
+    <div id="manual-screen">
+        <button class="close-manual" onclick="toggleManual()">CERRAR [X]</button>
+        <h2>MANUAL DE USUARIO - SIMULIC PRO</h2>
+        
+        <h4>1. INTRODUCCIÓN</h4>
+        <p>Bienvenido a Simulic Pro, un entorno de simulación electrónica donde la física importa. Aquí puedes crear circuitos complejos, lógica digital y automatización.</p>
+
+        <h4>2. ¡IMPORTANTE! ¿POR QUÉ SE QUEMAN MIS COSAS?</h4>
+        <p style="color:#e74c3c; font-weight:bold;">ESTO NO ES UN ERROR, ES FÍSICA.</p>
+        <p>Al igual que en la vida real, los componentes tienen límites:</p>
+        <ul>
+            <li>Un <strong>LED</strong> conectado directo a una batería de 9V <strong>explotará</strong>. Necesita una resistencia (aprox 330Ω).</li>
+            <li>Un <strong>Transistor</strong> sin resistencia en la base se quemará.</li>
+            <li>Si algo se pone ROJO o dice "QUEMADO", usa la herramienta <strong>AJUSTAR</strong> (o click derecho) y pulsa <strong>REPARAR</strong>.</li>
+        </ul>
+
+        <h4>3. PROGRAMACIÓN 'LOG' (CHIP RADION)</h4>
+        <p>El componente RADION es programable. Usa el lenguaje LOG:</p>
+        <ul>
+            <li><code>start&lt;</code> : Inicia el código.</li>
+            <li><code>end&gt;</code> : Termina el código.</li>
+            <li><code>pinA=D1</code> : Asigna el pin físico D1 a la variable 'pinA'.</li>
+            <li><code>pinA;HIGH</code> : Enciende el pin (5V).</li>
+            <li><code>pinA;LOW</code> : Apaga el pin (0V).</li>
+            <li><code>delay 500</code> : Espera 500 milisegundos.</li>
+            <li><code>loop</code> : Vuelve al inicio (crea un bucle infinito).</li>
+        </ul>
+        <p><em>Ejemplo Parpadeo:</em><br>
+        <code>start&lt;<br>var=D1<br>var;HIGH<br>delay 500<br>var;LOW<br>delay 500<br>loop<br>end&gt;</code></p>
     </div>
 
     <div id="context-menu">
@@ -140,7 +188,12 @@
         resize();
     }
 
-    // --- LÓGICA DE UI CATEGORIZADA ---
+    function toggleManual() {
+        const m = document.getElementById('manual-screen');
+        m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    }
+
+    // --- LISTAS DE COMPONENTES Y DEMOS ---
     const componentLists = {
         'active': [
             { id: 'BATTERY', label: 'BATERÍA' },
@@ -168,22 +221,133 @@
         ]
     };
 
+    // DEFINICIÓN DE DEMOS
+    const demos = {
+        'EMPTY': { label: 'VACÍO (LIMPIAR)', func: () => { clearAll(true); } },
+        'BASIC': { label: 'ELECTRICIDAD BÁSICA', func: () => loadBasicDemo() },
+        'LOGIC': { label: 'PUERTA AND', func: () => loadLogicDemo() },
+        'MOTOR': { label: 'CONTROL MOTOR', func: () => loadMotorDemo() },
+        'RADION': { label: 'RADION BLINK', func: () => loadRadionDemo() }
+    };
+
     function selectCategory(cat, btnElement) {
         document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-        if(btnElement) btnElement.classList.add('active');
+        if(btnElement && !btnElement.classList.contains('cat-btn-manual')) btnElement.classList.add('active');
         const sub = document.getElementById('ui-sub');
         sub.innerHTML = '';
-        componentLists[cat].forEach(comp => {
-            const btn = document.createElement('button');
-            btn.className = 'spawn-btn';
-            btn.innerText = comp.label;
-            btn.onclick = () => spawn(comp.id);
-            if (cat === 'digital') btn.style.borderColor = '#3498db';
-            if (comp.id === 'RSK90') btn.style.color = '#e67e22';
-            if (comp.id === 'RADION') { btn.style.borderColor = '#2ecc71'; btn.style.color = '#2ecc71'; }
-            sub.appendChild(btn);
-        });
+
+        if (cat === 'demos') {
+            Object.keys(demos).forEach(key => {
+                const d = demos[key];
+                const btn = document.createElement('button');
+                btn.className = 'spawn-btn';
+                btn.innerText = d.label;
+                btn.style.borderColor = '#9b59b6';
+                btn.onclick = d.func;
+                sub.appendChild(btn);
+            });
+        } else {
+            componentLists[cat].forEach(comp => {
+                const btn = document.createElement('button');
+                btn.className = 'spawn-btn';
+                btn.innerText = comp.label;
+                btn.onclick = () => spawn(comp.id);
+                if (cat === 'digital') btn.style.borderColor = '#3498db';
+                if (comp.id === 'RSK90') btn.style.color = '#e67e22';
+                if (comp.id === 'RADION') { btn.style.borderColor = '#2ecc71'; btn.style.color = '#2ecc71'; }
+                sub.appendChild(btn);
+            });
+        }
     }
+    
+    // Función auxiliar para conectar cables
+    function connect(c1, pin1, c2, pin2) {
+        const n1 = c1.nodes[pin1];
+        const n2 = c2.nodes[pin2];
+        if (n1 && n2) {
+            connections.push({ a: {c:c1, n:n1}, b: {c:c2, n:n2} });
+        }
+    }
+
+    function loadBasicDemo() {
+        clearAll(true);
+        camera.x = 0; camera.y = 0; camera.zoom = 1.0;
+        
+        const bat = spawn('BATTERY', -150, -50);
+        const res = spawn('RESISTOR', -20, -100);
+        const sw = spawn('SWITCH', -20, 0);
+        const led = spawn('LED', 120, -50);
+
+        connect(bat, 0, res, 0); 
+        connect(res, 1, led, 0); 
+        connect(led, 1, sw, 1);  
+        connect(sw, 0, bat, 1);  
+        
+        sw.closed = true;
+    }
+
+    function loadLogicDemo() {
+        clearAll(true);
+        camera.x = 0; camera.y = 0;
+        
+        // CORRECCIÓN: Añadida resistencia para no quemar el LED de salida
+        const sw1 = spawn('SWITCH', -180, -80);
+        const sw2 = spawn('SWITCH', -180, 20);
+        const andGate = spawn('AND', -30, -30);
+        const res = spawn('RESISTOR', 100, -30); // Resistencia de protección
+        res.val = 220;
+        const led = spawn('LED', 200, -30);
+        const bat = spawn('BATTERY', -250, 150);
+
+        connect(bat, 0, sw1, 0);
+        connect(bat, 0, sw2, 0);
+        connect(sw1, 1, andGate, 0);
+        connect(sw2, 1, andGate, 1);
+        
+        // Salida AND -> Resistencia -> LED
+        connect(andGate, 2, res, 0);
+        connect(res, 1, led, 0);
+        connect(led, 1, bat, 1); 
+    }
+
+    function loadMotorDemo() {
+        clearAll(true);
+        // CORRECCIÓN: Resistencia pequeña para limitar corriente del motor
+        const bat = spawn('BATTERY', -120, -50);
+        const res = spawn('RESISTOR', -20, -120); // Resistencia limitadora
+        res.val = 10; // Valor bajo para dejar girar el motor pero protegerlo algo
+        const btn = spawn('PUSH_BTN', 60, -50);
+        const motor = spawn('MOTOR', 60, 50);
+        
+        connect(bat, 0, res, 0);
+        connect(res, 1, motor, 0);
+        connect(motor, 1, btn, 0);
+        connect(btn, 1, bat, 1);
+    }
+
+    function loadRadionDemo() {
+        clearAll(true);
+        const radion = spawn('RADION', -50, -50);
+        const led1 = spawn('LED', 150, -80);
+        const led2 = spawn('LED', 150, 20);
+        const bat = spawn('BATTERY', -200, 0);
+        
+        connect(bat, 0, radion, 0); 
+        connect(bat, 1, radion, 1); 
+        
+        // El chip RADION tiene salidas reguladas (en la lógica interna), 
+        // pero para enseñar buenos hábitos, podríamos poner resistencias.
+        // En este caso, asumimos que el chip tiene lógica interna de 5v.
+        connect(radion, 3, led1, 0); 
+        connect(led1, 1, radion, 2); 
+        
+        connect(radion, 4, led2, 0); 
+        connect(led2, 1, radion, 2); 
+        
+        radion.code = "start<\npin1=D1\npin2=D2\npin1;HIGH\ndelay 200\npin1;LOW\npin2;HIGH\ndelay 200\npin2;LOW\nloop\nend>";
+        radion.intState = { pc: 0, wait: 0, vars: {} };
+    }
+
     selectCategory('active', document.querySelector('.cat-btn'));
 
     // --- MOTOR FÍSICO ---
@@ -191,20 +355,20 @@
     const ctx = canvas.getContext('2d');
     const container = document.getElementById('canvas-container');
     let components = [], connections = [];
-    const vMouse = { x: 0, y: 0, speed: 12, isDown: false, lastDown: false, moving: {}, selectionMode: false };
+    const vMouse = { x: 0, y: 0, speed: 4, isDown: false, lastDown: false, moving: {}, selectionMode: false };
     let draggingComp = null, drawingCable = null, rotAnim = 0, time = 0;
     let targetCfg = null;
     let selectionBox = null; 
     let selectedItems = []; 
     let camera = { x: 0, y: 0, zoom: 1.0 };
-    let contextTarget = null; // Componente objetivo del click derecho
+    let contextTarget = null;
+    let isPanning = false; 
 
     function resize() { canvas.width = container.clientWidth; canvas.height = container.clientHeight; }
     window.addEventListener('resize', resize); resize();
 
     // --- INPUT HANDLERS ---
     
-    // Zoom con rueda (Solo PC)
     canvas.addEventListener('wheel', (e) => {
         if (!isDesktopMode) return;
         e.preventDefault();
@@ -212,11 +376,14 @@
         camera.zoom = Math.min(3.0, Math.max(0.4, camera.zoom + delta));
     });
 
-    // MOUSE MOVE (PC Tracking)
     canvas.addEventListener('mousemove', (e) => {
         if (!isDesktopMode) return;
+        if (isPanning) {
+            camera.x -= e.movementX / camera.zoom;
+            camera.y -= e.movementY / camera.zoom;
+            return; 
+        }
         const rect = canvas.getBoundingClientRect();
-        // Convertir coordenadas de pantalla a mundo
         vMouse.x = ((e.clientX - rect.left) / camera.zoom) + camera.x - (canvas.width / 2) / camera.zoom;
         vMouse.y = ((e.clientY - rect.top) / camera.zoom) + camera.y - (canvas.height / 2) / camera.zoom;
 
@@ -226,47 +393,43 @@
         }
     });
 
-    // CLICK IZQUIERDO (PC)
     canvas.addEventListener('mousedown', (e) => {
         if (!isDesktopMode) return;
-        if (e.button !== 0) return; // Solo click izquierdo
+        if (e.button === 1) {
+            e.preventDefault();
+            isPanning = true;
+            canvas.style.cursor = 'grabbing';
+            return;
+        }
+        if (e.button !== 0) return; 
         
-        // Cerrar menú contextual si está abierto
         document.getElementById('context-menu').style.display = 'none';
 
-        // 1. Intentar interactuar con nodos (CABLE)
         let nHit = null;
         components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c, n}; }));
         
         if (nHit) {
             drawingCable = nHit;
         } else {
-            // 2. Intentar agarrar componente
             let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
-            
             if (compHit) {
-                // Mover componente
                 if (selectedItems.includes(compHit)) { 
                     draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; 
                 } else { 
-                    // Si no estaba seleccionado, limpiamos selección anterior
                     selectedItems.forEach(c => c.selected = false); selectedItems = []; 
                     draggingComp = {c: compHit, ox:vMouse.x-compHit.x, oy:vMouse.y-compHit.y}; 
                 }
             } else {
-                // 3. Click en vacío -> Iniciar Selección de Caja
                 selectedItems.forEach(c => c.selected = false); selectedItems = [];
                 selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 };
             }
         }
     });
 
-    // CLICK DERECHO (PC - Context Menu)
     canvas.addEventListener('contextmenu', (e) => {
         if (!isDesktopMode) return;
         e.preventDefault();
         
-        // Detectar si hay componente bajo el mouse
         let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
         
         if (compHit) {
@@ -276,14 +439,17 @@
             menu.style.left = e.clientX + 'px';
             menu.style.top = e.clientY + 'px';
         } else {
-            // Click derecho en vacío: Mover cámara (pan) - Opcional, o simplemente cerrar menú
             document.getElementById('context-menu').style.display = 'none';
         }
     });
 
-    // MOUSE UP (PC)
     canvas.addEventListener('mouseup', (e) => {
         if (!isDesktopMode) return;
+        if (e.button === 1) {
+            isPanning = false;
+            canvas.style.cursor = 'crosshair';
+            return;
+        }
         
         if (drawingCable) {
             let targetHit = null;
@@ -300,7 +466,6 @@
         draggingComp = drawingCable = null;
     });
 
-    // ACCIONES DE MENÚ CONTEXTUAL
     function ctxAction(action) {
         document.getElementById('context-menu').style.display = 'none';
         if (!contextTarget) return;
@@ -314,7 +479,6 @@
         } else if (action === 'cfg') {
             openCfg(contextTarget);
         } else if (action === 'use') {
-            // Toggle manual para switch/push
              if (contextTarget.type === 'SWITCH' || contextTarget.type === 'PUSH_BTN') {
                  contextTarget.closed = !contextTarget.closed;
              }
@@ -322,8 +486,6 @@
         contextTarget = null;
     }
 
-
-    // --- CONTROLES VIRTUALES (LEGACY) ---
     const bind = (id, k) => {
         const el = document.getElementById(id);
         el.addEventListener('touchstart', (e) => { if(isDesktopMode) return; e.preventDefault(); vMouse.moving[k] = true; });
@@ -342,15 +504,18 @@
     
     setupBtn('vSel', (v) => {
         vMouse.selectionMode = v;
-        if (v) { 
-            selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 }; 
-        } else {
+        if (v) { selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 }; } 
+        else {
             if (selectionBox && Math.abs(selectionBox.w) > 5) applySelection();
             selectionBox = null;
         }
     });
 
-    function clearAll() { if(confirm("¿Borrar todo?")) { components = []; connections = []; selectedItems = []; drawingCable = null; } }
+    function clearAll(force = false) { 
+        if(force || confirm("¿Borrar todo?")) { 
+            components = []; connections = []; selectedItems = []; drawingCable = null; 
+        } 
+    }
 
     function applySelection() {
         if (!selectionBox) return;
@@ -479,8 +644,11 @@
     }
     function repairCfg() { if(targetCfg) targetCfg.burned=false; closeCfg(); }
 
-    function spawn(type) {
-        const comp = { type, x: vMouse.x-50, y: vMouse.y-30, w: 100, h: 60, nodes: [], state: 0, active: false, burned: false, rotation: 0, selected: false };
+    function spawn(type, xOpt, yOpt) {
+        const tx = (xOpt !== undefined) ? xOpt : vMouse.x;
+        const ty = (yOpt !== undefined) ? yOpt : vMouse.y;
+
+        const comp = { type, x: tx-50, y: ty-30, w: 100, h: 60, nodes: [], state: 0, active: false, burned: false, rotation: 0, selected: false };
         if (type === 'BATTERY') { comp.nodes = [{id:'+', x:0, y:30}, {id:'-', x:100, y:30}]; comp.val = 9; }
         else if (type === 'LED') comp.nodes = [{id:'A', x:0, y:30}, {id:'C', x:100, y:30}];
         else if (type === 'MOTOR') comp.nodes = [{id:'M1', x:0, y:30}, {id:'M2', x:100, y:30}];
@@ -509,7 +677,7 @@
             comp.memory = { d1: false, d2: false };
             comp.intState = { pc: 0, wait: 0, vars: {} };
         }
-        else if (type === 'WAYPOINT') { comp.x = vMouse.x-5; comp.y = vMouse.y-5; comp.w=10; comp.h=10; comp.nodes=[{id:'W', x:5, y:5}]; }
+        else if (type === 'WAYPOINT') { comp.x = tx-5; comp.y = ty-5; comp.w=10; comp.h=10; comp.nodes=[{id:'W', x:5, y:5}]; }
         components.push(comp);
         return comp;
     }
@@ -798,12 +966,12 @@
     }
 
     function draw() {
-        if(targetCfg == null && !isDesktopMode) { // Movimiento cámara móvil
+        if(targetCfg == null && !isDesktopMode) { 
             if (vMouse.moving.up) vMouse.y -= vMouse.speed; if (vMouse.moving.down) vMouse.y += vMouse.speed;
             if (vMouse.moving.left) vMouse.x -= vMouse.speed; if (vMouse.moving.right) vMouse.x += vMouse.speed;
         }
 
-        if(!isDesktopMode) { // Auto-cámara móvil
+        if(!isDesktopMode) { 
             const edgeMargin = 50; 
             let screenMouseX = (vMouse.x - camera.x) * camera.zoom + canvas.width / 2;
             let screenMouseY = (vMouse.y - camera.y) * camera.zoom + canvas.height / 2;
@@ -817,7 +985,6 @@
             selectionBox.w = vMouse.x - selectionBox.x; selectionBox.h = vMouse.y - selectionBox.y;
         }
 
-        // LÓGICA DE DIBUJO DE CABLES Y ARRASTRE (MOVIL)
         if (!isDesktopMode) {
              if (vMouse.isDown && !vMouse.lastDown && targetCfg == null && !vMouse.selectionMode) {
                 let clickOnSomething = false; let nHit = null;
@@ -843,7 +1010,6 @@
             }
         }
 
-        // Arrastre común (Móvil y Desktop)
         if (draggingComp) { 
             if (draggingComp.group) {
                 const dx = vMouse.x - draggingComp.ox; const dy = vMouse.y - draggingComp.oy;
@@ -1027,7 +1193,7 @@
         ctx.restore();
         const modeText = isDesktopMode ? "MODO PC" : "MODO MOVIL";
         ctx.fillStyle = "rgba(0, 255, 65, 0.3)"; ctx.font = "bold 12px monospace"; ctx.textAlign = "right";
-        ctx.fillText(`Simulic Pro 1.3 [${modeText}]`, canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
+        ctx.fillText(`Simulic Pro 1.6 [MANUAL]`, canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
 
         requestAnimationFrame(draw);
     }
