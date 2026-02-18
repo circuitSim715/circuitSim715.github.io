@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulic Pro - Select Fix</title>
+    <title>Simulic Pro - Radion Update</title>
     <style>
         * { user-select: none; box-sizing: border-box; touch-action: none; }
         body { margin: 0; background: #050505; color: #00ff41; font-family: 'Courier New', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* UI SUPERIOR (INTACTA) */
+        /* UI SUPERIOR */
         #ui-top { padding: 10px; background: #111; display: flex; justify-content: flex-start; gap: 5px; border-bottom: 1px solid #222; z-index: 10; overflow-x: auto; }
         #ui-sub { padding: 8px; background: #1a1a1a; display: flex; gap: 6px; border-bottom: 2px solid #00ff41; min-height: 45px; overflow-x: auto; align-items: center; z-index: 9; }
         
@@ -40,8 +40,11 @@
         .btn-sel { background: #3498db; }
         .btn-action:active { transform: scale(0.9); }
         
-        #modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid #00ff41; padding: 20px; text-align: center; z-index: 100; border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,65,0.2); }
+        #modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid #00ff41; padding: 20px; text-align: center; z-index: 100; border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,65,0.2); width: 300px; }
         #modal input { width: 100px; padding: 5px; background: #000; color: #00ff41; border: 1px solid #00ff41; text-align: center; margin: 10px 0; font-size: 16px; font-family: monospace; }
+        /* ESTILO AÑADIDO PARA CÓDIGO */
+        #m-code-area { width: 100%; height: 120px; background: #000; color: #fff; border: 1px solid #555; font-family: monospace; font-size: 12px; text-align: left; padding: 5px; margin-bottom: 10px; resize: none; display: none; }
+        
         .modal-btn { padding: 8px 15px; background: #1a1a1a; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; margin: 5px; border-radius: 4px; }
         .modal-btn-rep { border-color: #f1c40f; color: #f1c40f; }
         .modal-btn-toggle { border-color: #3498db; color: #3498db; }
@@ -53,7 +56,7 @@
     <button class="cat-btn" onclick="selectCategory('active', this)">ACTIVOS</button>
     <button class="cat-btn" onclick="selectCategory('passive', this)">PASIVOS</button>
     <button class="cat-btn" onclick="selectCategory('digital', this)">DIGITALES</button>
-    <button class="clear-btn" onclick="clearAll()">BORRAR TODO</button> 
+    <button class="cat-btn" onclick="selectCategory('boards', this)">PLACAS</button> <button class="clear-btn" onclick="clearAll()">BORRAR TODO</button> 
 </div>
 <div id="ui-sub">
     <span style="color:#444; font-size:10px;">SELECCIONA UNA CATEGORÍA ARRIBA</span>
@@ -68,7 +71,12 @@
     <canvas id="circuitCanvas"></canvas>
     <div id="modal">
         <h3 id="m-title" style="margin:0 0 10px 0;">Configurar</h3>
-        <input type="number" id="m-val"> <span id="m-unit"></span><br>
+        
+        <input type="number" id="m-val"> <span id="m-unit"></span>
+        
+        <textarea id="m-code-area" placeholder="Escribe código LOG aquí..."></textarea>
+        
+        <br>
         <button class="modal-btn modal-btn-toggle" id="m-toggle" onclick="toggleCompType()" style="display:none;">TIPO: NPN</button>
         <br>
         <button class="modal-btn" onclick="saveCfg()">GUARDAR</button>
@@ -111,11 +119,16 @@
             { id: 'CAPACITOR', label: 'CONDENSADOR' }
         ],
         'digital': [
+            { id: 'RSK90', label: 'CHIP RSK90' },
             { id: 'AND', label: 'AND' },
             { id: 'OR', label: 'OR' },
             { id: 'XOR', label: 'XOR' },
             { id: 'NOT', label: 'NOT' },
             { id: 'MUX', label: 'MULTIPLEXOR' }
+        ],
+        // NUEVA CATEGORÍA
+        'boards': [
+            { id: 'RADION', label: 'RADION 1.0' }
         ]
     };
 
@@ -129,7 +142,9 @@
             btn.className = 'spawn-btn';
             btn.innerText = comp.label;
             btn.onclick = () => spawn(comp.id);
-            if (cat === 'digital') btn.style.borderColor = '#3498db'; 
+            if (cat === 'digital') btn.style.borderColor = '#3498db';
+            if (comp.id === 'RSK90') btn.style.color = '#e67e22';
+            if (comp.id === 'RADION') { btn.style.borderColor = '#2ecc71'; btn.style.color = '#2ecc71'; }
             sub.appendChild(btn);
         });
     }
@@ -166,15 +181,11 @@
     };
     setupBtn('vClick', (v) => vMouse.isDown = v);
     
-    // --- ARREGLO DEL BOTÓN SELECT ---
-    // Simplemente al mantener presionado, se inicia la caja.
     setupBtn('vSel', (v) => {
         vMouse.selectionMode = v;
         if (v) { 
-            // Inicia la caja en la posición actual
             selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 }; 
         } else {
-            // Al soltar, aplica selección
             if (selectionBox && Math.abs(selectionBox.w) > 5) applySelection();
             selectionBox = null;
         }
@@ -275,6 +286,15 @@
         const toggleBtn = document.getElementById('m-toggle');
         if (c.type === 'TRANSISTOR') { toggleBtn.style.display = 'inline-block'; toggleBtn.innerText = "TIPO: " + c.mode; } 
         else { toggleBtn.style.display = 'none'; }
+
+        // --- MANEJO DEL CÓDIGO DE RADION ---
+        const codeArea = document.getElementById('m-code-area');
+        if (c.type === 'RADION') {
+            codeArea.style.display = 'block';
+            codeArea.value = c.code;
+        } else {
+            codeArea.style.display = 'none';
+        }
     }
     
     function toggleCompType() {
@@ -285,10 +305,17 @@
     }
 
     function closeCfg() { document.getElementById('modal').style.display='none'; targetCfg=null; }
+    
     function saveCfg() { 
-        if(targetCfg && (targetCfg.type === 'BATTERY' || targetCfg.type === 'RESISTOR' || targetCfg.type === 'CAPACITOR')) { 
-            targetCfg.val = Math.max(0.1, parseFloat(document.getElementById('m-val').value) || 0); 
-        } 
+        if(targetCfg) {
+            if (targetCfg.type === 'BATTERY' || targetCfg.type === 'RESISTOR' || targetCfg.type === 'CAPACITOR') { 
+                targetCfg.val = Math.max(0.1, parseFloat(document.getElementById('m-val').value) || 0); 
+            } 
+            // GUARDAR CÓDIGO DE RADION
+            if (targetCfg.type === 'RADION') {
+                targetCfg.code = document.getElementById('m-code-area').value;
+            }
+        }
         closeCfg(); 
     }
     function repairCfg() { if(targetCfg) targetCfg.burned=false; closeCfg(); }
@@ -309,9 +336,60 @@
         }
         else if (type === 'AND' || type === 'OR' || type === 'XOR') comp.nodes = [{id:'I1', x:0, y:15}, {id:'I2', x:0, y:45}, {id:'OUT', x:100, y:30}]; 
         else if (type === 'NOT') comp.nodes = [{id:'PWR', x:0, y:15}, {id:'IN', x:0, y:45}, {id:'OUT', x:100, y:30}];
+        else if (type === 'RSK90') {
+            comp.nodes = [{id:'VCC', x:20, y:10}, {id:'GND', x:20, y:50}, {id:'OUT', x:80, y:30}];
+            comp.lastTick = 0; comp.clockState = false;
+        }
+        // --- AÑADIDO: RADION 1.0 ---
+        else if (type === 'RADION') {
+            comp.w = 110; comp.h = 90; // Un poco más grande
+            // Nodos: VCC(0), GND_IN(1), GND_AUX(2), D1(3), D2(4)
+            comp.nodes = [
+                {id:'VCC', x:15, y:15}, {id:'GND', x:15, y:45},
+                {id:'G', x:15, y:75}, // Pin GND extra para componentes
+                {id:'D1', x:95, y:30}, {id:'D2', x:95, y:60}
+            ];
+            // Código por defecto
+            comp.code = "start<\npin1=D1\npin2=D2\npin1;HIGH\nend>";
+            // Estado interno del simulador
+            comp.memory = { d1: false, d2: false };
+        }
+        // ---------------------------
         else if (type === 'WAYPOINT') { comp.x = vMouse.x-5; comp.y = vMouse.y-5; comp.w=10; comp.h=10; comp.nodes=[{id:'W', x:5, y:5}]; }
         components.push(comp);
         return comp;
+    }
+
+    // --- LOGICA INTERPRETE LOG (Simple) ---
+    function runRadionLogic(c) {
+        if (!c.active || c.burned) {
+            c.memory.d1 = false; c.memory.d2 = false;
+            return;
+        }
+        if (!c.code.includes('start<') || !c.code.includes('end>')) return;
+        
+        const lines = c.code.split('\n');
+        let pinMap = {}; // Mapea nombre de variable -> 'D1' o 'D2'
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (line.includes('=')) {
+                // Definición: pin1=D1
+                const parts = line.split('=');
+                if (parts.length === 2) pinMap[parts[0].trim()] = parts[1].trim();
+            } else if (line.includes(';')) {
+                // Acción: pin1;HIGH
+                const parts = line.split(';');
+                if (parts.length === 2) {
+                    const varName = parts[0].trim();
+                    const state = parts[1].trim(); // HIGH o LOW
+                    const physicalPin = pinMap[varName];
+                    
+                    if (physicalPin === 'D1') c.memory.d1 = (state === 'HIGH');
+                    if (physicalPin === 'D2') c.memory.d2 = (state === 'HIGH');
+                }
+            }
+        });
     }
 
     function updatePhysics() {
@@ -328,38 +406,61 @@
         });
 
         components.forEach(c => c.nodes.forEach(n => n.signal = false));
-        components.filter(c => (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource)) && !c.burned).forEach(src => {
-            let startNode = src.nodes[0]; 
-            let q = [startNode]; startNode.signal = true;
-            while(q.length > 0) {
-                let curr = q.shift();
-                connections.forEach(conn => {
-                    let next = null; if (conn.a.n === curr) next = conn.b.n; if (conn.b.n === curr) next = conn.a.n;
-                    if (next && !next.signal) { next.signal = true; q.push(next); }
-                });
-                const comp = components.find(c => c.nodes.includes(curr));
-                if (comp && !comp.burned) {
-                    if ((comp.type === 'SWITCH' || comp.type === 'PUSH_BTN') && !comp.closed) continue;
-                    if (comp.type === 'RELAY') { if ((curr === comp.nodes[2] || curr === comp.nodes[3]) && !comp.coilState) continue; }
-                    if (comp.type === 'MUX') {
-                        const sel = comp.selState;
-                        if (curr === comp.nodes[0]) { if (!sel && !comp.nodes[3].signal) { comp.nodes[3].signal=true; q.push(comp.nodes[3]); } }
-                        else if (curr === comp.nodes[1]) { if (sel && !comp.nodes[3].signal) { comp.nodes[3].signal=true; q.push(comp.nodes[3]); } }
-                        else if (curr === comp.nodes[3]) {
-                            let dest = sel ? comp.nodes[1] : comp.nodes[0];
-                            if(!dest.signal) { dest.signal=true; q.push(dest); }
-                        }
-                        continue; 
-                    }
-                    if (comp.type === 'LED' && curr !== comp.nodes[0]) continue;
-                    if (comp.type === 'CAPACITOR' && curr !== comp.nodes[0]) continue; 
-                    if (comp.type === 'TRANSISTOR') continue;
-                    if (['AND', 'OR', 'NOT', 'XOR'].includes(comp.type)) continue;
-                    comp.nodes.forEach(n => { if (!n.signal) { n.signal = true; q.push(n); } });
-                }
+        
+        // --- 1. DETECCIÓN DE FUENTES Y PROPAGACIÓN (BFS) ---
+        // Añado RADION al filtro. Se considera fuente si sus pines internos están en HIGH gracias al código.
+        const sources = components.filter(c => 
+            (c.type === 'BATTERY' || 
+             (c.type === 'CAPACITOR' && c.isSource) || 
+             (c.type === 'RSK90' && c.clockState) ||
+             (c.type === 'RADION' && (c.memory.d1 || c.memory.d2))) // Radion es fuente si D1 o D2 son HIGH
+            && !c.burned
+        );
+
+        sources.forEach(src => {
+            let startNodes = [];
+            
+            if (src.type === 'BATTERY' || src.type === 'CAPACITOR') startNodes.push(src.nodes[0]);
+            else if (src.type === 'RSK90') startNodes.push(src.nodes[2]); // OUT
+            else if (src.type === 'RADION') {
+                if (src.memory.d1) startNodes.push(src.nodes[3]); // D1
+                if (src.memory.d2) startNodes.push(src.nodes[4]); // D2
             }
+
+            startNodes.forEach(startNode => {
+                let q = [startNode]; startNode.signal = true;
+                while(q.length > 0) {
+                    let curr = q.shift();
+                    connections.forEach(conn => {
+                        let next = null; if (conn.a.n === curr) next = conn.b.n; if (conn.b.n === curr) next = conn.a.n;
+                        if (next && !next.signal) { next.signal = true; q.push(next); }
+                    });
+                    const comp = components.find(c => c.nodes.includes(curr));
+                    if (comp && !comp.burned) {
+                        if ((comp.type === 'SWITCH' || comp.type === 'PUSH_BTN') && !comp.closed) continue;
+                        if (comp.type === 'RELAY') { if ((curr === comp.nodes[2] || curr === comp.nodes[3]) && !comp.coilState) continue; }
+                        if (comp.type === 'MUX') {
+                            const sel = comp.selState;
+                            if (curr === comp.nodes[0]) { if (!sel && !comp.nodes[3].signal) { comp.nodes[3].signal=true; q.push(comp.nodes[3]); } }
+                            else if (curr === comp.nodes[1]) { if (sel && !comp.nodes[3].signal) { comp.nodes[3].signal=true; q.push(comp.nodes[3]); } }
+                            else if (curr === comp.nodes[3]) {
+                                let dest = sel ? comp.nodes[1] : comp.nodes[0];
+                                if(!dest.signal) { dest.signal=true; q.push(dest); }
+                            }
+                            continue; 
+                        }
+                        if (comp.type === 'LED' && curr !== comp.nodes[0]) continue;
+                        if (comp.type === 'CAPACITOR' && curr !== comp.nodes[0]) continue; 
+                        if (comp.type === 'TRANSISTOR') continue;
+                        // Radion y RSK90 no dejan pasar la señal de VCC a sus salidas "gratis", tienen lógica interna
+                        if (['AND', 'OR', 'NOT', 'XOR', 'RSK90', 'RADION'].includes(comp.type)) continue; 
+                        comp.nodes.forEach(n => { if (!n.signal) { n.signal = true; q.push(n); } });
+                    }
+                }
+            });
         });
 
+        // --- 2. CÁLCULO DE CORRIENTE Y CONSUMO (DFS) ---
         components.filter(c => (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource)) && !c.burned).forEach(bat => {
             let foundPaths = [];
             function dfs(currentNode, currentPath, visitedNodes) {
@@ -391,6 +492,33 @@
                             if (sel) outNodes.push(comp.nodes[1]); else outNodes.push(comp.nodes[0]);
                         }
                     }
+                    else if (comp.type === 'RSK90') {
+                        if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); } 
+                        if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
+                        if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]); 
+                    }
+                    // --- RADION 1.0 PATHS ---
+                    // Permite el paso de VCC(0) a GND(1).
+                    // Permite el paso de VCC(0) a D1/D2 si están en HIGH (para cerrar circuito con cargas).
+                    // Todos los GNDs (1 y 2) están conectados internamente.
+                    else if (comp.type === 'RADION') {
+                        // VCC a GNDs (alimentación de la placa)
+                        if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); }
+                        // GNDs entre sí
+                        if (currentNode === comp.nodes[1]) { outNodes.push(comp.nodes[2]); outNodes.push(comp.nodes[0]); }
+                        if (currentNode === comp.nodes[2]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[0]); }
+                        
+                        // Pines de salida D1/D2
+                        if (comp.memory.d1) {
+                             if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[3]); // VCC -> D1
+                             if (currentNode === comp.nodes[3]) outNodes.push(comp.nodes[0]); // D1 -> VCC
+                        }
+                        if (comp.memory.d2) {
+                             if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[4]); // VCC -> D2
+                             if (currentNode === comp.nodes[4]) outNodes.push(comp.nodes[0]); // D2 -> VCC
+                        }
+                    }
+                    // ------------------------
                     else { outNodes.push(comp.nodes.find(n => n !== currentNode)); }
 
                     outNodes.forEach(otherNode => {
@@ -411,6 +539,24 @@
                             if (comp.type === 'OR' && (comp.nodes[0].signal || comp.nodes[1].signal)) canCross = true;
                             if (comp.type === 'XOR' && ((comp.nodes[0].signal && !comp.nodes[1].signal) || (!comp.nodes[0].signal && comp.nodes[1].signal))) canCross = true;
                             if (comp.type === 'NOT' && currentNode === comp.nodes[0] && !comp.nodes[1].signal) canCross = true;
+                            
+                            if (comp.type === 'RSK90') {
+                                if ((currentNode === comp.nodes[0] && otherNode === comp.nodes[1]) || (currentNode === comp.nodes[1] && otherNode === comp.nodes[0])) canCross = true;
+                                if (comp.clockState && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[2]) || (currentNode === comp.nodes[2] && otherNode === comp.nodes[0]))) canCross = true;
+                            }
+
+                            // --- RADION CROSS CHECK ---
+                            if (comp.type === 'RADION') {
+                                // Siempre hay camino entre VCC y GNDs (resistencia interna)
+                                const isPwr = (n) => n === comp.nodes[0] || n === comp.nodes[1] || n === comp.nodes[2];
+                                if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
+
+                                // Salidas activas
+                                if (comp.memory.d1 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[3]) || (currentNode === comp.nodes[3] && otherNode === comp.nodes[0]))) canCross = true;
+                                if (comp.memory.d2 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[4]) || (currentNode === comp.nodes[4] && otherNode === comp.nodes[0]))) canCross = true;
+                            }
+                            // --------------------------
+
                             if (comp.type === 'TRANSISTOR') {
                                 const baseSignal = comp.nodes[1].signal;
                                 if (comp.mode === 'NPN') { if (baseSignal) canCross = true; } 
@@ -431,6 +577,10 @@
                             pathComps.push(step.comp);
                             if (step.comp.type === 'RESISTOR') rSum += step.comp.val;
                             if (step.comp.type === 'RELAY') rSum += 50; 
+                            if (step.comp.type === 'RSK90') rSum += 1000;
+                            // Resistencia interna de la placa
+                            if (step.comp.type === 'RADION') rSum += 1200; 
+
                             if (step.comp.type === 'LED') ledCount++;
                             if (['AND', 'OR', 'NOT', 'XOR', 'MUX'].includes(step.comp.type)) rSum += 10;
                             if (step.comp.type === 'CAPACITOR' && bat.type === 'BATTERY') {
@@ -467,6 +617,24 @@
         
         components.filter(c => c.type === 'RELAY').forEach(r => r.coilState = r.coilActiveThisFrame);
         components.filter(c => c.type === 'MUX').forEach(m => { m.selState = m.nodes[2].signal; });
+
+        components.filter(c => c.type === 'RSK90').forEach(c => {
+            if (c.active && !c.burned) {
+                const now = Date.now();
+                if (!c.lastTick) c.lastTick = now;
+                if (now - c.lastTick >= 1000) { 
+                    c.clockState = !c.clockState;
+                    c.lastTick = now;
+                }
+            } else {
+                c.clockState = false; c.lastTick = 0;
+            }
+        });
+
+        // --- EJECUCIÓN LÓGICA RADION ---
+        components.filter(c => c.type === 'RADION').forEach(c => {
+            runRadionLogic(c); // Ejecuta el intérprete cada frame
+        });
     }
 
     function drawGrid(camX, camY, zoom) {
@@ -570,6 +738,11 @@
 
             ctx.fillStyle = "#111"; ctx.strokeStyle = c.burned ? "#e74c3c" : "#444"; ctx.lineWidth = 2;
             let drawW = (c.rotation % 2 === 0) ? c.w : c.h; let drawH = (c.rotation % 2 === 0) ? c.h : c.w;
+            
+            // Si es RADION, dibujo especial
+            if(c.type === 'RADION') ctx.fillStyle = "#27ae60"; // PCB Verde
+            else ctx.fillStyle = "#111";
+
             ctx.fillRect(c.x, c.y, drawW, drawH); ctx.strokeRect(c.x, c.y, drawW, drawH);
             if(c.burned) { ctx.fillStyle = "#e74c3c"; ctx.font = "bold 12px Arial"; ctx.fillText("¡QUEMADO!", c.x+5, c.y-5); }
 
@@ -613,6 +786,35 @@
                 ctx.fillStyle = "#aaa"; ctx.font = "8px monospace"; 
                 ctx.fillText("A", c.x+5, c.y+15); ctx.fillText("B", c.x+5, c.y+45); ctx.fillText("S", c.x+45, c.y+55); ctx.fillText("Q", c.x+85, c.y+33);
             }
+            else if (c.type === 'RSK90') {
+                ctx.strokeStyle = c.active ? "#e67e22" : "#555"; ctx.lineWidth = 2;
+                ctx.strokeRect(c.x+15, c.y+10, 70, 40); ctx.fillStyle = "#222"; ctx.fillRect(c.x+15, c.y+10, 70, 40);
+                ctx.fillStyle = c.clockState ? "#e67e22" : "#333"; ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#e67e22"; ctx.font = "bold 10px monospace"; ctx.fillText("RSK90", c.x+35, c.y+25);
+                ctx.fillStyle = "#aaa"; ctx.font = "8px monospace"; ctx.fillText("VCC", c.x+18, c.y+18); ctx.fillText("GND", c.x+18, c.y+45); ctx.fillText("OUT", c.x+60, c.y+33);
+            }
+            // --- DRAW RADION 1.0 ---
+            else if (c.type === 'RADION') {
+                ctx.strokeStyle = c.active ? "#00ff41" : "#111"; ctx.lineWidth = 2;
+                // Chip central
+                ctx.fillStyle = "#111"; ctx.fillRect(c.x+35, c.y+20, 40, 40);
+                ctx.strokeStyle = "#555"; ctx.strokeRect(c.x+35, c.y+20, 40, 40);
+                
+                // Texto
+                ctx.fillStyle = "#fff"; ctx.font = "bold 10px monospace"; ctx.fillText("RADION", c.x+38, c.y+35);
+                ctx.font = "9px monospace"; ctx.fillText("1.0", c.x+45, c.y+50);
+                
+                // Etiquetas pines
+                ctx.fillStyle = "#000"; ctx.font = "9px monospace";
+                ctx.fillText("VCC", c.x+20, c.y+20); ctx.fillText("GND", c.x+20, c.y+50); ctx.fillText("GND", c.x+20, c.y+80);
+                ctx.fillText("D1", c.x+80, c.y+35); ctx.fillText("D2", c.x+80, c.y+65);
+                
+                // Led de estado (si hay código corriendo)
+                if (c.active && !c.burned) {
+                    ctx.fillStyle = "#00ff41"; ctx.beginPath(); ctx.arc(c.x+90, c.y+10, 2, 0, Math.PI*2); ctx.fill();
+                }
+            }
+            // -----------------------
             else if (c.type === 'BATTERY') {
                 ctx.fillStyle = "#00ff41"; ctx.font = "12px monospace"; ctx.fillText(`BAT ${c.val}V`, c.x+25, c.y+35);
             } else if (c.type === 'CAPACITOR') {
@@ -657,8 +859,11 @@
             ctx.restore();
 
             c.nodes.forEach(n => {
-                ctx.fillStyle = (n.id==='+'||n.id==='A'||n.id==='M1'||n.id==='R1'||n.id==='I1'||n.id==='I2'||n.id==='PWR'||n.id==='IN'||n.id==='C+') ? "#00ff41" : "#ff3131";
-                if (c.type === 'TRANSISTOR' || c.type === 'MUX' || n.id==='S' || n.id==='COM') ctx.fillStyle = "#3498db"; 
+                ctx.fillStyle = (n.id==='+'||n.id==='A'||n.id==='M1'||n.id==='R1'||n.id==='I1'||n.id==='I2'||n.id==='PWR'||n.id==='IN'||n.id==='C+'||n.id==='VCC') ? "#00ff41" : "#ff3131";
+                if (c.type === 'TRANSISTOR' || c.type === 'MUX' || n.id==='S' || n.id==='COM' || n.id==='OUT') ctx.fillStyle = "#3498db"; 
+                if (c.type === 'RADION' && (n.id === 'D1' || n.id === 'D2')) ctx.fillStyle = "#2ecc71";
+                if (c.type === 'RADION' && (n.id === 'GND' || n.id === 'G')) ctx.fillStyle = "#ff3131";
+
                 if (c.type === 'RELAY' && n.id === 'NO') ctx.fillStyle = "#ff3131";
                 ctx.beginPath(); ctx.arc(c.x+n.x, c.y+n.y, 6, 0, Math.PI*2); ctx.fill();
                 if(n.signal) { ctx.strokeStyle="#00ff41"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(c.x+n.x, c.y+n.y, 8, 0, Math.PI*2); ctx.stroke(); }
@@ -677,7 +882,7 @@
 
         ctx.restore();
         ctx.fillStyle = "rgba(0, 255, 65, 0.3)"; ctx.font = "bold 12px monospace"; ctx.textAlign = "right";
-        ctx.fillText("Simulic Pro 1.1", canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
+        ctx.fillText("Simulic Pro 1.2 + RADION", canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
 
         requestAnimationFrame(draw);
     }
