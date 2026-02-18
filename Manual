@@ -1,0 +1,5 @@
+SIMULICPRO 1.2 MANUAL:
+
+Radion 1.0:
+  Fictial programming board from SimulicPro. Has 3 alimentaiton pins: 1 VCC, 2 GND. Has 2 GPIO pina: D1, D2.
+  Can be programmed with LOG, own programming language. (More information about below.)
