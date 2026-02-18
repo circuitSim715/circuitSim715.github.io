@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulic Pro - Radion 1.1 (Logic Update)</title>
+    <title>Simulic Pro - Desktop Mode</title>
     <style>
         * { user-select: none; box-sizing: border-box; touch-action: none; }
         body { margin: 0; background: #050505; color: #00ff41; font-family: 'Courier New', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -19,27 +19,29 @@
         .spawn-btn:active { background: #fff; color: #000; }
         
         .clear-btn { margin-left: auto; border-color: #e74c3c; color: #e74c3c; background: #111; } 
-        .clear-btn:active { background: #e74c3c; color: #fff; }
+        .mode-btn { border-color: #3498db; color: #3498db; background: #111; margin-left: 5px; }
 
-        #canvas-container { flex: 1; position: relative; overflow: hidden; background: #050505; }
+        #canvas-container { flex: 1; position: relative; overflow: hidden; background: #050505; cursor: crosshair; }
         canvas { width: 100%; height: 100%; display: block; }
         
         #zoom-controls { position: absolute; right: 15px; top: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 20; }
         .zoom-btn { padding: 10px; font-size: 16px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: #111; border: 2px solid #3498db; color: #3498db; border-radius: 50%; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
         .zoom-btn:active { background: #3498db; color: #000; transform: scale(0.9); }
 
-        #virtual-controls { background: #111; height: 180px; display: flex; justify-content: space-between; padding: 10px; border-top: 2px solid #222; z-index: 10; }
+        /* CONTROLES VIRTUALES (MÓVIL) */
+        #virtual-controls { background: #111; height: 180px; display: flex; justify-content: space-between; padding: 10px; border-top: 2px solid #222; z-index: 10; transition: height 0.3s; }
         .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(2, 50px); gap: 8px; }
-        .btn-v { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .btn-v { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; }
         .btn-up { grid-column: 2; } .btn-left { grid-column: 1; grid-row: 2; } .btn-down { grid-column: 2; grid-row: 2; } .btn-right { grid-column: 3; grid-row: 2; }
         
         .actions { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 8px; }
-        .btn-action { width: 55px; height: 55px; border-radius: 50%; font-weight: bold; font-size: 9px; color: white; border: none; }
+        .btn-action { width: 55px; height: 55px; border-radius: 50%; font-weight: bold; font-size: 9px; color: white; border: none; cursor: pointer; }
         .btn-click { background: #2ecc71; } .btn-del { background: #e74c3c; } 
         .btn-use { background: #f1c40f; color: black; } .btn-cfg { background: #9b59b6; } .btn-rot { background: #e67e22; }
         .btn-sel { background: #3498db; }
         .btn-action:active { transform: scale(0.9); }
         
+        /* MODAL CONFIGURACIÓN */
         #modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid #00ff41; padding: 20px; text-align: center; z-index: 100; border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,65,0.2); width: 300px; }
         #modal input { width: 100px; padding: 5px; background: #000; color: #00ff41; border: 1px solid #00ff41; text-align: center; margin: 10px 0; font-size: 16px; font-family: monospace; }
         #m-code-area { width: 100%; height: 150px; background: #000; color: #fff; border: 1px solid #555; font-family: monospace; font-size: 11px; text-align: left; padding: 5px; margin-bottom: 10px; resize: none; display: none; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
@@ -47,28 +49,38 @@
         .modal-btn { padding: 8px 15px; background: #1a1a1a; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; margin: 5px; border-radius: 4px; }
         .modal-btn-rep { border-color: #f1c40f; color: #f1c40f; }
         .modal-btn-toggle { border-color: #3498db; color: #3498db; }
+
+        /* MENÚ CONTEXTUAL (CLICK DERECHO) */
+        #context-menu { display: none; position: absolute; background: #222; border: 1px solid #00ff41; z-index: 200; box-shadow: 2px 2px 10px rgba(0,0,0,0.8); border-radius: 4px; min-width: 120px; }
+        .ctx-item { padding: 8px 12px; color: #eee; cursor: pointer; font-size: 12px; border-bottom: 1px solid #333; }
+        .ctx-item:hover { background: #00ff41; color: #000; }
+        .ctx-item:last-child { border-bottom: none; }
+
+        /* CLASE PARA OCULTAR CONTROLES */
+        .desktop-mode #virtual-controls { display: none !important; }
+        .desktop-mode #zoom-controls { top: auto; bottom: 20px; right: 20px; }
     </style>
 </head>
-<body>
-
-<div id="ui-top">
+<body class=""> <div id="ui-top">
     <button class="cat-btn" onclick="selectCategory('active', this)">ACTIVOS</button>
     <button class="cat-btn" onclick="selectCategory('passive', this)">PASIVOS</button>
     <button class="cat-btn" onclick="selectCategory('digital', this)">DIGITALES</button>
     <button class="cat-btn" onclick="selectCategory('boards', this)">PLACAS</button>
+    <button class="clear-btn mode-btn" onclick="toggleMode()" id="btnMode">📱 MÓVIL</button>
     <button class="clear-btn" onclick="clearAll()">BORRAR TODO</button> 
 </div>
 <div id="ui-sub">
     <span style="color:#444; font-size:10px;">SELECCIONA UNA CATEGORÍA ARRIBA</span>
 </div>
 
-<div id="canvas-container">
+<div id="canvas-container" oncontextmenu="return false;">
     <div id="zoom-controls">
         <button class="zoom-btn" onclick="camera.zoom = Math.min(3.0, camera.zoom + 0.2)">🔎+</button>
         <button class="zoom-btn" onclick="camera.zoom = 1.0" style="font-size: 12px;">1x</button>
         <button class="zoom-btn" onclick="camera.zoom = Math.max(0.4, camera.zoom - 0.2)">🔎-</button>
     </div>
     <canvas id="circuitCanvas"></canvas>
+    
     <div id="modal">
         <h3 id="m-title" style="margin:0 0 10px 0;">Configurar</h3>
         <input type="number" id="m-val"> <span id="m-unit"></span>
@@ -79,6 +91,13 @@
         <button class="modal-btn" onclick="saveCfg()">GUARDAR</button>
         <button class="modal-btn" onclick="closeCfg()">CERRAR</button>
         <button class="modal-btn modal-btn-rep" id="m-repair" onclick="repairCfg()" style="display:none;">REPARAR</button>
+    </div>
+
+    <div id="context-menu">
+        <div class="ctx-item" onclick="ctxAction('use')">👆 Usar</div>
+        <div class="ctx-item" onclick="ctxAction('cfg')">⚙️ Ajustar</div>
+        <div class="ctx-item" onclick="ctxAction('rot')">🔄 Rotar</div>
+        <div class="ctx-item" onclick="ctxAction('del')" style="color:#e74c3c">🗑️ Borrar</div>
     </div>
 </div>
 
@@ -100,6 +119,27 @@
 </div>
 
 <script>
+    let isDesktopMode = false;
+
+    function toggleMode() {
+        isDesktopMode = !isDesktopMode;
+        const body = document.body;
+        const btn = document.getElementById('btnMode');
+        
+        if (isDesktopMode) {
+            body.classList.add('desktop-mode');
+            btn.innerText = "🖥️ PC";
+            btn.style.borderColor = "#00ff41";
+            btn.style.color = "#00ff41";
+        } else {
+            body.classList.remove('desktop-mode');
+            btn.innerText = "📱 MÓVIL";
+            btn.style.borderColor = "#3498db";
+            btn.style.color = "#3498db";
+        }
+        resize();
+    }
+
     // --- LÓGICA DE UI CATEGORIZADA ---
     const componentLists = {
         'active': [
@@ -157,23 +197,146 @@
     let selectionBox = null; 
     let selectedItems = []; 
     let camera = { x: 0, y: 0, zoom: 1.0 };
+    let contextTarget = null; // Componente objetivo del click derecho
 
     function resize() { canvas.width = container.clientWidth; canvas.height = container.clientHeight; }
     window.addEventListener('resize', resize); resize();
 
+    // --- INPUT HANDLERS ---
+    
+    // Zoom con rueda (Solo PC)
+    canvas.addEventListener('wheel', (e) => {
+        if (!isDesktopMode) return;
+        e.preventDefault();
+        const delta = Math.sign(e.deltaY) * -0.1;
+        camera.zoom = Math.min(3.0, Math.max(0.4, camera.zoom + delta));
+    });
+
+    // MOUSE MOVE (PC Tracking)
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDesktopMode) return;
+        const rect = canvas.getBoundingClientRect();
+        // Convertir coordenadas de pantalla a mundo
+        vMouse.x = ((e.clientX - rect.left) / camera.zoom) + camera.x - (canvas.width / 2) / camera.zoom;
+        vMouse.y = ((e.clientY - rect.top) / camera.zoom) + camera.y - (canvas.height / 2) / camera.zoom;
+
+        if (selectionBox) {
+            selectionBox.w = vMouse.x - selectionBox.x;
+            selectionBox.h = vMouse.y - selectionBox.y;
+        }
+    });
+
+    // CLICK IZQUIERDO (PC)
+    canvas.addEventListener('mousedown', (e) => {
+        if (!isDesktopMode) return;
+        if (e.button !== 0) return; // Solo click izquierdo
+        
+        // Cerrar menú contextual si está abierto
+        document.getElementById('context-menu').style.display = 'none';
+
+        // 1. Intentar interactuar con nodos (CABLE)
+        let nHit = null;
+        components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c, n}; }));
+        
+        if (nHit) {
+            drawingCable = nHit;
+        } else {
+            // 2. Intentar agarrar componente
+            let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
+            
+            if (compHit) {
+                // Mover componente
+                if (selectedItems.includes(compHit)) { 
+                    draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; 
+                } else { 
+                    // Si no estaba seleccionado, limpiamos selección anterior
+                    selectedItems.forEach(c => c.selected = false); selectedItems = []; 
+                    draggingComp = {c: compHit, ox:vMouse.x-compHit.x, oy:vMouse.y-compHit.y}; 
+                }
+            } else {
+                // 3. Click en vacío -> Iniciar Selección de Caja
+                selectedItems.forEach(c => c.selected = false); selectedItems = [];
+                selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 };
+            }
+        }
+    });
+
+    // CLICK DERECHO (PC - Context Menu)
+    canvas.addEventListener('contextmenu', (e) => {
+        if (!isDesktopMode) return;
+        e.preventDefault();
+        
+        // Detectar si hay componente bajo el mouse
+        let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
+        
+        if (compHit) {
+            contextTarget = compHit;
+            const menu = document.getElementById('context-menu');
+            menu.style.display = 'block';
+            menu.style.left = e.clientX + 'px';
+            menu.style.top = e.clientY + 'px';
+        } else {
+            // Click derecho en vacío: Mover cámara (pan) - Opcional, o simplemente cerrar menú
+            document.getElementById('context-menu').style.display = 'none';
+        }
+    });
+
+    // MOUSE UP (PC)
+    canvas.addEventListener('mouseup', (e) => {
+        if (!isDesktopMode) return;
+        
+        if (drawingCable) {
+            let targetHit = null;
+            components.forEach(c => c.nodes.forEach(n => { if (c!==drawingCable.c && Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) targetHit = {c, n}; }));
+            if (targetHit) connections.push({a:drawingCable, b:targetHit});
+            else { const waypoint = spawn('WAYPOINT'); connections.push({a:drawingCable, b:{c:waypoint, n:waypoint.nodes[0]}}); }
+        }
+
+        if (selectionBox) {
+            applySelection();
+            selectionBox = null;
+        }
+
+        draggingComp = drawingCable = null;
+    });
+
+    // ACCIONES DE MENÚ CONTEXTUAL
+    function ctxAction(action) {
+        document.getElementById('context-menu').style.display = 'none';
+        if (!contextTarget) return;
+
+        if (action === 'del') {
+            components = components.filter(c => c !== contextTarget);
+            connections = connections.filter(conn => components.includes(conn.a.c) && components.includes(conn.b.c));
+            if(selectedItems.includes(contextTarget)) selectedItems = [];
+        } else if (action === 'rot') {
+            rotateComponent(contextTarget);
+        } else if (action === 'cfg') {
+            openCfg(contextTarget);
+        } else if (action === 'use') {
+            // Toggle manual para switch/push
+             if (contextTarget.type === 'SWITCH' || contextTarget.type === 'PUSH_BTN') {
+                 contextTarget.closed = !contextTarget.closed;
+             }
+        }
+        contextTarget = null;
+    }
+
+
+    // --- CONTROLES VIRTUALES (LEGACY) ---
     const bind = (id, k) => {
         const el = document.getElementById(id);
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); vMouse.moving[k] = true; });
-        el.addEventListener('touchend', (e) => { e.preventDefault(); vMouse.moving[k] = false; });
-        el.addEventListener('mousedown', () => vMouse.moving[k] = true);
-        el.addEventListener('mouseup', () => vMouse.moving[k] = false);
+        el.addEventListener('touchstart', (e) => { if(isDesktopMode) return; e.preventDefault(); vMouse.moving[k] = true; });
+        el.addEventListener('touchend', (e) => { if(isDesktopMode) return; e.preventDefault(); vMouse.moving[k] = false; });
+        el.addEventListener('mousedown', () => { if(isDesktopMode) return; vMouse.moving[k] = true; });
+        el.addEventListener('mouseup', () => { if(isDesktopMode) return; vMouse.moving[k] = false; });
     };
     bind('vUp', 'up'); bind('vDown', 'down'); bind('vLeft', 'left'); bind('vRight', 'right');
 
     const setupBtn = (id, fn) => {
         const el = document.getElementById(id);
-        el.addEventListener('mousedown', () => fn(true)); el.addEventListener('mouseup', () => fn(false));
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); fn(true); }); el.addEventListener('touchend', (e) => { e.preventDefault(); fn(false); });
+        el.addEventListener('mousedown', () => { if(!isDesktopMode) fn(true); }); el.addEventListener('mouseup', () => { if(!isDesktopMode) fn(false); });
+        el.addEventListener('touchstart', (e) => { if(!isDesktopMode) { e.preventDefault(); fn(true); } }); el.addEventListener('touchend', (e) => { if(!isDesktopMode) { e.preventDefault(); fn(false); } });
     };
     setupBtn('vClick', (v) => vMouse.isDown = v);
     
@@ -287,7 +450,6 @@
         if (c.type === 'RADION') {
             codeArea.style.display = 'block';
             codeArea.value = c.code;
-            // Al abrir config, reseteamos la máquina para que el usuario vea los cambios al instante si edita
             c.intState = { pc: 0, wait: 0, vars: {} }; 
         } else {
             codeArea.style.display = 'none';
@@ -310,7 +472,7 @@
             } 
             if (targetCfg.type === 'RADION') {
                 targetCfg.code = document.getElementById('m-code-area').value;
-                targetCfg.intState = { pc: 0, wait: 0, vars: {} }; // Reiniciar intérprete con nuevo código
+                targetCfg.intState = { pc: 0, wait: 0, vars: {} };
             }
         }
         closeCfg(); 
@@ -343,97 +505,65 @@
                 {id:'VCC', x:15, y:15}, {id:'GND', x:15, y:45},
                 {id:'G', x:15, y:75}, {id:'D1', x:95, y:30}, {id:'D2', x:95, y:60}
             ];
-            // --- NUEVO CÓDIGO POR DEFECTO: INTERMITENTE ---
             comp.code = "start<\npin1=D1\npin1;HIGH\ndelay 500\npin1;LOW\ndelay 500\nloop\nend>";
             comp.memory = { d1: false, d2: false };
-            comp.intState = { pc: 0, wait: 0, vars: {} }; // Estado del intérprete
+            comp.intState = { pc: 0, wait: 0, vars: {} };
         }
         else if (type === 'WAYPOINT') { comp.x = vMouse.x-5; comp.y = vMouse.y-5; comp.w=10; comp.h=10; comp.nodes=[{id:'W', x:5, y:5}]; }
         components.push(comp);
         return comp;
     }
 
-    // --- INTÉRPRETE DE LOG MEJORADO (CON DELAY Y LOOP) ---
     function runRadionLogic(c) {
-        // Reiniciar si no tiene energía o está quemado
         if (!c.active || c.burned) {
             c.memory.d1 = false; c.memory.d2 = false;
             c.intState = { pc: 0, wait: 0, vars: {} };
             return;
         }
-
-        // Inicializar estado si no existe
         if (!c.intState) c.intState = { pc: 0, wait: 0, vars: {} };
         
-        // Verificar Delay
         const now = Date.now();
-        if (c.intState.wait > now) return; // Si está esperando, no hace nada este frame
+        if (c.intState.wait > now) return;
 
         const rawLines = c.code.split('\n');
-        
-        // Ejecutamos hasta X instrucciones por frame para velocidad, pero paramos si hay delay
         let instructionsExecuted = 0;
-        const maxInstructions = 20; // Limite para evitar congelamiento por bucles infinitos sin delay
+        const maxInstructions = 20;
 
         while(instructionsExecuted < maxInstructions) {
-            // Fin del código
             if (c.intState.pc >= rawLines.length) break;
 
             let line = rawLines[c.intState.pc].trim();
-            
-            // Ignorar líneas vacías o comentarios
-            if (!line || line.startsWith('//')) {
-                c.intState.pc++;
-                continue;
-            }
+            if (!line || line.startsWith('//')) { c.intState.pc++; continue; }
 
-            if (line.includes('start<')) {
-                 // Etiqueta de inicio, solo pasamos
-                 c.intState.pc++;
-            }
-            else if (line.includes('end>')) {
-                 // Fin del programa, paramos ejecución
-                 break; 
-            }
+            if (line.includes('start<')) { c.intState.pc++; }
+            else if (line.includes('end>')) { break; }
             else if (line === 'loop') {
-                 // COMANDO LOOP: Busca 'start<' y salta
                  const startIndex = rawLines.findIndex(l => l.trim().includes('start<'));
                  c.intState.pc = startIndex !== -1 ? startIndex + 1 : 0;
                  instructionsExecuted++;
-                 // No hacemos return aquí para que el bucle sea instantáneo si no hay delay
             }
             else if (line.startsWith('delay')) {
-                 // COMANDO DELAY: delay 500
                  const parts = line.split(' ');
                  const ms = parseInt(parts[1]) || 100;
                  c.intState.wait = now + ms;
                  c.intState.pc++;
-                 return; // Salimos de la función por este frame
+                 return;
             }
             else if (line.includes('=')) {
-                // Asignación: pin1=D1
                 const parts = line.split('=');
                 if (parts.length === 2) c.intState.vars[parts[0].trim()] = parts[1].trim();
                 c.intState.pc++;
             }
             else if (line.includes(';')) {
-                // Acción: pin1;HIGH
                 const parts = line.split(';');
                 const varName = parts[0].trim();
                 const state = parts[1].trim();
-                
-                // Buscar qué pin físico es esa variable
                 const physicalPin = c.intState.vars[varName];
-                
                 if (physicalPin === 'D1') c.memory.d1 = (state === 'HIGH');
                 if (physicalPin === 'D2') c.memory.d2 = (state === 'HIGH');
                 c.intState.pc++;
             }
-            else {
-                // Comando desconocido, avanzar
-                c.intState.pc++;
-            }
-            
+            else { c.intState.pc++; }
             instructionsExecuted++;
         }
     }
@@ -453,7 +583,6 @@
 
         components.forEach(c => c.nodes.forEach(n => n.signal = false));
         
-        // Fuentes
         const sources = components.filter(c => 
             (c.type === 'BATTERY' || 
              (c.type === 'CAPACITOR' && c.isSource) || 
@@ -577,7 +706,6 @@
                                 if ((currentNode === comp.nodes[0] && otherNode === comp.nodes[1]) || (currentNode === comp.nodes[1] && otherNode === comp.nodes[0])) canCross = true;
                                 if (comp.clockState && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[2]) || (currentNode === comp.nodes[2] && otherNode === comp.nodes[0]))) canCross = true;
                             }
-
                             if (comp.type === 'RADION') {
                                 const isPwr = (n) => n === comp.nodes[0] || n === comp.nodes[1] || n === comp.nodes[2];
                                 if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
@@ -606,7 +734,7 @@
                             if (step.comp.type === 'RESISTOR') rSum += step.comp.val;
                             if (step.comp.type === 'RELAY') rSum += 50; 
                             if (step.comp.type === 'RSK90') rSum += 1000;
-                            if (step.comp.type === 'RADION') rSum += 1200; 
+                            if (step.comp.type === 'RADION') rSum += 1200;
                             if (step.comp.type === 'LED') ledCount++;
                             if (['AND', 'OR', 'NOT', 'XOR', 'MUX'].includes(step.comp.type)) rSum += 10;
                             if (step.comp.type === 'CAPACITOR' && bat.type === 'BATTERY') {
@@ -652,14 +780,9 @@
                     c.clockState = !c.clockState;
                     c.lastTick = now;
                 }
-            } else {
-                c.clockState = false; c.lastTick = 0;
-            }
+            } else { c.clockState = false; c.lastTick = 0; }
         });
-
-        components.filter(c => c.type === 'RADION').forEach(c => {
-            runRadionLogic(c); 
-        });
+        components.filter(c => c.type === 'RADION').forEach(c => { runRadionLogic(c); });
     }
 
     function drawGrid(camX, camY, zoom) {
@@ -675,46 +798,52 @@
     }
 
     function draw() {
-        if(targetCfg == null) {
+        if(targetCfg == null && !isDesktopMode) { // Movimiento cámara móvil
             if (vMouse.moving.up) vMouse.y -= vMouse.speed; if (vMouse.moving.down) vMouse.y += vMouse.speed;
             if (vMouse.moving.left) vMouse.x -= vMouse.speed; if (vMouse.moving.right) vMouse.x += vMouse.speed;
         }
 
-        const edgeMargin = 50; 
-        let screenMouseX = (vMouse.x - camera.x) * camera.zoom + canvas.width / 2;
-        let screenMouseY = (vMouse.y - camera.y) * camera.zoom + canvas.height / 2;
-        if (screenMouseX < edgeMargin) camera.x -= (edgeMargin - screenMouseX) / camera.zoom;
-        if (screenMouseX > canvas.width - edgeMargin) camera.x += (screenMouseX - (canvas.width - edgeMargin)) / camera.zoom;
-        if (screenMouseY < edgeMargin) camera.y -= (edgeMargin - screenMouseY) / camera.zoom;
-        if (screenMouseY > canvas.height - edgeMargin) camera.y += (screenMouseY - (canvas.height - edgeMargin)) / camera.zoom;
+        if(!isDesktopMode) { // Auto-cámara móvil
+            const edgeMargin = 50; 
+            let screenMouseX = (vMouse.x - camera.x) * camera.zoom + canvas.width / 2;
+            let screenMouseY = (vMouse.y - camera.y) * camera.zoom + canvas.height / 2;
+            if (screenMouseX < edgeMargin) camera.x -= (edgeMargin - screenMouseX) / camera.zoom;
+            if (screenMouseX > canvas.width - edgeMargin) camera.x += (screenMouseX - (canvas.width - edgeMargin)) / camera.zoom;
+            if (screenMouseY < edgeMargin) camera.y -= (edgeMargin - screenMouseY) / camera.zoom;
+            if (screenMouseY > canvas.height - edgeMargin) camera.y += (screenMouseY - (canvas.height - edgeMargin)) / camera.zoom;
+        }
 
-        if (vMouse.selectionMode && selectionBox) {
+        if (vMouse.selectionMode && selectionBox && !isDesktopMode) {
             selectionBox.w = vMouse.x - selectionBox.x; selectionBox.h = vMouse.y - selectionBox.y;
         }
 
-        if (vMouse.isDown && !vMouse.lastDown && targetCfg == null && !vMouse.selectionMode) {
-            let clickOnSomething = false; let nHit = null;
-            components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c, n}; }));
-            if (nHit) { drawingCable = nHit; clickOnSomething = true; } 
-            else {
-                let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
-                if (compHit) {
-                    clickOnSomething = true;
-                    if (selectedItems.includes(compHit)) { draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; } 
-                    else { selectedItems.forEach(c => c.selected = false); selectedItems = []; draggingComp = {c: compHit, ox:vMouse.x-compHit.x, oy:vMouse.y-compHit.y}; }
+        // LÓGICA DE DIBUJO DE CABLES Y ARRASTRE (MOVIL)
+        if (!isDesktopMode) {
+             if (vMouse.isDown && !vMouse.lastDown && targetCfg == null && !vMouse.selectionMode) {
+                let clickOnSomething = false; let nHit = null;
+                components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c, n}; }));
+                if (nHit) { drawingCable = nHit; clickOnSomething = true; } 
+                else {
+                    let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
+                    if (compHit) {
+                        clickOnSomething = true;
+                        if (selectedItems.includes(compHit)) { draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; } 
+                        else { selectedItems.forEach(c => c.selected = false); selectedItems = []; draggingComp = {c: compHit, ox:vMouse.x-compHit.x, oy:vMouse.y-compHit.y}; }
+                    }
                 }
+                if (!clickOnSomething && selectedItems.length > 0) { selectedItems.forEach(c => c.selected = false); selectedItems = []; }
+            } else if (!vMouse.isDown && vMouse.lastDown) {
+                if (drawingCable) {
+                    let targetHit = null;
+                    components.forEach(c => c.nodes.forEach(n => { if (c!==drawingCable.c && Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) targetHit = {c, n}; }));
+                    if (targetHit) connections.push({a:drawingCable, b:targetHit});
+                    else { const waypoint = spawn('WAYPOINT'); connections.push({a:drawingCable, b:{c:waypoint, n:waypoint.nodes[0]}}); }
+                }
+                draggingComp = drawingCable = null;
             }
-            if (!clickOnSomething && selectedItems.length > 0) { selectedItems.forEach(c => c.selected = false); selectedItems = []; }
-        } else if (!vMouse.isDown && vMouse.lastDown) {
-            if (drawingCable) {
-                let targetHit = null;
-                components.forEach(c => c.nodes.forEach(n => { if (c!==drawingCable.c && Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) targetHit = {c, n}; }));
-                if (targetHit) connections.push({a:drawingCable, b:targetHit});
-                else { const waypoint = spawn('WAYPOINT'); connections.push({a:drawingCable, b:{c:waypoint, n:waypoint.nodes[0]}}); }
-            }
-            draggingComp = drawingCable = null;
         }
 
+        // Arrastre común (Móvil y Desktop)
         if (draggingComp) { 
             if (draggingComp.group) {
                 const dx = vMouse.x - draggingComp.ox; const dy = vMouse.y - draggingComp.oy;
@@ -896,8 +1025,9 @@
         ctx.beginPath(); ctx.moveTo(vMouse.x, vMouse.y-15); ctx.lineTo(vMouse.x, vMouse.y+15); ctx.stroke();
 
         ctx.restore();
+        const modeText = isDesktopMode ? "MODO PC" : "MODO MOVIL";
         ctx.fillStyle = "rgba(0, 255, 65, 0.3)"; ctx.font = "bold 12px monospace"; ctx.textAlign = "right";
-        ctx.fillText("Simulic Pro 1.2 + RADION (Logic Update)", canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
+        ctx.fillText(`Simulic Pro 1.3 [${modeText}]`, canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
 
         requestAnimationFrame(draw);
     }
