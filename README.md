@@ -1,4 +1,5 @@
 CircuitSim (SimulicPro) is a free circuit designer. I'm the only developer of this, but I'm open to further contributions!
+Official email: industriescvc@gmail.com
 
 **CHANGE LOG**
 
