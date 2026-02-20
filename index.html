@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulic Pro - Manual Update</title>
+    <title>Simulic Pro - I2C OLED Update</title>
     <style>
         * { user-select: none; box-sizing: border-box; touch-action: none; }
         body { margin: 0; background: #050505; color: #00ff41; font-family: 'Courier New', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -50,7 +50,7 @@
         /* MODAL CONFIGURACIÓN */
         #modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid #00ff41; padding: 20px; text-align: center; z-index: 100; border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,65,0.2); width: 300px; }
         #modal input { width: 100px; padding: 5px; background: #000; color: #00ff41; border: 1px solid #00ff41; text-align: center; margin: 10px 0; font-size: 16px; font-family: monospace; }
-        #m-code-area { width: 100%; height: 150px; background: #000; color: #fff; border: 1px solid #555; font-family: monospace; font-size: 11px; text-align: left; padding: 5px; margin-bottom: 10px; resize: none; display: none; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
+        #m-code-area { width: 100%; height: 160px; background: #000; color: #fff; border: 1px solid #555; font-family: monospace; font-size: 11px; text-align: left; padding: 5px; margin-bottom: 10px; resize: none; display: none; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
         
         .modal-btn { padding: 8px 15px; background: #1a1a1a; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; margin: 5px; border-radius: 4px; }
         .modal-btn-rep { border-color: #f1c40f; color: #f1c40f; }
@@ -61,6 +61,7 @@
         #manual-screen h2 { color: #f1c40f; border-bottom: 1px solid #f1c40f; padding-bottom: 10px; }
         #manual-screen h4 { color: #00ff41; margin-top: 20px; margin-bottom: 5px; }
         #manual-screen p, #manual-screen li { font-size: 13px; line-height: 1.5; color: #ccc; }
+        #manual-screen pre { background: #222; padding: 10px; color: #e67e22; border-radius: 5px; font-size: 11px; overflow-x: auto; }
         #manual-screen code { background: #222; padding: 2px 5px; color: #e67e22; border-radius: 3px; }
         #manual-screen .close-manual { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; border: none; padding: 5px 10px; cursor: pointer; font-weight: bold; }
 
@@ -81,6 +82,7 @@
     <button class="cat-btn" onclick="selectCategory('passive', this)">PASIVOS</button>
     <button class="cat-btn" onclick="selectCategory('digital', this)">DIGITALES</button>
     <button class="cat-btn" onclick="selectCategory('boards', this)">PLACAS</button>
+    <button class="cat-btn" onclick="selectCategory('output_plus', this)">OUTPUT+</button>
     <button class="cat-btn cat-btn-demo" onclick="selectCategory('demos', this)">★ DEMOS</button>
     <button class="cat-btn cat-btn-manual" onclick="toggleManual()">📖 MANUAL</button>
     <button class="clear-btn mode-btn" onclick="toggleMode()" id="btnMode">📱 MÓVIL</button>
@@ -126,19 +128,25 @@
             <li>Si algo se pone ROJO o dice "QUEMADO", usa la herramienta <strong>AJUSTAR</strong> (o click derecho) y pulsa <strong>REPARAR</strong>.</li>
         </ul>
 
-        <h4>3. PROGRAMACIÓN 'LOG' (CHIP RADION)</h4>
-        <p>El componente RADION es programable. Usa el lenguaje LOG:</p>
+        <h4>3. PROGRAMACIÓN 'LOG' (CHIP RADION 1.1)</h4>
+        <p>El componente RADION cuenta con pines D1, D2, D3 y un bus I2C (SCL, SDA).</p>
         <ul>
-            <li><code>start&lt;</code> : Inicia el código.</li>
-            <li><code>end&gt;</code> : Termina el código.</li>
-            <li><code>pinA=D1</code> : Asigna el pin físico D1 a la variable 'pinA'.</li>
-            <li><code>pinA;HIGH</code> : Enciende el pin (5V).</li>
-            <li><code>pinA;LOW</code> : Apaga el pin (0V).</li>
+            <li><code>start&lt;</code> y <code>end&gt;</code> : Inician y terminan el código general.</li>
+            <li><code>var=D1</code> : Asigna el pin físico D1 a tu variable.</li>
+            <li><code>var;HIGH</code> o <code>var;LOW</code> : Enciende (5V) o Apaga (0V) un pin de salida.</li>
             <li><code>delay 500</code> : Espera 500 milisegundos.</li>
-            <li><code>loop</code> : Vuelve al inicio (crea un bucle infinito).</li>
+            <li><code>loop{ ... }</code> : Ejecuta el código interno en bucle infinito.</li>
+            <li><code>if var==HIGH { ... }</code> : Lee voltaje externo.</li>
         </ul>
-        <p><em>Ejemplo Parpadeo:</em><br>
-        <code>start&lt;<br>var=D1<br>var;HIGH<br>delay 500<br>var;LOW<br>delay 500<br>loop<br>end&gt;</code></p>
+        
+        <h4>4. PANTALLAS OLED (I2C)</h4>
+        <p>Conecta el pin SCL del Radion al SCL de la pantalla OLED y el SDA al SDA (además de darles energía). Luego usa:</p>
+        <ul>
+            <li><code>oled.init</code> : Prepara la pantalla vinculada por hardware.</li>
+            <li><code>oled.print "Texto"</code> : Escribe en la línea actual.</li>
+            <li><code>oled.println "Texto"</code> : Escribe en una nueva línea.</li>
+            <li><code>oled.clear</code> : Limpia toda la pantalla.</li>
+        </ul>
     </div>
 
     <div id="context-menu">
@@ -217,7 +225,10 @@
             { id: 'MUX', label: 'MULTIPLEXOR' }
         ],
         'boards': [
-            { id: 'RADION', label: 'RADION 1.0' }
+            { id: 'RADION', label: 'RADION 1.1' }
+        ],
+        'output_plus': [
+            { id: 'OLED_I2C', label: 'PANTALLA OLED' }
         ]
     };
 
@@ -227,7 +238,9 @@
         'BASIC': { label: 'ELECTRICIDAD BÁSICA', func: () => loadBasicDemo() },
         'LOGIC': { label: 'PUERTA AND', func: () => loadLogicDemo() },
         'MOTOR': { label: 'CONTROL MOTOR', func: () => loadMotorDemo() },
-        'RADION': { label: 'RADION BLINK', func: () => loadRadionDemo() }
+        'RADION': { label: 'RADION BLINK', func: () => loadRadionDemo() },
+        'INPUT':  { label: 'RADION INPUT', func: () => loadInputDemo() },
+        'OLED':   { label: 'RADION OLED (NEW)', func: () => loadOledDemo() }
     };
 
     function selectCategory(cat, btnElement) {
@@ -243,6 +256,7 @@
                 btn.className = 'spawn-btn';
                 btn.innerText = d.label;
                 btn.style.borderColor = '#9b59b6';
+                if(key === 'OLED') btn.style.color = '#e67e22'; 
                 btn.onclick = d.func;
                 sub.appendChild(btn);
             });
@@ -255,12 +269,12 @@
                 if (cat === 'digital') btn.style.borderColor = '#3498db';
                 if (comp.id === 'RSK90') btn.style.color = '#e67e22';
                 if (comp.id === 'RADION') { btn.style.borderColor = '#2ecc71'; btn.style.color = '#2ecc71'; }
+                if (comp.id === 'OLED_I2C') { btn.style.borderColor = '#e67e22'; btn.style.color = '#e67e22'; }
                 sub.appendChild(btn);
             });
         }
     }
     
-    // Función auxiliar para conectar cables
     function connect(c1, pin1, c2, pin2) {
         const n1 = c1.nodes[pin1];
         const n2 = c2.nodes[pin2];
@@ -290,11 +304,10 @@
         clearAll(true);
         camera.x = 0; camera.y = 0;
         
-        // CORRECCIÓN: Añadida resistencia para no quemar el LED de salida
         const sw1 = spawn('SWITCH', -180, -80);
         const sw2 = spawn('SWITCH', -180, 20);
         const andGate = spawn('AND', -30, -30);
-        const res = spawn('RESISTOR', 100, -30); // Resistencia de protección
+        const res = spawn('RESISTOR', 100, -30); 
         res.val = 220;
         const led = spawn('LED', 200, -30);
         const bat = spawn('BATTERY', -250, 150);
@@ -304,7 +317,6 @@
         connect(sw1, 1, andGate, 0);
         connect(sw2, 1, andGate, 1);
         
-        // Salida AND -> Resistencia -> LED
         connect(andGate, 2, res, 0);
         connect(res, 1, led, 0);
         connect(led, 1, bat, 1); 
@@ -312,10 +324,9 @@
 
     function loadMotorDemo() {
         clearAll(true);
-        // CORRECCIÓN: Resistencia pequeña para limitar corriente del motor
         const bat = spawn('BATTERY', -120, -50);
-        const res = spawn('RESISTOR', -20, -120); // Resistencia limitadora
-        res.val = 10; // Valor bajo para dejar girar el motor pero protegerlo algo
+        const res = spawn('RESISTOR', -20, -120); 
+        res.val = 10; 
         const btn = spawn('PUSH_BTN', 60, -50);
         const motor = spawn('MOTOR', 60, 50);
         
@@ -334,18 +345,86 @@
         
         connect(bat, 0, radion, 0); 
         connect(bat, 1, radion, 1); 
-        
-        // El chip RADION tiene salidas reguladas (en la lógica interna), 
-        // pero para enseñar buenos hábitos, podríamos poner resistencias.
-        // En este caso, asumimos que el chip tiene lógica interna de 5v.
         connect(radion, 3, led1, 0); 
         connect(led1, 1, radion, 2); 
-        
         connect(radion, 4, led2, 0); 
         connect(led2, 1, radion, 2); 
         
-        radion.code = "start<\npin1=D1\npin2=D2\npin1;HIGH\ndelay 200\npin1;LOW\npin2;HIGH\ndelay 200\npin2;LOW\nloop\nend>";
-        radion.intState = { pc: 0, wait: 0, vars: {} };
+        radion.code = `start<
+pin1=D1
+pin2=D2
+loop{
+  pin1;HIGH
+  delay 200
+  pin1;LOW
+  pin2;HIGH
+  delay 200
+  pin2;LOW
+}
+end>`;
+        radion.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
+    }
+
+    function loadInputDemo() {
+        clearAll(true);
+        const radion = spawn('RADION', -20, -50);
+        const led = spawn('LED', 150, -20);
+        const btn = spawn('PUSH_BTN', -180, 20);
+        const bat = spawn('BATTERY', -250, -100);
+        
+        connect(bat, 0, radion, 0);
+        connect(bat, 1, radion, 1); 
+        connect(bat, 0, btn, 0);    
+        connect(btn, 1, radion, 4); 
+        connect(radion, 3, led, 0); 
+        connect(led, 1, radion, 2); 
+        
+        radion.code = `start<
+pinLed=D1
+pinBtn=D2
+loop{
+  if pinBtn==HIGH {
+    pinLed;HIGH
+  }
+  if pinBtn==LOW {
+    pinLed;LOW
+  }
+}
+end>`;
+        radion.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
+    }
+
+    function loadOledDemo() {
+        clearAll(true);
+        const radion = spawn('RADION', -100, -30);
+        const oled = spawn('OLED_I2C', 100, -30);
+        const bat = spawn('BATTERY', -260, -30);
+        
+        // Alimentar Radion
+        connect(bat, 0, radion, 0); 
+        connect(bat, 1, radion, 1); 
+        
+        // Alimentar OLED
+        connect(bat, 0, oled, 0); 
+        connect(bat, 1, oled, 1); 
+        
+        // I2C 
+        connect(radion, 6, oled, 2); // SCL
+        connect(radion, 7, oled, 3); // SDA
+        
+        radion.code = `start<
+oled.init
+oled.println "HELLO WORLD!"
+delay 1000
+oled.println "RADION 1.1 I2C"
+delay 1000
+oled.println "STATUS: OK"
+loop{
+  delay 500
+  oled.print "."
+}
+end>`;
+        radion.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
     }
 
     selectCategory('active', document.querySelector('.cat-btn'));
@@ -368,7 +447,6 @@
     window.addEventListener('resize', resize); resize();
 
     // --- INPUT HANDLERS ---
-    
     canvas.addEventListener('wheel', (e) => {
         if (!isDesktopMode) return;
         e.preventDefault();
@@ -615,7 +693,7 @@
         if (c.type === 'RADION') {
             codeArea.style.display = 'block';
             codeArea.value = c.code;
-            c.intState = { pc: 0, wait: 0, vars: {} }; 
+            c.intState = { pc: 0, wait: 0, vars: {}, parsed: null }; 
         } else {
             codeArea.style.display = 'none';
         }
@@ -637,7 +715,7 @@
             } 
             if (targetCfg.type === 'RADION') {
                 targetCfg.code = document.getElementById('m-code-area').value;
-                targetCfg.intState = { pc: 0, wait: 0, vars: {} };
+                targetCfg.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
             }
         }
         closeCfg(); 
@@ -668,54 +746,169 @@
             comp.lastTick = 0; comp.clockState = false;
         }
         else if (type === 'RADION') {
-            comp.w = 110; comp.h = 90;
+            comp.w = 110; comp.h = 110;
             comp.nodes = [
-                {id:'VCC', x:15, y:15}, {id:'GND', x:15, y:45},
-                {id:'G', x:15, y:75}, {id:'D1', x:95, y:30}, {id:'D2', x:95, y:60}
+                {id:'VCC', x:15, y:15}, {id:'GND', x:15, y:35}, {id:'G', x:15, y:55}, 
+                {id:'D1', x:95, y:15}, {id:'D2', x:95, y:35}, {id:'D3', x:95, y:55},
+                {id:'SCL', x:95, y:75}, {id:'SDA', x:95, y:95}
             ];
-            comp.code = "start<\npin1=D1\npin1;HIGH\ndelay 500\npin1;LOW\ndelay 500\nloop\nend>";
-            comp.memory = { d1: false, d2: false };
-            comp.intState = { pc: 0, wait: 0, vars: {} };
+            comp.code = `start<\npin1=D1\nloop{\n  pin1;HIGH\n  delay 500\n  pin1;LOW\n  delay 500\n}\nend>`;
+            comp.memory = { d1: false, d2: false, d3: false };
+            comp.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
+        }
+        else if (type === 'OLED_I2C') {
+            comp.w = 120; comp.h = 80;
+            comp.nodes = [
+                {id:'VCC', x:20, y:0}, {id:'GND', x:45, y:0},
+                {id:'SCL', x:70, y:0}, {id:'SDA', x:95, y:0}
+            ];
+            comp.textLines = []; comp.initialized = false;
         }
         else if (type === 'WAYPOINT') { comp.x = tx-5; comp.y = ty-5; comp.w=10; comp.h=10; comp.nodes=[{id:'W', x:5, y:5}]; }
         components.push(comp);
         return comp;
     }
 
+    function preprocessCode(code) {
+        const lines = code.split('\n');
+        let blocks = {};
+        let stack = [];
+        for (let i = 0; i < lines.length; i++) {
+            let l = lines[i].trim();
+            if (l.endsWith('{')) {
+                stack.push(i);
+            } else if (l === '}') {
+                if(stack.length > 0) {
+                    let start = stack.pop();
+                    blocks[start] = i; 
+                    blocks[i] = start; 
+                }
+            }
+        }
+        return { lines, blocks };
+    }
+
+    // Funciones lógicas para I2C simulado sobre cables físicos
+    function traceWire(startNode) {
+        let q = [startNode]; let visited = []; let foundComps = [];
+        while(q.length > 0) {
+            let curr = q.shift();
+            visited.push(curr);
+            connections.forEach(conn => {
+                let next = null;
+                if (conn.a.n === curr) next = conn.b.n;
+                if (conn.b.n === curr) next = conn.a.n;
+                if (next && !visited.includes(next)) {
+                    visited.push(next);
+                    let comp = components.find(c => c.nodes.includes(next));
+                    if (comp) {
+                        if (comp.type === 'WAYPOINT') q.push(next);
+                        else foundComps.push({comp, node: next});
+                    }
+                }
+            });
+        }
+        return foundComps;
+    }
+
+    function getI2C_OLED(radion) {
+        let sclNode = radion.nodes.find(n => n.id === 'SCL');
+        let sdaNode = radion.nodes.find(n => n.id === 'SDA');
+        let sclComps = traceWire(sclNode);
+        let sdaComps = traceWire(sdaNode);
+        let oled = null;
+        sclComps.forEach(sc => {
+            if (sc.comp.type === 'OLED_I2C' && sc.node.id === 'SCL') {
+                sdaComps.forEach(sd => {
+                    if (sd.comp === sc.comp && sd.node.id === 'SDA') oled = sc.comp;
+                });
+            }
+        });
+        return oled;
+    }
+
     function runRadionLogic(c) {
         if (!c.active || c.burned) {
-            c.memory.d1 = false; c.memory.d2 = false;
-            c.intState = { pc: 0, wait: 0, vars: {} };
+            c.memory.d1 = false; c.memory.d2 = false; c.memory.d3 = false;
+            c.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
             return;
         }
-        if (!c.intState) c.intState = { pc: 0, wait: 0, vars: {} };
+        
+        if (!c.intState) c.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
+        if (!c.intState.parsed) c.intState.parsed = preprocessCode(c.code);
         
         const now = Date.now();
         if (c.intState.wait > now) return;
 
-        const rawLines = c.code.split('\n');
+        const { lines, blocks } = c.intState.parsed;
         let instructionsExecuted = 0;
-        const maxInstructions = 20;
+        const maxInstructions = 30; 
 
         while(instructionsExecuted < maxInstructions) {
-            if (c.intState.pc >= rawLines.length) break;
+            if (c.intState.pc >= lines.length) break;
 
-            let line = rawLines[c.intState.pc].trim();
-            if (!line || line.startsWith('//')) { c.intState.pc++; continue; }
+            let line = lines[c.intState.pc].trim();
+            if (!line || line.startsWith('//') || line === 'start<' || line === 'end>') { 
+                c.intState.pc++; instructionsExecuted++; continue; 
+            }
 
-            if (line.includes('start<')) { c.intState.pc++; }
-            else if (line.includes('end>')) { break; }
-            else if (line === 'loop') {
-                 const startIndex = rawLines.findIndex(l => l.trim().includes('start<'));
-                 c.intState.pc = startIndex !== -1 ? startIndex + 1 : 0;
-                 instructionsExecuted++;
+            if (line.startsWith('if ')) {
+                let match = line.match(/if\s+(.+)==(HIGH|LOW)\s*\{/);
+                let conditionTrue = false;
+                if (match) {
+                    let varName = match[1].trim(); let state = match[2];
+                    let physPin = c.intState.vars[varName];
+                    let pinVal = false;
+                    if (physPin === 'D1') pinVal = c.nodes[3].signal;
+                    if (physPin === 'D2') pinVal = c.nodes[4].signal;
+                    if (physPin === 'D3') pinVal = c.nodes[5].signal;
+                    
+                    conditionTrue = (state === 'HIGH') ? pinVal : !pinVal;
+                }
+                if (conditionTrue) c.intState.pc++; 
+                else c.intState.pc = (blocks[c.intState.pc] !== undefined) ? blocks[c.intState.pc] + 1 : c.intState.pc + 1;
+            } 
+            else if (line.endsWith('{')) {
+                c.intState.pc++;
+            }
+            else if (line === '}') {
+                let startLine = blocks[c.intState.pc];
+                if (startLine !== undefined) {
+                    let startText = lines[startLine].trim();
+                    if (startText.startsWith('loop')) { c.intState.pc = startLine + 1; instructionsExecuted++; continue; } 
+                    else c.intState.pc++; 
+                } else c.intState.pc++;
             }
             else if (line.startsWith('delay')) {
                  const parts = line.split(' ');
                  const ms = parseInt(parts[1]) || 100;
                  c.intState.wait = now + ms;
-                 c.intState.pc++;
-                 return;
+                 c.intState.pc++; return; 
+            }
+            else if (line.startsWith('oled.')) {
+                let oled = getI2C_OLED(c);
+                if (oled && oled.active && !oled.burned) {
+                    if (line === 'oled.init') {
+                        oled.textLines = [""]; oled.initialized = true;
+                    } else if (line.startsWith('oled.print ')) {
+                        if (oled.initialized) {
+                            let text = line.substring(11).replace(/"/g, '');
+                            if(oled.textLines.length === 0) oled.textLines.push("");
+                            oled.textLines[oled.textLines.length - 1] += text;
+                        }
+                    } else if (line.startsWith('oled.println ')) {
+                        if (oled.initialized) {
+                            let text = line.substring(13).replace(/"/g, '');
+                            if(oled.textLines.length === 0) oled.textLines.push("");
+                            oled.textLines[oled.textLines.length - 1] += text;
+                            if (oled.textLines.length >= 4) oled.textLines.shift(); // Max líneas
+                            oled.textLines.push("");
+                        }
+                    } else if (line === 'oled.clear') {
+                        if (oled.initialized) oled.textLines = [""];
+                    }
+                }
+                c.intState.pc++;
             }
             else if (line.includes('=')) {
                 const parts = line.split('=');
@@ -724,14 +917,14 @@
             }
             else if (line.includes(';')) {
                 const parts = line.split(';');
-                const varName = parts[0].trim();
-                const state = parts[1].trim();
+                const varName = parts[0].trim(); const state = parts[1].trim();
                 const physicalPin = c.intState.vars[varName];
                 if (physicalPin === 'D1') c.memory.d1 = (state === 'HIGH');
                 if (physicalPin === 'D2') c.memory.d2 = (state === 'HIGH');
+                if (physicalPin === 'D3') c.memory.d3 = (state === 'HIGH');
                 c.intState.pc++;
             }
-            else { c.intState.pc++; }
+            else c.intState.pc++; 
             instructionsExecuted++;
         }
     }
@@ -755,7 +948,7 @@
             (c.type === 'BATTERY' || 
              (c.type === 'CAPACITOR' && c.isSource) || 
              (c.type === 'RSK90' && c.clockState) ||
-             (c.type === 'RADION' && (c.memory.d1 || c.memory.d2))) 
+             (c.type === 'RADION' && (c.memory.d1 || c.memory.d2 || c.memory.d3))) 
             && !c.burned
         );
 
@@ -766,6 +959,7 @@
             else if (src.type === 'RADION') {
                 if (src.memory.d1) startNodes.push(src.nodes[3]);
                 if (src.memory.d2) startNodes.push(src.nodes[4]);
+                if (src.memory.d3) startNodes.push(src.nodes[5]);
             }
 
             startNodes.forEach(startNode => {
@@ -793,7 +987,7 @@
                         if (comp.type === 'LED' && curr !== comp.nodes[0]) continue;
                         if (comp.type === 'CAPACITOR' && curr !== comp.nodes[0]) continue; 
                         if (comp.type === 'TRANSISTOR') continue;
-                        if (['AND', 'OR', 'NOT', 'XOR', 'RSK90', 'RADION'].includes(comp.type)) continue; 
+                        if (['AND', 'OR', 'NOT', 'XOR', 'RSK90', 'RADION', 'OLED_I2C'].includes(comp.type)) continue; 
                         comp.nodes.forEach(n => { if (!n.signal) { n.signal = true; q.push(n); } });
                     }
                 }
@@ -827,9 +1021,7 @@
                         const sel = comp.selState;
                         if (currentNode === comp.nodes[0] && !sel) outNodes.push(comp.nodes[3]);
                         if (currentNode === comp.nodes[1] && sel) outNodes.push(comp.nodes[3]);
-                        if (currentNode === comp.nodes[3]) {
-                            if (sel) outNodes.push(comp.nodes[1]); else outNodes.push(comp.nodes[0]);
-                        }
+                        if (currentNode === comp.nodes[3]) { if (sel) outNodes.push(comp.nodes[1]); else outNodes.push(comp.nodes[0]); }
                     }
                     else if (comp.type === 'RSK90') {
                         if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); } 
@@ -840,14 +1032,12 @@
                         if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); }
                         if (currentNode === comp.nodes[1]) { outNodes.push(comp.nodes[2]); outNodes.push(comp.nodes[0]); }
                         if (currentNode === comp.nodes[2]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[0]); }
-                        if (comp.memory.d1) {
-                             if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[3]); 
-                             if (currentNode === comp.nodes[3]) outNodes.push(comp.nodes[0]); 
-                        }
-                        if (comp.memory.d2) {
-                             if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[4]); 
-                             if (currentNode === comp.nodes[4]) outNodes.push(comp.nodes[0]); 
-                        }
+                        if (comp.memory.d1) { if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[3]); if (currentNode === comp.nodes[3]) outNodes.push(comp.nodes[0]); }
+                        if (comp.memory.d2) { if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[4]); if (currentNode === comp.nodes[4]) outNodes.push(comp.nodes[0]); }
+                        if (comp.memory.d3) { if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[5]); if (currentNode === comp.nodes[5]) outNodes.push(comp.nodes[0]); }
+                    }
+                    else if (comp.type === 'OLED_I2C') {
+                        if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[1]);
                     }
                     else { outNodes.push(comp.nodes.find(n => n !== currentNode)); }
 
@@ -879,6 +1069,11 @@
                                 if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
                                 if (comp.memory.d1 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[3]) || (currentNode === comp.nodes[3] && otherNode === comp.nodes[0]))) canCross = true;
                                 if (comp.memory.d2 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[4]) || (currentNode === comp.nodes[4] && otherNode === comp.nodes[0]))) canCross = true;
+                                if (comp.memory.d3 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[5]) || (currentNode === comp.nodes[5] && otherNode === comp.nodes[0]))) canCross = true;
+                            }
+                            if (comp.type === 'OLED_I2C') {
+                                const isPwr = (n) => n === comp.nodes[0] || n === comp.nodes[1];
+                                if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
                             }
 
                             if (comp.type === 'TRANSISTOR') {
@@ -903,6 +1098,7 @@
                             if (step.comp.type === 'RELAY') rSum += 50; 
                             if (step.comp.type === 'RSK90') rSum += 1000;
                             if (step.comp.type === 'RADION') rSum += 1200;
+                            if (step.comp.type === 'OLED_I2C') rSum += 1000;
                             if (step.comp.type === 'LED') ledCount++;
                             if (['AND', 'OR', 'NOT', 'XOR', 'MUX'].includes(step.comp.type)) rSum += 10;
                             if (step.comp.type === 'CAPACITOR' && bat.type === 'BATTERY') {
@@ -919,6 +1115,7 @@
                             if (c.type === 'RESISTOR' && (current * current * c.val) > 0.5) { c.burned = true; popped = true; }
                             if (['AND', 'OR', 'NOT', 'XOR', 'MUX'].includes(c.type) && current > 0.2) { c.burned = true; popped = true; }
                             if (c.type === 'TRANSISTOR' && current > 1.0) { c.burned = true; popped = true; }
+                            if (c.type === 'OLED_I2C' && current > 0.5) { c.burned = true; popped = true; }
                         });
                     }
                     if (!popped && current > 0) {
@@ -944,10 +1141,7 @@
             if (c.active && !c.burned) {
                 const now = Date.now();
                 if (!c.lastTick) c.lastTick = now;
-                if (now - c.lastTick >= 1000) { 
-                    c.clockState = !c.clockState;
-                    c.lastTick = now;
-                }
+                if (now - c.lastTick >= 1000) { c.clockState = !c.clockState; c.lastTick = now; }
             } else { c.clockState = false; c.lastTick = 0; }
         });
         components.filter(c => c.type === 'RADION').forEach(c => { runRadionLogic(c); });
@@ -1062,7 +1256,9 @@
             if(c.type === 'RADION') ctx.fillStyle = "#27ae60"; 
             else ctx.fillStyle = "#111";
 
-            ctx.fillRect(c.x, c.y, drawW, drawH); ctx.strokeRect(c.x, c.y, drawW, drawH);
+            if (c.type !== 'OLED_I2C') {
+                ctx.fillRect(c.x, c.y, drawW, drawH); ctx.strokeRect(c.x, c.y, drawW, drawH);
+            }
             if(c.burned) { ctx.fillStyle = "#e74c3c"; ctx.font = "bold 12px Arial"; ctx.fillText("¡QUEMADO!", c.x+5, c.y-5); }
 
             if (c.type === 'LED') {
@@ -1114,15 +1310,33 @@
             }
             else if (c.type === 'RADION') {
                 ctx.strokeStyle = c.active ? "#00ff41" : "#111"; ctx.lineWidth = 2;
-                ctx.fillStyle = "#111"; ctx.fillRect(c.x+35, c.y+20, 40, 40);
-                ctx.strokeStyle = "#555"; ctx.strokeRect(c.x+35, c.y+20, 40, 40);
-                ctx.fillStyle = "#fff"; ctx.font = "bold 10px monospace"; ctx.fillText("RADION", c.x+38, c.y+35);
-                ctx.font = "9px monospace"; ctx.fillText("1.0", c.x+45, c.y+50);
+                ctx.fillStyle = "#111"; ctx.fillRect(c.x+35, c.y+10, 40, 90);
+                ctx.strokeStyle = "#555"; ctx.strokeRect(c.x+35, c.y+10, 40, 90);
+                ctx.fillStyle = "#fff"; ctx.font = "bold 10px monospace";
+                ctx.save(); ctx.translate(c.x+40, c.y+80); ctx.rotate(-Math.PI/2); ctx.fillText("RADION 1.1", 0, 0); ctx.restore();
+
                 ctx.fillStyle = "#000"; ctx.font = "9px monospace";
-                ctx.fillText("VCC", c.x+20, c.y+20); ctx.fillText("GND", c.x+20, c.y+50); ctx.fillText("GND", c.x+20, c.y+80);
-                ctx.fillText("D1", c.x+80, c.y+35); ctx.fillText("D2", c.x+80, c.y+65);
-                if (c.active && !c.burned) {
-                    ctx.fillStyle = "#00ff41"; ctx.beginPath(); ctx.arc(c.x+90, c.y+10, 2, 0, Math.PI*2); ctx.fill();
+                ctx.fillText("VCC", c.x+20, c.y+18); ctx.fillText("GND", c.x+20, c.y+38); ctx.fillText("GND", c.x+20, c.y+58);
+                ctx.fillText("D1", c.x+80, c.y+18); ctx.fillText("D2", c.x+80, c.y+38); ctx.fillText("D3", c.x+80, c.y+58);
+                ctx.fillText("SCL", c.x+80, c.y+78); ctx.fillText("SDA", c.x+80, c.y+98);
+                if (c.active && !c.burned) { ctx.fillStyle = "#00ff41"; ctx.beginPath(); ctx.arc(c.x+45, c.y+20, 2, 0, Math.PI*2); ctx.fill(); }
+            }
+            else if (c.type === 'OLED_I2C') {
+                ctx.fillStyle = "#111"; ctx.fillRect(c.x, c.y, c.w, c.h);
+                ctx.strokeStyle = c.burned ? "#e74c3c" : "#555"; ctx.strokeRect(c.x, c.y, c.w, c.h);
+                
+                ctx.fillStyle = "#000"; ctx.fillRect(c.x+5, c.y+15, c.w-10, c.h-20);
+                ctx.strokeStyle = "#333"; ctx.strokeRect(c.x+5, c.y+15, c.w-10, c.h-20);
+
+                ctx.fillStyle = "#aaa"; ctx.font = "8px monospace";
+                ctx.fillText("VCC", c.x+12, c.y+12); ctx.fillText("GND", c.x+38, c.y+12);
+                ctx.fillText("SCL", c.x+62, c.y+12); ctx.fillText("SDA", c.x+88, c.y+12);
+                
+                if (c.active && !c.burned && c.initialized && c.textLines) {
+                    ctx.fillStyle = "#00ff41"; ctx.font = "10px monospace";
+                    for(let i=0; i<c.textLines.length; i++) {
+                        ctx.fillText(c.textLines[i], c.x+8, c.y+26 + (i*13));
+                    }
                 }
             }
             else if (c.type === 'BATTERY') {
@@ -1171,7 +1385,9 @@
             c.nodes.forEach(n => {
                 ctx.fillStyle = (n.id==='+'||n.id==='A'||n.id==='M1'||n.id==='R1'||n.id==='I1'||n.id==='I2'||n.id==='PWR'||n.id==='IN'||n.id==='C+'||n.id==='VCC') ? "#00ff41" : "#ff3131";
                 if (c.type === 'TRANSISTOR' || c.type === 'MUX' || n.id==='S' || n.id==='COM' || n.id==='OUT') ctx.fillStyle = "#3498db"; 
-                if (c.type === 'RADION' && (n.id === 'D1' || n.id === 'D2')) ctx.fillStyle = "#2ecc71";
+                if (c.type === 'RADION' && (n.id === 'D1' || n.id === 'D2' || n.id === 'D3')) ctx.fillStyle = "#2ecc71";
+                if (c.type === 'RADION' && (n.id === 'SCL' || n.id === 'SDA')) ctx.fillStyle = "#f1c40f"; // I2C color
+                if (c.type === 'OLED_I2C' && (n.id === 'SCL' || n.id === 'SDA')) ctx.fillStyle = "#f1c40f"; 
                 if (c.type === 'RADION' && (n.id === 'GND' || n.id === 'G')) ctx.fillStyle = "#ff3131";
 
                 if (c.type === 'RELAY' && n.id === 'NO') ctx.fillStyle = "#ff3131";
@@ -1193,7 +1409,7 @@
         ctx.restore();
         const modeText = isDesktopMode ? "MODO PC" : "MODO MOVIL";
         ctx.fillStyle = "rgba(0, 255, 65, 0.3)"; ctx.font = "bold 12px monospace"; ctx.textAlign = "right";
-        ctx.fillText(`Simulic Pro 1.3 [MANUAL]`, canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
+        ctx.fillText(`Simulic Pro 1.8 [I2C OLED UPDATE]`, canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
 
         requestAnimationFrame(draw);
     }
