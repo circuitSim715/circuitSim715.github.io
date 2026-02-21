@@ -7,6 +7,7 @@ CircuitSim 1.8 update 2/21/2026:
 VERY IMPORTANT CHANGES:
 * UI revamp.
 * Enhanced LOG sintax.
+* Enhanced code editor
 * Added compatible i2c OLED screen.
 
 *Why 1.8 and not 1.4?*
