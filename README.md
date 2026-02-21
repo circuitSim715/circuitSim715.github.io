@@ -3,6 +3,16 @@ Official email: industriescvc@gmail.com
 
 **CHANGE LOG**
 
+CircuitSim 1.8 update 2/21/2026:
+VERY IMPORTANT CHANGES:
+* UI revamp.
+* Enhanced LOG sintax.
+* Added compatible i2c OLED screen.
+
+*Why 1.8 and not 1.4?*
+The reason are the significant changes and private updates
+before realese.
+
 CircuitSim 1.3 update 2/18/2026:
 IMPORTANT CHANGES:
 * Added demo projects.
