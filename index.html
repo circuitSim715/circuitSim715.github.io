@@ -1148,14 +1148,14 @@
     }
 
     function loadMotorDemo() {
-        clearAll(true);
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
         const bat = spawn('BATTERY',-120,-50); const res = spawn('RESISTOR',-20,-120); res.val=10;
         const btn = spawn('PUSH_BTN',60,-50); const motor = spawn('MOTOR',60,50);
         connect(bat,0,res,0); connect(res,1,motor,0); connect(motor,1,btn,0); connect(btn,1,bat,1);
     }
 
     function loadRadionDemo() {
-        clearAll(true);
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
         const radion = spawn('RADION',-50,-50); const led1 = spawn('LED',150,-80);
         const led2 = spawn('LED',150,20); const bat = spawn('BATTERY',-200,0);
         connect(bat,0,radion,0); connect(bat,1,radion,1); connect(radion,3,led1,0);
@@ -1165,7 +1165,7 @@
     }
 
     function loadInputDemo() {
-        clearAll(true);
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
         const radion = spawn('RADION',-20,-50); const led = spawn('LED',150,-20);
         const btn = spawn('PUSH_BTN',-180,20); const bat = spawn('BATTERY',-250,-100);
         connect(bat,0,radion,0); connect(bat,1,radion,1); connect(bat,0,btn,0);
@@ -1175,7 +1175,7 @@
     }
 
     function loadOledDemo() {
-        clearAll(true);
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
         const radion = spawn('RADION',-100,-30); const oled = spawn('OLED_I2C',100,-30);
         const bat = spawn('BATTERY',-260,-30);
         connect(bat,0,radion,0); connect(bat,1,radion,1); connect(bat,0,oled,0); connect(bat,1,oled,1);
@@ -1270,12 +1270,25 @@
 
     const bind = (id,k) => {
         const el=document.getElementById(id);
-        el.addEventListener('touchstart',(e)=>{if(isDesktopMode)return;e.preventDefault();vMouse.moving[k]=true;});
-        el.addEventListener('touchend',(e)=>{if(isDesktopMode)return;e.preventDefault();vMouse.moving[k]=false;});
-        el.addEventListener('mousedown',()=>{if(isDesktopMode)return;vMouse.moving[k]=true;});
-        el.addEventListener('mouseup',()=>{if(isDesktopMode)return;vMouse.moving[k]=false;});
+        const set=(v)=>{ if(isDesktopMode)return; vMouse.moving[k]=v; };
+        el.addEventListener('touchstart',(e)=>{e.preventDefault();set(true);},{passive:false});
+        el.addEventListener('touchend',(e)=>{e.preventDefault();set(false);});
+        el.addEventListener('touchcancel',()=>set(false));
+        el.addEventListener('mousedown',()=>set(true));
+        el.addEventListener('mouseup',()=>set(false));
+        el.addEventListener('mouseleave',()=>set(false));
     };
     bind('vUp','up'); bind('vDown','down'); bind('vLeft','left'); bind('vRight','right');
+
+    // Reset all movement if focus lost or touch leaves virtual controls area
+    const clearAllMovement = () => { vMouse.moving = {}; };
+    document.addEventListener('visibilitychange', clearAllMovement);
+    document.getElementById('virtual-controls').addEventListener('touchend', (e)=>{
+        // If no touches remain on the dpad buttons, clear all movement
+        if(e.touches.length === 0) clearAllMovement();
+    });
+    document.getElementById('virtual-controls').addEventListener('touchcancel', clearAllMovement);
+    window.addEventListener('blur', clearAllMovement);
 
     const setupBtn = (id,fn) => {
         const el=document.getElementById(id);
@@ -1732,12 +1745,6 @@
         ctx.strokeStyle = c.burned ? C_BORD_BURN : (c.active ? C_BORD_ACTIVE : C_BORD);
         ctx.lineWidth = 1;
         ctx.fillRect(c.x,c.y,dW,dH);
-        // Glass rim highlight
-        const grd = ctx.createLinearGradient(c.x,c.y,c.x,c.y+14);
-        grd.addColorStop(0,'rgba(255,255,255,0.08)');
-        grd.addColorStop(1,'rgba(255,255,255,0)');
-        ctx.fillStyle = grd;
-        ctx.fillRect(c.x+1,c.y+1,dW-2,13);
         ctx.strokeRect(c.x,c.y,dW,dH);
     }
 
@@ -1907,10 +1914,7 @@
             else if(c.type==='RADION'){
                 // Glass board
                 ctx.fillStyle='rgba(14,30,22,0.88)'; ctx.strokeStyle=c.active?'rgba(0,230,118,0.45)':'rgba(0,230,118,0.15)'; ctx.lineWidth=1;
-                ctx.fillRect(c.x+30,c.y+5,50,100);
-                const radGrd=ctx.createLinearGradient(c.x+30,c.y+5,c.x+30,c.y+20); radGrd.addColorStop(0,'rgba(255,255,255,0.06)'); radGrd.addColorStop(1,'rgba(255,255,255,0)');
-                ctx.fillStyle=radGrd; ctx.fillRect(c.x+31,c.y+6,48,14);
-                ctx.strokeRect(c.x+30,c.y+5,50,100);
+                ctx.fillRect(c.x+30,c.y+5,50,100); ctx.strokeRect(c.x+30,c.y+5,50,100);
                 // Inner chip
                 ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(c.x+36,c.y+22,38,56);
                 ctx.strokeStyle='rgba(0,230,118,0.15)'; ctx.strokeRect(c.x+36,c.y+22,38,56);
@@ -1932,10 +1936,7 @@
             else if(c.type==='OLED_I2C'){
                 // Housing
                 ctx.fillStyle='rgba(18,26,46,0.85)'; ctx.strokeStyle=c.burned?C_RED:C_BORD; ctx.lineWidth=1;
-                ctx.fillRect(c.x,c.y,c.w,c.h);
-                const oledGrd=ctx.createLinearGradient(c.x,c.y,c.x,c.y+14); oledGrd.addColorStop(0,'rgba(255,255,255,0.08)'); oledGrd.addColorStop(1,'rgba(255,255,255,0)');
-                ctx.fillStyle=oledGrd; ctx.fillRect(c.x+1,c.y+1,c.w-2,13);
-                ctx.strokeRect(c.x,c.y,c.w,c.h);
+                ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
                 // Screen
                 ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(c.x+4,c.y+14,c.w-8,c.h-18);
                 ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.strokeRect(c.x+4,c.y+14,c.w-8,c.h-18);
