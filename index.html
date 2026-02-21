@@ -1,121 +1,808 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulic Pro - I2C OLED Update</title>
+    <title>Simulic Pro — I2C OLED Update</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        * { user-select: none; box-sizing: border-box; touch-action: none; }
-        body { margin: 0; background: #050505; color: #00ff41; font-family: 'Courier New', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        /* UI SUPERIOR */
-        #ui-top { padding: 10px; background: #111; display: flex; justify-content: flex-start; gap: 5px; border-bottom: 1px solid #222; z-index: 10; overflow-x: auto; }
-        #ui-sub { padding: 8px; background: #1a1a1a; display: flex; gap: 6px; border-bottom: 2px solid #00ff41; min-height: 45px; overflow-x: auto; align-items: center; z-index: 9; }
-        
-        .cat-btn { padding: 8px 12px; background: #000; border: 1px solid #444; color: #aaa; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; flex-shrink: 0; }
-        .cat-btn.active { background: #00ff41; color: #000; border-color: #00ff41; box-shadow: 0 0 10px rgba(0,255,65,0.4); }
-        
-        .cat-btn-demo { border-color: #9b59b6; color: #9b59b6; }
-        .cat-btn-demo.active { background: #9b59b6; color: #fff; box-shadow: 0 0 10px rgba(155, 89, 182, 0.4); }
+        :root {
+            --green: #00ff41;
+            --green-dim: #00bb30;
+            --green-glow: rgba(0,255,65,0.15);
+            --amber: #ffb000;
+            --amber-dim: #cc8800;
+            --blue: #00aaff;
+            --red: #ff2244;
+            --purple: #b06bff;
+            --orange: #ff7700;
+            --bg-base: #080a08;
+            --bg-panel: #0d110d;
+            --bg-raised: #131713;
+            --bg-inset: #090b09;
+            --border-dim: #1e251e;
+            --border-bright: #2a3a2a;
+            --text-primary: #c8e8c8;
+            --text-dim: #5a7a5a;
+            --text-muted: #3a4a3a;
+            --scanline: rgba(0,255,65,0.012);
+        }
 
-        .cat-btn-manual { border-color: #f1c40f; color: #f1c40f; }
-        .cat-btn-manual:active { background: #f1c40f; color: #000; }
+```
+    * { user-select: none; box-sizing: border-box; touch-action: none; margin: 0; padding: 0; }
 
-        .spawn-btn { padding: 6px 10px; background: #222; border: 1px solid #555; color: #ddd; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; flex-shrink: 0; white-space: nowrap; }
-        .spawn-btn:active { background: #fff; color: #000; }
-        
-        .clear-btn { margin-left: auto; border-color: #e74c3c; color: #e74c3c; background: #111; } 
-        .mode-btn { border-color: #3498db; color: #3498db; background: #111; margin-left: 5px; }
+    body {
+        background: var(--bg-base);
+        color: var(--green);
+        font-family: 'Share Tech Mono', 'Courier New', monospace;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
 
-        #canvas-container { flex: 1; position: relative; overflow: hidden; background: #050505; cursor: crosshair; }
-        canvas { width: 100%; height: 100%; display: block; }
-        
-        #zoom-controls { position: absolute; right: 15px; top: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 20; }
-        .zoom-btn { padding: 10px; font-size: 16px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: #111; border: 2px solid #3498db; color: #3498db; border-radius: 50%; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
-        .zoom-btn:active { background: #3498db; color: #000; transform: scale(0.9); }
+    /* SCANLINES OVERLAY */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            var(--scanline) 2px,
+            var(--scanline) 4px
+        );
+        pointer-events: none;
+        z-index: 9999;
+    }
 
-        /* CONTROLES VIRTUALES (MÓVIL) */
-        #virtual-controls { background: #111; height: 180px; display: flex; justify-content: space-between; padding: 10px; border-top: 2px solid #222; z-index: 10; transition: height 0.3s; }
-        .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(2, 50px); gap: 8px; }
-        .btn-v { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; }
-        .btn-up { grid-column: 2; } .btn-left { grid-column: 1; grid-row: 2; } .btn-down { grid-column: 2; grid-row: 2; } .btn-right { grid-column: 3; grid-row: 2; }
-        
-        .actions { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 8px; }
-        .btn-action { width: 55px; height: 55px; border-radius: 50%; font-weight: bold; font-size: 9px; color: white; border: none; cursor: pointer; }
-        .btn-click { background: #2ecc71; } .btn-del { background: #e74c3c; } 
-        .btn-use { background: #f1c40f; color: black; } .btn-cfg { background: #9b59b6; } .btn-rot { background: #e67e22; }
-        .btn-sel { background: #3498db; }
-        .btn-action:active { transform: scale(0.9); }
-        
-        /* MODAL CONFIGURACIÓN */
-        #modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 2px solid #00ff41; padding: 20px; text-align: center; z-index: 100; border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,65,0.2); width: 300px; }
-        #modal input { width: 100px; padding: 5px; background: #000; color: #00ff41; border: 1px solid #00ff41; text-align: center; margin: 10px 0; font-size: 16px; font-family: monospace; }
-        #m-code-area { width: 100%; height: 160px; background: #000; color: #fff; border: 1px solid #555; font-family: monospace; font-size: 11px; text-align: left; padding: 5px; margin-bottom: 10px; resize: none; display: none; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
-        
-        .modal-btn { padding: 8px 15px; background: #1a1a1a; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; margin: 5px; border-radius: 4px; }
-        .modal-btn-rep { border-color: #f1c40f; color: #f1c40f; }
-        .modal-btn-toggle { border-color: #3498db; color: #3498db; }
+    /* ═══════════════════════════════════
+       HEADER / TITLE BAR
+    ═══════════════════════════════════ */
+    #header {
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        height: 44px;
+        background: var(--bg-panel);
+        border-bottom: 1px solid var(--border-bright);
+        position: relative;
+        flex-shrink: 0;
+    }
 
-        /* PANTALLA DE MANUAL */
-        #manual-screen { display: none; position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: rgba(10,10,10,0.95); border: 2px solid #f1c40f; z-index: 300; padding: 20px; overflow-y: auto; color: #ddd; box-shadow: 0 0 50px rgba(0,0,0,0.9); }
-        #manual-screen h2 { color: #f1c40f; border-bottom: 1px solid #f1c40f; padding-bottom: 10px; }
-        #manual-screen h4 { color: #00ff41; margin-top: 20px; margin-bottom: 5px; }
-        #manual-screen p, #manual-screen li { font-size: 13px; line-height: 1.5; color: #ccc; }
-        #manual-screen pre { background: #222; padding: 10px; color: #e67e22; border-radius: 5px; font-size: 11px; overflow-x: auto; }
-        #manual-screen code { background: #222; padding: 2px 5px; color: #e67e22; border-radius: 3px; }
-        #manual-screen .close-manual { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; border: none; padding: 5px 10px; cursor: pointer; font-weight: bold; }
+    #header::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+        opacity: 0.4;
+    }
 
-        /* MENÚ CONTEXTUAL (CLICK DERECHO) */
-        #context-menu { display: none; position: absolute; background: #222; border: 1px solid #00ff41; z-index: 200; box-shadow: 2px 2px 10px rgba(0,0,0,0.8); border-radius: 4px; min-width: 120px; }
-        .ctx-item { padding: 8px 12px; color: #eee; cursor: pointer; font-size: 12px; border-bottom: 1px solid #333; }
-        .ctx-item:hover { background: #00ff41; color: #000; }
-        .ctx-item:last-child { border-bottom: none; }
+    .app-logo {
+        font-family: 'Orbitron', monospace;
+        font-weight: 900;
+        font-size: 15px;
+        letter-spacing: 3px;
+        color: var(--green);
+        text-shadow: 0 0 12px var(--green-dim), 0 0 24px rgba(0,255,65,0.2);
+        margin-right: 12px;
+    }
 
-        .desktop-mode #virtual-controls { display: none !important; }
-        .desktop-mode #zoom-controls { top: auto; bottom: 20px; right: 20px; }
-    </style>
+    .app-version {
+        font-size: 9px;
+        color: var(--text-dim);
+        letter-spacing: 2px;
+        padding: 2px 6px;
+        border: 1px solid var(--border-dim);
+        background: var(--bg-inset);
+    }
+
+    .header-status {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .status-dot {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 9px;
+        color: var(--text-dim);
+        letter-spacing: 1px;
+    }
+
+    .dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+        animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    /* ═══════════════════════════════════
+       CATEGORY TOOLBAR
+    ═══════════════════════════════════ */
+    #ui-top {
+        padding: 0;
+        background: var(--bg-panel);
+        display: flex;
+        align-items: stretch;
+        border-bottom: 1px solid var(--border-dim);
+        z-index: 10;
+        overflow-x: auto;
+        flex-shrink: 0;
+        height: 42px;
+    }
+
+    #ui-top::-webkit-scrollbar { height: 2px; }
+    #ui-top::-webkit-scrollbar-track { background: var(--bg-inset); }
+    #ui-top::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    .toolbar-section {
+        display: flex;
+        align-items: stretch;
+        border-right: 1px solid var(--border-dim);
+    }
+
+    .toolbar-section-label {
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        font-size: 8px;
+        color: var(--text-muted);
+        letter-spacing: 2px;
+        writing-mode: horizontal-tb;
+        border-right: 1px solid var(--border-dim);
+        background: var(--bg-inset);
+    }
+
+    .cat-btn {
+        padding: 0 14px;
+        background: transparent;
+        border: none;
+        border-right: 1px solid var(--border-dim);
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: bold;
+        font-family: 'Orbitron', monospace;
+        letter-spacing: 1px;
+        flex-shrink: 0;
+        position: relative;
+        transition: color 0.15s, background 0.15s;
+        white-space: nowrap;
+    }
+
+    .cat-btn::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 2px;
+        background: transparent;
+        transition: background 0.15s;
+    }
+
+    .cat-btn:hover {
+        background: var(--green-glow);
+        color: var(--text-primary);
+    }
+
+    .cat-btn.active {
+        background: rgba(0,255,65,0.08);
+        color: var(--green);
+    }
+
+    .cat-btn.active::after {
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+    }
+
+    .cat-btn-demo {
+        color: #9966cc;
+    }
+    .cat-btn-demo:hover { color: var(--purple); }
+    .cat-btn-demo.active { color: var(--purple); background: rgba(176,107,255,0.08); }
+    .cat-btn-demo.active::after { background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+
+    .cat-btn-manual {
+        color: var(--amber-dim);
+    }
+    .cat-btn-manual:hover { color: var(--amber); }
+
+    .toolbar-right {
+        margin-left: auto;
+        display: flex;
+        align-items: stretch;
+        border-left: 1px solid var(--border-dim);
+    }
+
+    .header-btn {
+        padding: 0 14px;
+        background: transparent;
+        border: none;
+        border-left: 1px solid var(--border-dim);
+        cursor: pointer;
+        font-size: 9px;
+        font-family: 'Orbitron', monospace;
+        letter-spacing: 1px;
+        flex-shrink: 0;
+        transition: background 0.15s, color 0.15s;
+        white-space: nowrap;
+    }
+
+    .mode-btn {
+        color: var(--blue);
+    }
+    .mode-btn:hover { background: rgba(0,170,255,0.1); }
+
+    .clear-btn {
+        color: var(--red);
+    }
+    .clear-btn:hover { background: rgba(255,34,68,0.1); }
+
+    /* ═══════════════════════════════════
+       COMPONENT SPAWN BAR
+    ═══════════════════════════════════ */
+    #ui-sub {
+        padding: 0 12px;
+        background: var(--bg-inset);
+        display: flex;
+        gap: 6px;
+        border-bottom: 1px solid var(--border-dim);
+        min-height: 40px;
+        overflow-x: auto;
+        align-items: center;
+        z-index: 9;
+        flex-shrink: 0;
+    }
+
+    #ui-sub::-webkit-scrollbar { height: 2px; }
+    #ui-sub::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    .sub-label {
+        color: var(--text-muted);
+        font-size: 9px;
+        letter-spacing: 2px;
+        flex-shrink: 0;
+    }
+
+    .spawn-btn {
+        padding: 4px 12px;
+        background: var(--bg-raised);
+        border: 1px solid var(--border-bright);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 10px;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        letter-spacing: 1px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        transition: all 0.12s;
+        position: relative;
+        clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    }
+
+    .spawn-btn:hover {
+        background: rgba(0,255,65,0.1);
+        border-color: var(--green-dim);
+        color: var(--green);
+    }
+
+    .spawn-btn:active {
+        background: rgba(0,255,65,0.2);
+        transform: scale(0.97);
+    }
+
+    /* ═══════════════════════════════════
+       CANVAS AREA
+    ═══════════════════════════════════ */
+    #canvas-container {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background: var(--bg-base);
+        cursor: crosshair;
+    }
+
+    canvas { width: 100%; height: 100%; display: block; }
+
+    /* ═══════════════════════════════════
+       ZOOM CONTROLS
+    ═══════════════════════════════════ */
+    #zoom-controls {
+        position: absolute;
+        right: 16px;
+        top: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        z-index: 20;
+    }
+
+    .zoom-btn {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-bright);
+        color: var(--blue);
+        cursor: pointer;
+        font-family: 'Orbitron', monospace;
+        font-size: 11px;
+        font-weight: 700;
+        transition: all 0.12s;
+        clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+    }
+
+    .zoom-btn:hover {
+        background: rgba(0,170,255,0.15);
+        border-color: var(--blue);
+        box-shadow: 0 0 8px rgba(0,170,255,0.3);
+    }
+
+    .zoom-btn:active { transform: scale(0.93); }
+
+    /* Compass / coordinates readout */
+    #coords-display {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        font-size: 9px;
+        color: var(--text-dim);
+        letter-spacing: 1px;
+        background: rgba(8,10,8,0.8);
+        border: 1px solid var(--border-dim);
+        padding: 6px 10px;
+        z-index: 20;
+        pointer-events: none;
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* ═══════════════════════════════════
+       VIRTUAL CONTROLS (MOBILE)
+    ═══════════════════════════════════ */
+    #virtual-controls {
+        background: var(--bg-panel);
+        height: 175px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        border-top: 1px solid var(--border-bright);
+        z-index: 10;
+        flex-shrink: 0;
+        gap: 16px;
+    }
+
+    .dpad {
+        display: grid;
+        grid-template-columns: repeat(3, 48px);
+        grid-template-rows: repeat(2, 48px);
+        gap: 4px;
+    }
+
+    .btn-v {
+        background: var(--bg-raised);
+        border: 1px solid var(--border-bright);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-dim);
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.1s;
+    }
+
+    .btn-v:active, .btn-v.pressed {
+        background: rgba(0,255,65,0.12);
+        border-color: var(--green-dim);
+        color: var(--green);
+    }
+
+    .btn-up { grid-column: 2; }
+    .btn-left { grid-column: 1; grid-row: 2; }
+    .btn-down { grid-column: 2; grid-row: 2; }
+    .btn-right { grid-column: 3; grid-row: 2; }
+
+    .actions {
+        display: grid;
+        grid-template-columns: repeat(3, 56px);
+        grid-template-rows: repeat(2, 56px);
+        gap: 6px;
+    }
+
+    .btn-action {
+        border-radius: 0;
+        font-weight: 700;
+        font-size: 9px;
+        font-family: 'Orbitron', monospace;
+        letter-spacing: 0.5px;
+        color: var(--bg-base);
+        border: none;
+        cursor: pointer;
+        transition: transform 0.1s, box-shadow 0.1s;
+        clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+    }
+
+    .btn-action:active { transform: scale(0.92); }
+
+    .btn-click { background: #1a8a40; color: #a0ffb8; border: 1px solid #1a8a40; }
+    .btn-del { background: #8a1a22; color: #ffb0b8; border: 1px solid #8a1a22; }
+    .btn-use { background: #8a7000; color: #ffe88a; border: 1px solid #8a7000; }
+    .btn-cfg { background: #5a1a8a; color: #d8a0ff; border: 1px solid #5a1a8a; }
+    .btn-rot { background: #8a4800; color: #ffcc88; border: 1px solid #8a4800; }
+    .btn-sel { background: #005a8a; color: #88ccff; border: 1px solid #005a8a; }
+
+    /* ═══════════════════════════════════
+       MODAL
+    ═══════════════════════════════════ */
+    #modal {
+        display: none;
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-panel);
+        border: 1px solid var(--border-bright);
+        padding: 0;
+        text-align: center;
+        z-index: 100;
+        width: 320px;
+        box-shadow: 0 0 40px rgba(0,0,0,0.9), 0 0 0 1px var(--border-dim);
+    }
+
+    .modal-header {
+        padding: 10px 16px;
+        background: var(--bg-inset);
+        border-bottom: 1px solid var(--border-dim);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .modal-header-bar {
+        width: 3px;
+        height: 16px;
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+    }
+
+    #m-title {
+        font-family: 'Orbitron', monospace;
+        font-size: 12px;
+        letter-spacing: 2px;
+        color: var(--green);
+        text-align: left;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        justify-content: center;
+    }
+
+    .modal-input-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-bright);
+        padding: 6px 10px;
+    }
+
+    #m-val {
+        width: 80px;
+        padding: 4px;
+        background: transparent;
+        color: var(--green);
+        border: none;
+        text-align: center;
+        font-size: 18px;
+        font-family: 'Orbitron', monospace;
+        outline: none;
+    }
+
+    #m-unit {
+        color: var(--text-dim);
+        font-size: 12px;
+        letter-spacing: 1px;
+    }
+
+    #m-code-area {
+        width: 100%;
+        height: 160px;
+        background: var(--bg-inset);
+        color: #88ff88;
+        border: 1px solid var(--border-bright);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 11px;
+        text-align: left;
+        padding: 8px;
+        margin-bottom: 12px;
+        resize: none;
+        display: none;
+        white-space: pre;
+        overflow-wrap: normal;
+        overflow-x: auto;
+        outline: none;
+        line-height: 1.6;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .modal-btn {
+        padding: 6px 14px;
+        background: var(--bg-raised);
+        border: 1px solid var(--border-bright);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 9px;
+        font-family: 'Orbitron', monospace;
+        letter-spacing: 1px;
+        transition: all 0.12s;
+    }
+
+    .modal-btn:hover { background: rgba(0,255,65,0.1); border-color: var(--green-dim); color: var(--green); }
+    .modal-btn-rep { border-color: #885500; color: var(--amber-dim); }
+    .modal-btn-rep:hover { background: rgba(255,176,0,0.1); border-color: var(--amber); color: var(--amber); }
+    .modal-btn-toggle { border-color: #004488; color: var(--blue); }
+    .modal-btn-toggle:hover { background: rgba(0,170,255,0.1); border-color: var(--blue); }
+
+    /* ═══════════════════════════════════
+       MANUAL SCREEN
+    ═══════════════════════════════════ */
+    #manual-screen {
+        display: none;
+        position: absolute;
+        top: 4%; left: 4%;
+        width: 92%; height: 92%;
+        background: rgba(8,10,8,0.97);
+        border: 1px solid var(--border-bright);
+        z-index: 300;
+        overflow: hidden;
+        box-shadow: 0 0 60px rgba(0,0,0,0.95);
+    }
+
+    .manual-inner {
+        height: 100%;
+        overflow-y: auto;
+        padding: 24px 28px;
+    }
+
+    .manual-inner::-webkit-scrollbar { width: 4px; }
+    .manual-inner::-webkit-scrollbar-track { background: var(--bg-inset); }
+    .manual-inner::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    #manual-screen h2 {
+        font-family: 'Orbitron', monospace;
+        font-size: 16px;
+        letter-spacing: 4px;
+        color: var(--amber);
+        border-bottom: 1px solid var(--amber-dim);
+        padding-bottom: 12px;
+        margin-bottom: 24px;
+    }
+
+    #manual-screen h4 {
+        font-family: 'Orbitron', monospace;
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: var(--green);
+        margin-top: 24px;
+        margin-bottom: 10px;
+        padding-left: 8px;
+        border-left: 3px solid var(--green);
+    }
+
+    #manual-screen p, #manual-screen li {
+        font-size: 12px;
+        line-height: 1.8;
+        color: #9ab09a;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 400;
+    }
+
+    #manual-screen strong { color: var(--text-primary); }
+
+    #manual-screen pre {
+        background: var(--bg-inset);
+        padding: 12px;
+        color: var(--amber-dim);
+        border-left: 2px solid var(--amber-dim);
+        font-size: 11px;
+        overflow-x: auto;
+        margin: 10px 0;
+    }
+
+    #manual-screen code {
+        background: var(--bg-inset);
+        padding: 1px 6px;
+        color: var(--amber);
+        border: 1px solid var(--border-dim);
+        font-size: 11px;
+    }
+
+    .close-manual {
+        position: absolute;
+        top: 12px; right: 12px;
+        background: var(--bg-raised);
+        color: var(--red);
+        border: 1px solid #441122;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 9px;
+        font-family: 'Orbitron', monospace;
+        letter-spacing: 1px;
+        transition: all 0.12s;
+    }
+
+    .close-manual:hover { background: rgba(255,34,68,0.15); border-color: var(--red); }
+
+    /* ═══════════════════════════════════
+       CONTEXT MENU
+    ═══════════════════════════════════ */
+    #context-menu {
+        display: none;
+        position: absolute;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-bright);
+        z-index: 200;
+        box-shadow: 4px 4px 20px rgba(0,0,0,0.9);
+        min-width: 140px;
+    }
+
+    .ctx-header {
+        padding: 6px 10px;
+        background: var(--bg-inset);
+        border-bottom: 1px solid var(--border-dim);
+        font-size: 8px;
+        color: var(--text-muted);
+        letter-spacing: 2px;
+        font-family: 'Orbitron', monospace;
+    }
+
+    .ctx-item {
+        padding: 8px 12px;
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 11px;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        letter-spacing: 1px;
+        border-bottom: 1px solid var(--border-dim);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.1s;
+    }
+
+    .ctx-item:last-child { border-bottom: none; }
+    .ctx-item:hover { background: rgba(0,255,65,0.1); color: var(--green); }
+    .ctx-item.danger:hover { background: rgba(255,34,68,0.1); color: var(--red); }
+
+    .ctx-icon {
+        font-size: 12px;
+        width: 16px;
+        text-align: center;
+    }
+
+    /* ═══════════════════════════════════
+       DESKTOP MODE
+    ═══════════════════════════════════ */
+    .desktop-mode #virtual-controls { display: none !important; }
+    .desktop-mode #zoom-controls { top: auto; bottom: 20px; right: 20px; }
+</style>
+```
+
 </head>
 <body class="">
 
-<div id="ui-top">
-    <button class="cat-btn" onclick="selectCategory('active', this)">ACTIVOS</button>
-    <button class="cat-btn" onclick="selectCategory('passive', this)">PASIVOS</button>
-    <button class="cat-btn" onclick="selectCategory('digital', this)">DIGITALES</button>
-    <button class="cat-btn" onclick="selectCategory('boards', this)">PLACAS</button>
-    <button class="cat-btn" onclick="selectCategory('output_plus', this)">OUTPUT+</button>
-    <button class="cat-btn cat-btn-demo" onclick="selectCategory('demos', this)">★ DEMOS</button>
-    <button class="cat-btn cat-btn-manual" onclick="toggleManual()">📖 MANUAL</button>
-    <button class="clear-btn mode-btn" onclick="toggleMode()" id="btnMode">📱 MÓVIL</button>
-    <button class="clear-btn" onclick="clearAll()">BORRAR TODO</button> 
+<!-- HEADER -->
+
+<div id="header">
+    <span class="app-logo">SIMULIC</span>
+    <span class="app-version">v1.8 / I2C-OLED</span>
+    <div class="header-status">
+        <div class="status-dot"><span class="dot"></span>SIM ACTIVE</div>
+    </div>
 </div>
+
+<!-- CATEGORY TOOLBAR -->
+
+<div id="ui-top">
+    <div class="toolbar-section">
+        <button class="cat-btn" onclick="selectCategory('active', this)">ACTIVOS</button>
+        <button class="cat-btn" onclick="selectCategory('passive', this)">PASIVOS</button>
+        <button class="cat-btn" onclick="selectCategory('digital', this)">DIGITALES</button>
+        <button class="cat-btn" onclick="selectCategory('boards', this)">PLACAS</button>
+        <button class="cat-btn" onclick="selectCategory('output_plus', this)">OUTPUT+</button>
+    </div>
+    <div class="toolbar-section">
+        <button class="cat-btn cat-btn-demo" onclick="selectCategory('demos', this)">★ DEMOS</button>
+        <button class="cat-btn cat-btn-manual" onclick="toggleManual()">📖 MANUAL</button>
+    </div>
+    <div class="toolbar-right">
+        <button class="header-btn mode-btn" onclick="toggleMode()" id="btnMode">📱 MÓVIL</button>
+        <button class="header-btn clear-btn" onclick="clearAll()">⊗ BORRAR</button>
+    </div>
+</div>
+
+<!-- SPAWN BAR -->
+
 <div id="ui-sub">
-    <span style="color:#444; font-size:10px;">SELECCIONA UNA CATEGORÍA ARRIBA</span>
+    <span class="sub-label">▶ SELECCIONA UNA CATEGORÍA</span>
 </div>
 
 <div id="canvas-container" oncontextmenu="return false;">
-    <div id="zoom-controls">
-        <button class="zoom-btn" onclick="camera.zoom = Math.min(3.0, camera.zoom + 0.2)">🔎+</button>
-        <button class="zoom-btn" onclick="camera.zoom = 1.0" style="font-size: 12px;">1x</button>
-        <button class="zoom-btn" onclick="camera.zoom = Math.max(0.4, camera.zoom - 0.2)">🔎-</button>
-    </div>
-    <canvas id="circuitCanvas"></canvas>
-    
-    <div id="modal">
-        <h3 id="m-title" style="margin:0 0 10px 0;">Configurar</h3>
-        <input type="number" id="m-val"> <span id="m-unit"></span>
-        <textarea id="m-code-area" spellcheck="false" placeholder="Escribe código LOG aquí..."></textarea>
-        <br>
-        <button class="modal-btn modal-btn-toggle" id="m-toggle" onclick="toggleCompType()" style="display:none;">TIPO: NPN</button>
-        <br>
-        <button class="modal-btn" onclick="saveCfg()">GUARDAR</button>
-        <button class="modal-btn" onclick="closeCfg()">CERRAR</button>
-        <button class="modal-btn modal-btn-rep" id="m-repair" onclick="repairCfg()" style="display:none;">REPARAR</button>
-    </div>
 
-    <div id="manual-screen">
-        <button class="close-manual" onclick="toggleManual()">CERRAR [X]</button>
-        <h2>MANUAL DE USUARIO - SIMULIC PRO</h2>
-        
+```
+<div id="coords-display">
+    X: <span id="cx">0</span> &nbsp; Y: <span id="cy">0</span> &nbsp; Z: <span id="cz">1.0</span>x
+</div>
+
+<div id="zoom-controls">
+    <button class="zoom-btn" onclick="camera.zoom = Math.min(3.0, camera.zoom + 0.2)">+</button>
+    <button class="zoom-btn" onclick="camera.zoom = 1.0" style="font-size:9px; letter-spacing:-1px;">1:1</button>
+    <button class="zoom-btn" onclick="camera.zoom = Math.max(0.4, camera.zoom - 0.2)">−</button>
+</div>
+
+<canvas id="circuitCanvas"></canvas>
+
+<!-- MODAL -->
+<div id="modal">
+    <div class="modal-header">
+        <div class="modal-header-bar"></div>
+        <div id="m-title">CONFIGURAR</div>
+    </div>
+    <div class="modal-body">
+        <div class="modal-row" id="m-val-row">
+            <div class="modal-input-group">
+                <input type="number" id="m-val">
+                <span id="m-unit"></span>
+            </div>
+        </div>
+        <textarea id="m-code-area" spellcheck="false" placeholder="// Escribe código LOG aquí..."></textarea>
+        <div class="modal-actions">
+            <button class="modal-btn modal-btn-toggle" id="m-toggle" onclick="toggleCompType()" style="display:none;">TIPO: NPN</button>
+            <button class="modal-btn" onclick="saveCfg()">GUARDAR</button>
+            <button class="modal-btn" onclick="closeCfg()">CERRAR</button>
+            <button class="modal-btn modal-btn-rep" id="m-repair" onclick="repairCfg()" style="display:none;">REPARAR</button>
+        </div>
+    </div>
+</div>
+
+<!-- MANUAL SCREEN -->
+<div id="manual-screen">
+    <button class="close-manual" onclick="toggleManual()">CERRAR ✕</button>
+    <div class="manual-inner">
+        <h2>MANUAL DE USUARIO — SIMULIC PRO</h2>
+
         <h4>1. INTRODUCCIÓN</h4>
         <p>Bienvenido a Simulic Pro, un entorno de simulación electrónica donde la física importa. Aquí puedes crear circuitos complejos, lógica digital y automatización.</p>
 
@@ -138,7 +825,7 @@
             <li><code>loop{ ... }</code> : Ejecuta el código interno en bucle infinito.</li>
             <li><code>if var==HIGH { ... }</code> : Lee voltaje externo.</li>
         </ul>
-        
+
         <h4>4. PANTALLAS OLED (I2C)</h4>
         <p>Conecta el pin SCL del Radion al SCL de la pantalla OLED y el SDA al SDA (además de darles energía). Luego usa:</p>
         <ul>
@@ -148,14 +835,21 @@
             <li><code>oled.clear</code> : Limpia toda la pantalla.</li>
         </ul>
     </div>
-
-    <div id="context-menu">
-        <div class="ctx-item" onclick="ctxAction('use')">👆 Usar</div>
-        <div class="ctx-item" onclick="ctxAction('cfg')">⚙️ Ajustar</div>
-        <div class="ctx-item" onclick="ctxAction('rot')">🔄 Rotar</div>
-        <div class="ctx-item" onclick="ctxAction('del')" style="color:#e74c3c">🗑️ Borrar</div>
-    </div>
 </div>
+
+<!-- CONTEXT MENU -->
+<div id="context-menu">
+    <div class="ctx-header">ACCIONES</div>
+    <div class="ctx-item" onclick="ctxAction('use')"><span class="ctx-icon">▶</span>Usar</div>
+    <div class="ctx-item" onclick="ctxAction('cfg')"><span class="ctx-icon">⚙</span>Ajustar</div>
+    <div class="ctx-item" onclick="ctxAction('rot')"><span class="ctx-icon">↻</span>Rotar</div>
+    <div class="ctx-item danger" onclick="ctxAction('del')" style="color:#ff4455"><span class="ctx-icon">✕</span>Borrar</div>
+</div>
+```
+
+</div>
+
+<!-- VIRTUAL CONTROLS -->
 
 <div id="virtual-controls">
     <div class="dpad">
@@ -175,6 +869,13 @@
 </div>
 
 <script>
+    // Coords display update
+    function updateCoordsDisplay() {
+        document.getElementById('cx').textContent = Math.round(vMouse.x);
+        document.getElementById('cy').textContent = Math.round(vMouse.y);
+        document.getElementById('cz').textContent = camera.zoom.toFixed(1);
+    }
+
     let isDesktopMode = false;
 
     function toggleMode() {
@@ -185,13 +886,11 @@
         if (isDesktopMode) {
             body.classList.add('desktop-mode');
             btn.innerText = "🖥️ PC";
-            btn.style.borderColor = "#00ff41";
             btn.style.color = "#00ff41";
         } else {
             body.classList.remove('desktop-mode');
             btn.innerText = "📱 MÓVIL";
-            btn.style.borderColor = "#3498db";
-            btn.style.color = "#3498db";
+            btn.style.color = "#00aaff";
         }
         resize();
     }
@@ -232,7 +931,6 @@
         ]
     };
 
-    // DEFINICIÓN DE DEMOS
     const demos = {
         'EMPTY': { label: 'VACÍO (LIMPIAR)', func: () => { clearAll(true); } },
         'BASIC': { label: 'ELECTRICIDAD BÁSICA', func: () => loadBasicDemo() },
@@ -255,8 +953,9 @@
                 const btn = document.createElement('button');
                 btn.className = 'spawn-btn';
                 btn.innerText = d.label;
-                btn.style.borderColor = '#9b59b6';
-                if(key === 'OLED') btn.style.color = '#e67e22'; 
+                btn.style.borderColor = '#5a2a8a';
+                btn.style.color = '#c090ff';
+                if(key === 'OLED') { btn.style.color = '#ffaa44'; btn.style.borderColor = '#664400'; }
                 btn.onclick = d.func;
                 sub.appendChild(btn);
             });
@@ -266,10 +965,10 @@
                 btn.className = 'spawn-btn';
                 btn.innerText = comp.label;
                 btn.onclick = () => spawn(comp.id);
-                if (cat === 'digital') btn.style.borderColor = '#3498db';
-                if (comp.id === 'RSK90') btn.style.color = '#e67e22';
-                if (comp.id === 'RADION') { btn.style.borderColor = '#2ecc71'; btn.style.color = '#2ecc71'; }
-                if (comp.id === 'OLED_I2C') { btn.style.borderColor = '#e67e22'; btn.style.color = '#e67e22'; }
+                if (cat === 'digital') btn.style.borderColor = '#004488';
+                if (comp.id === 'RSK90') btn.style.color = '#ff9900';
+                if (comp.id === 'RADION') { btn.style.borderColor = '#1a6a30'; btn.style.color = '#40ff80'; }
+                if (comp.id === 'OLED_I2C') { btn.style.borderColor = '#664400'; btn.style.color = '#ffaa44'; }
                 sub.appendChild(btn);
             });
         }
@@ -286,54 +985,35 @@
     function loadBasicDemo() {
         clearAll(true);
         camera.x = 0; camera.y = 0; camera.zoom = 1.0;
-        
         const bat = spawn('BATTERY', -150, -50);
         const res = spawn('RESISTOR', -20, -100);
         const sw = spawn('SWITCH', -20, 0);
         const led = spawn('LED', 120, -50);
-
-        connect(bat, 0, res, 0); 
-        connect(res, 1, led, 0); 
-        connect(led, 1, sw, 1);  
-        connect(sw, 0, bat, 1);  
-        
+        connect(bat, 0, res, 0); connect(res, 1, led, 0); connect(led, 1, sw, 1); connect(sw, 0, bat, 1);
         sw.closed = true;
     }
 
     function loadLogicDemo() {
         clearAll(true);
         camera.x = 0; camera.y = 0;
-        
         const sw1 = spawn('SWITCH', -180, -80);
         const sw2 = spawn('SWITCH', -180, 20);
         const andGate = spawn('AND', -30, -30);
-        const res = spawn('RESISTOR', 100, -30); 
-        res.val = 220;
+        const res = spawn('RESISTOR', 100, -30); res.val = 220;
         const led = spawn('LED', 200, -30);
         const bat = spawn('BATTERY', -250, 150);
-
-        connect(bat, 0, sw1, 0);
-        connect(bat, 0, sw2, 0);
-        connect(sw1, 1, andGate, 0);
-        connect(sw2, 1, andGate, 1);
-        
-        connect(andGate, 2, res, 0);
-        connect(res, 1, led, 0);
-        connect(led, 1, bat, 1); 
+        connect(bat, 0, sw1, 0); connect(bat, 0, sw2, 0);
+        connect(sw1, 1, andGate, 0); connect(sw2, 1, andGate, 1);
+        connect(andGate, 2, res, 0); connect(res, 1, led, 0); connect(led, 1, bat, 1);
     }
 
     function loadMotorDemo() {
         clearAll(true);
         const bat = spawn('BATTERY', -120, -50);
-        const res = spawn('RESISTOR', -20, -120); 
-        res.val = 10; 
+        const res = spawn('RESISTOR', -20, -120); res.val = 10;
         const btn = spawn('PUSH_BTN', 60, -50);
         const motor = spawn('MOTOR', 60, 50);
-        
-        connect(bat, 0, res, 0);
-        connect(res, 1, motor, 0);
-        connect(motor, 1, btn, 0);
-        connect(btn, 1, bat, 1);
+        connect(bat, 0, res, 0); connect(res, 1, motor, 0); connect(motor, 1, btn, 0); connect(btn, 1, bat, 1);
     }
 
     function loadRadionDemo() {
@@ -342,26 +1022,10 @@
         const led1 = spawn('LED', 150, -80);
         const led2 = spawn('LED', 150, 20);
         const bat = spawn('BATTERY', -200, 0);
-        
-        connect(bat, 0, radion, 0); 
-        connect(bat, 1, radion, 1); 
-        connect(radion, 3, led1, 0); 
-        connect(led1, 1, radion, 2); 
-        connect(radion, 4, led2, 0); 
-        connect(led2, 1, radion, 2); 
-        
-        radion.code = `start<
-pin1=D1
-pin2=D2
-loop{
-  pin1;HIGH
-  delay 200
-  pin1;LOW
-  pin2;HIGH
-  delay 200
-  pin2;LOW
-}
-end>`;
+        connect(bat, 0, radion, 0); connect(bat, 1, radion, 1);
+        connect(radion, 3, led1, 0); connect(led1, 1, radion, 2);
+        connect(radion, 4, led2, 0); connect(led2, 1, radion, 2);
+        radion.code = `start<\npin1=D1\npin2=D2\nloop{\n  pin1;HIGH\n  delay 200\n  pin1;LOW\n  pin2;HIGH\n  delay 200\n  pin2;LOW\n}\nend>`;
         radion.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
     }
 
@@ -371,26 +1035,10 @@ end>`;
         const led = spawn('LED', 150, -20);
         const btn = spawn('PUSH_BTN', -180, 20);
         const bat = spawn('BATTERY', -250, -100);
-        
-        connect(bat, 0, radion, 0);
-        connect(bat, 1, radion, 1); 
-        connect(bat, 0, btn, 0);    
-        connect(btn, 1, radion, 4); 
-        connect(radion, 3, led, 0); 
-        connect(led, 1, radion, 2); 
-        
-        radion.code = `start<
-pinLed=D1
-pinBtn=D2
-loop{
-  if pinBtn==HIGH {
-    pinLed;HIGH
-  }
-  if pinBtn==LOW {
-    pinLed;LOW
-  }
-}
-end>`;
+        connect(bat, 0, radion, 0); connect(bat, 1, radion, 1);
+        connect(bat, 0, btn, 0); connect(btn, 1, radion, 4);
+        connect(radion, 3, led, 0); connect(led, 1, radion, 2);
+        radion.code = `start<\npinLed=D1\npinBtn=D2\nloop{\n  if pinBtn==HIGH {\n    pinLed;HIGH\n  }\n  if pinBtn==LOW {\n    pinLed;LOW\n  }\n}\nend>`;
         radion.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
     }
 
@@ -399,31 +1047,10 @@ end>`;
         const radion = spawn('RADION', -100, -30);
         const oled = spawn('OLED_I2C', 100, -30);
         const bat = spawn('BATTERY', -260, -30);
-        
-        // Alimentar Radion
-        connect(bat, 0, radion, 0); 
-        connect(bat, 1, radion, 1); 
-        
-        // Alimentar OLED
-        connect(bat, 0, oled, 0); 
-        connect(bat, 1, oled, 1); 
-        
-        // I2C 
-        connect(radion, 6, oled, 2); // SCL
-        connect(radion, 7, oled, 3); // SDA
-        
-        radion.code = `start<
-oled.init
-oled.println "HELLO WORLD!"
-delay 1000
-oled.println "RADION 1.1 I2C"
-delay 1000
-oled.println "STATUS: OK"
-loop{
-  delay 500
-  oled.print "."
-}
-end>`;
+        connect(bat, 0, radion, 0); connect(bat, 1, radion, 1);
+        connect(bat, 0, oled, 0); connect(bat, 1, oled, 1);
+        connect(radion, 6, oled, 2); connect(radion, 7, oled, 3);
+        radion.code = `start<\noled.init\noled.println "HELLO WORLD!"\ndelay 1000\noled.println "RADION 1.1 I2C"\ndelay 1000\noled.println "STATUS: OK"\nloop{\n  delay 500\n  oled.print "."\n}\nend>`;
         radion.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
     }
 
@@ -437,16 +1064,15 @@ end>`;
     const vMouse = { x: 0, y: 0, speed: 4, isDown: false, lastDown: false, moving: {}, selectionMode: false };
     let draggingComp = null, drawingCable = null, rotAnim = 0, time = 0;
     let targetCfg = null;
-    let selectionBox = null; 
-    let selectedItems = []; 
+    let selectionBox = null;
+    let selectedItems = [];
     let camera = { x: 0, y: 0, zoom: 1.0 };
     let contextTarget = null;
-    let isPanning = false; 
+    let isPanning = false;
 
     function resize() { canvas.width = container.clientWidth; canvas.height = container.clientHeight; }
     window.addEventListener('resize', resize); resize();
 
-    // --- INPUT HANDLERS ---
     canvas.addEventListener('wheel', (e) => {
         if (!isDesktopMode) return;
         e.preventDefault();
@@ -456,111 +1082,67 @@ end>`;
 
     canvas.addEventListener('mousemove', (e) => {
         if (!isDesktopMode) return;
-        if (isPanning) {
-            camera.x -= e.movementX / camera.zoom;
-            camera.y -= e.movementY / camera.zoom;
-            return; 
-        }
+        if (isPanning) { camera.x -= e.movementX / camera.zoom; camera.y -= e.movementY / camera.zoom; return; }
         const rect = canvas.getBoundingClientRect();
         vMouse.x = ((e.clientX - rect.left) / camera.zoom) + camera.x - (canvas.width / 2) / camera.zoom;
         vMouse.y = ((e.clientY - rect.top) / camera.zoom) + camera.y - (canvas.height / 2) / camera.zoom;
-
-        if (selectionBox) {
-            selectionBox.w = vMouse.x - selectionBox.x;
-            selectionBox.h = vMouse.y - selectionBox.y;
-        }
+        if (selectionBox) { selectionBox.w = vMouse.x - selectionBox.x; selectionBox.h = vMouse.y - selectionBox.y; }
+        updateCoordsDisplay();
     });
 
     canvas.addEventListener('mousedown', (e) => {
         if (!isDesktopMode) return;
-        if (e.button === 1) {
-            e.preventDefault();
-            isPanning = true;
-            canvas.style.cursor = 'grabbing';
-            return;
-        }
-        if (e.button !== 0) return; 
-        
+        if (e.button === 1) { e.preventDefault(); isPanning = true; canvas.style.cursor = 'grabbing'; return; }
+        if (e.button !== 0) return;
         document.getElementById('context-menu').style.display = 'none';
-
         let nHit = null;
         components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c, n}; }));
-        
-        if (nHit) {
-            drawingCable = nHit;
-        } else {
+        if (nHit) { drawingCable = nHit; } 
+        else {
             let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
             if (compHit) {
-                if (selectedItems.includes(compHit)) { 
-                    draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; 
-                } else { 
-                    selectedItems.forEach(c => c.selected = false); selectedItems = []; 
-                    draggingComp = {c: compHit, ox:vMouse.x-compHit.x, oy:vMouse.y-compHit.y}; 
-                }
-            } else {
-                selectedItems.forEach(c => c.selected = false); selectedItems = [];
-                selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 };
-            }
+                if (selectedItems.includes(compHit)) { draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; }
+                else { selectedItems.forEach(c => c.selected = false); selectedItems = []; draggingComp = {c: compHit, ox:vMouse.x-compHit.x, oy:vMouse.y-compHit.y}; }
+            } else { selectedItems.forEach(c => c.selected = false); selectedItems = []; selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 }; }
         }
     });
 
     canvas.addEventListener('contextmenu', (e) => {
         if (!isDesktopMode) return;
         e.preventDefault();
-        
         let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
-        
         if (compHit) {
             contextTarget = compHit;
             const menu = document.getElementById('context-menu');
             menu.style.display = 'block';
             menu.style.left = e.clientX + 'px';
             menu.style.top = e.clientY + 'px';
-        } else {
-            document.getElementById('context-menu').style.display = 'none';
-        }
+        } else { document.getElementById('context-menu').style.display = 'none'; }
     });
 
     canvas.addEventListener('mouseup', (e) => {
         if (!isDesktopMode) return;
-        if (e.button === 1) {
-            isPanning = false;
-            canvas.style.cursor = 'crosshair';
-            return;
-        }
-        
+        if (e.button === 1) { isPanning = false; canvas.style.cursor = 'crosshair'; return; }
         if (drawingCable) {
             let targetHit = null;
             components.forEach(c => c.nodes.forEach(n => { if (c!==drawingCable.c && Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) targetHit = {c, n}; }));
             if (targetHit) connections.push({a:drawingCable, b:targetHit});
             else { const waypoint = spawn('WAYPOINT'); connections.push({a:drawingCable, b:{c:waypoint, n:waypoint.nodes[0]}}); }
         }
-
-        if (selectionBox) {
-            applySelection();
-            selectionBox = null;
-        }
-
+        if (selectionBox) { applySelection(); selectionBox = null; }
         draggingComp = drawingCable = null;
     });
 
     function ctxAction(action) {
         document.getElementById('context-menu').style.display = 'none';
         if (!contextTarget) return;
-
         if (action === 'del') {
             components = components.filter(c => c !== contextTarget);
             connections = connections.filter(conn => components.includes(conn.a.c) && components.includes(conn.b.c));
             if(selectedItems.includes(contextTarget)) selectedItems = [];
-        } else if (action === 'rot') {
-            rotateComponent(contextTarget);
-        } else if (action === 'cfg') {
-            openCfg(contextTarget);
-        } else if (action === 'use') {
-             if (contextTarget.type === 'SWITCH' || contextTarget.type === 'PUSH_BTN') {
-                 contextTarget.closed = !contextTarget.closed;
-             }
-        }
+        } else if (action === 'rot') { rotateComponent(contextTarget); }
+        else if (action === 'cfg') { openCfg(contextTarget); }
+        else if (action === 'use') { if (contextTarget.type === 'SWITCH' || contextTarget.type === 'PUSH_BTN') contextTarget.closed = !contextTarget.closed; }
         contextTarget = null;
     }
 
@@ -579,20 +1161,15 @@ end>`;
         el.addEventListener('touchstart', (e) => { if(!isDesktopMode) { e.preventDefault(); fn(true); } }); el.addEventListener('touchend', (e) => { if(!isDesktopMode) { e.preventDefault(); fn(false); } });
     };
     setupBtn('vClick', (v) => vMouse.isDown = v);
-    
+
     setupBtn('vSel', (v) => {
         vMouse.selectionMode = v;
-        if (v) { selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 }; } 
-        else {
-            if (selectionBox && Math.abs(selectionBox.w) > 5) applySelection();
-            selectionBox = null;
-        }
+        if (v) { selectionBox = { x: vMouse.x, y: vMouse.y, w: 0, h: 0 }; }
+        else { if (selectionBox && Math.abs(selectionBox.w) > 5) applySelection(); selectionBox = null; }
     });
 
-    function clearAll(force = false) { 
-        if(force || confirm("¿Borrar todo?")) { 
-            components = []; connections = []; selectedItems = []; drawingCable = null; 
-        } 
+    function clearAll(force = false) {
+        if(force || confirm("¿Borrar todo?")) { components = []; connections = []; selectedItems = []; drawingCable = null; }
     }
 
     function applySelection() {
@@ -618,7 +1195,7 @@ end>`;
         if (selectedItems.length > 0) {
             components = components.filter(c => !selectedItems.includes(c));
             connections = connections.filter(conn => components.includes(conn.a.c) && components.includes(conn.b.c));
-            selectedItems = []; return; 
+            selectedItems = []; return;
         }
         let cableDeleted = false;
         connections = connections.filter(conn => {
@@ -635,7 +1212,7 @@ end>`;
     });
 
     document.getElementById('vRot').addEventListener('click', () => {
-        if(selectedItems.length > 0) { selectedItems.forEach(c => { if(c.type !== 'WAYPOINT') rotateComponent(c); }); } 
+        if(selectedItems.length > 0) { selectedItems.forEach(c => { if(c.type !== 'WAYPOINT') rotateComponent(c); }); }
         else {
             const hit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
             if (hit && hit.type !== 'WAYPOINT') rotateComponent(hit);
@@ -648,7 +1225,7 @@ end>`;
         c.nodes.forEach(n => { const dx = n.x - cx; const dy = n.y - cy; n.x = cx - dy; n.y = cy + dx; });
         [c.w, c.h] = [c.h, c.w];
     }
-    
+
     const vUseBtn = document.getElementById('vUse');
     const handleUse = (active) => {
         components.filter(c => c.type === 'PUSH_BTN').forEach(c => {
@@ -656,8 +1233,8 @@ end>`;
             if(!active) c.closed = false;
         });
         if (active) {
-            components.forEach(c => { 
-                if(c.type==='SWITCH' && vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h) c.closed = !c.closed; 
+            components.forEach(c => {
+                if(c.type==='SWITCH' && vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h) c.closed = !c.closed;
             });
         }
     };
@@ -672,33 +1249,29 @@ end>`;
         if (hit) openCfg(hit);
     });
 
-    function openCfg(c) { 
-        targetCfg=c; 
-        document.getElementById('modal').style.display='block'; 
-        document.getElementById('m-title').innerText=c.type; 
+    function openCfg(c) {
+        targetCfg = c;
+        document.getElementById('modal').style.display = 'block';
+        document.getElementById('m-title').innerText = c.type;
         const isBatResCap = c.type==='BATTERY'||c.type==='RESISTOR'||c.type==='CAPACITOR';
-        document.getElementById('m-val').style.display=isBatResCap?'inline-block':'none'; 
-        if(isBatResCap) document.getElementById('m-val').value=c.val||0; 
-        
+        const valRow = document.getElementById('m-val-row');
+        valRow.style.display = isBatResCap ? 'flex' : 'none';
+        document.getElementById('m-val').style.display = isBatResCap ? 'block' : 'none';
+        if(isBatResCap) document.getElementById('m-val').value = c.val || 0;
         let unit = '';
         if(c.type==='BATTERY') unit='V'; else if(c.type==='RESISTOR') unit='Ω'; else if(c.type==='CAPACITOR') unit='uF';
-        document.getElementById('m-unit').innerText=unit; 
-        document.getElementById('m-repair').style.display=c.burned?'inline-block':'none';
-        
+        document.getElementById('m-unit').innerText = unit;
+        document.getElementById('m-repair').style.display = c.burned ? 'inline-block' : 'none';
         const toggleBtn = document.getElementById('m-toggle');
-        if (c.type === 'TRANSISTOR') { toggleBtn.style.display = 'inline-block'; toggleBtn.innerText = "TIPO: " + c.mode; } 
+        if (c.type === 'TRANSISTOR') { toggleBtn.style.display = 'inline-block'; toggleBtn.innerText = "TIPO: " + c.mode; }
         else { toggleBtn.style.display = 'none'; }
-
         const codeArea = document.getElementById('m-code-area');
         if (c.type === 'RADION') {
-            codeArea.style.display = 'block';
-            codeArea.value = c.code;
-            c.intState = { pc: 0, wait: 0, vars: {}, parsed: null }; 
-        } else {
-            codeArea.style.display = 'none';
-        }
+            codeArea.style.display = 'block'; codeArea.value = c.code;
+            c.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
+        } else { codeArea.style.display = 'none'; }
     }
-    
+
     function toggleCompType() {
         if (targetCfg && targetCfg.type === 'TRANSISTOR') {
             targetCfg.mode = targetCfg.mode === 'NPN' ? 'PNP' : 'NPN';
@@ -706,49 +1279,43 @@ end>`;
         }
     }
 
-    function closeCfg() { document.getElementById('modal').style.display='none'; targetCfg=null; }
-    
-    function saveCfg() { 
+    function closeCfg() { document.getElementById('modal').style.display = 'none'; targetCfg = null; }
+
+    function saveCfg() {
         if(targetCfg) {
-            if (targetCfg.type === 'BATTERY' || targetCfg.type === 'RESISTOR' || targetCfg.type === 'CAPACITOR') { 
-                targetCfg.val = Math.max(0.1, parseFloat(document.getElementById('m-val').value) || 0); 
-            } 
+            if (targetCfg.type === 'BATTERY' || targetCfg.type === 'RESISTOR' || targetCfg.type === 'CAPACITOR') {
+                targetCfg.val = Math.max(0.1, parseFloat(document.getElementById('m-val').value) || 0);
+            }
             if (targetCfg.type === 'RADION') {
                 targetCfg.code = document.getElementById('m-code-area').value;
                 targetCfg.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
             }
         }
-        closeCfg(); 
+        closeCfg();
     }
-    function repairCfg() { if(targetCfg) targetCfg.burned=false; closeCfg(); }
+
+    function repairCfg() { if(targetCfg) targetCfg.burned = false; closeCfg(); }
 
     function spawn(type, xOpt, yOpt) {
         const tx = (xOpt !== undefined) ? xOpt : vMouse.x;
         const ty = (yOpt !== undefined) ? yOpt : vMouse.y;
-
         const comp = { type, x: tx-50, y: ty-30, w: 100, h: 60, nodes: [], state: 0, active: false, burned: false, rotation: 0, selected: false };
         if (type === 'BATTERY') { comp.nodes = [{id:'+', x:0, y:30}, {id:'-', x:100, y:30}]; comp.val = 9; }
         else if (type === 'LED') comp.nodes = [{id:'A', x:0, y:30}, {id:'C', x:100, y:30}];
         else if (type === 'MOTOR') comp.nodes = [{id:'M1', x:0, y:30}, {id:'M2', x:100, y:30}];
-        else if (type === 'SWITCH' || type === 'PUSH_BTN') { comp.closed = false; comp.nodes = [{id:'1', x:0, y:30}, {id:'2', x:100, y:30}]; } 
+        else if (type === 'SWITCH' || type === 'PUSH_BTN') { comp.closed = false; comp.nodes = [{id:'1', x:0, y:30}, {id:'2', x:100, y:30}]; }
         else if (type === 'CAPACITOR') { comp.nodes = [{id:'+', x:0, y:30}, {id:'-', x:100, y:30}]; comp.charge = 0; comp.val = 10; }
         else if (type === 'TRANSISTOR') { comp.nodes = [{id:'C', x:20, y:10}, {id:'B', x:20, y:50}, {id:'E', x:80, y:30}]; comp.mode = 'NPN'; }
         else if (type === 'RESISTOR') { comp.nodes = [{id:'R1', x:0, y:30}, {id:'R2', x:100, y:30}]; comp.val = 330; }
         else if (type === 'RELAY') { comp.nodes = [{id:'C+', x:10, y:15}, {id:'C-', x:10, y:45}, {id:'COM', x:90, y:20}, {id:'NO', x:90, y:40}]; comp.coilState = false; }
-        else if (type === 'MUX') {
-            comp.nodes = [{id:'A', x:0, y:15}, {id:'B', x:0, y:45}, {id:'S', x:50, y:50}, {id:'OUT', x:100, y:30}];
-            comp.selState = false;
-        }
-        else if (type === 'AND' || type === 'OR' || type === 'XOR') comp.nodes = [{id:'I1', x:0, y:15}, {id:'I2', x:0, y:45}, {id:'OUT', x:100, y:30}]; 
+        else if (type === 'MUX') { comp.nodes = [{id:'A', x:0, y:15}, {id:'B', x:0, y:45}, {id:'S', x:50, y:50}, {id:'OUT', x:100, y:30}]; comp.selState = false; }
+        else if (type === 'AND' || type === 'OR' || type === 'XOR') comp.nodes = [{id:'I1', x:0, y:15}, {id:'I2', x:0, y:45}, {id:'OUT', x:100, y:30}];
         else if (type === 'NOT') comp.nodes = [{id:'PWR', x:0, y:15}, {id:'IN', x:0, y:45}, {id:'OUT', x:100, y:30}];
-        else if (type === 'RSK90') {
-            comp.nodes = [{id:'VCC', x:20, y:10}, {id:'GND', x:20, y:50}, {id:'OUT', x:80, y:30}];
-            comp.lastTick = 0; comp.clockState = false;
-        }
+        else if (type === 'RSK90') { comp.nodes = [{id:'VCC', x:20, y:10}, {id:'GND', x:20, y:50}, {id:'OUT', x:80, y:30}]; comp.lastTick = 0; comp.clockState = false; }
         else if (type === 'RADION') {
             comp.w = 110; comp.h = 110;
             comp.nodes = [
-                {id:'VCC', x:15, y:15}, {id:'GND', x:15, y:35}, {id:'G', x:15, y:55}, 
+                {id:'VCC', x:15, y:15}, {id:'GND', x:15, y:35}, {id:'G', x:15, y:55},
                 {id:'D1', x:95, y:15}, {id:'D2', x:95, y:35}, {id:'D3', x:95, y:55},
                 {id:'SCL', x:95, y:75}, {id:'SDA', x:95, y:95}
             ];
@@ -770,30 +1337,19 @@ end>`;
     }
 
     function preprocessCode(code) {
-        const lines = code.split('\n');
-        let blocks = {};
-        let stack = [];
+        const lines = code.split('\n'); let blocks = {}; let stack = [];
         for (let i = 0; i < lines.length; i++) {
             let l = lines[i].trim();
-            if (l.endsWith('{')) {
-                stack.push(i);
-            } else if (l === '}') {
-                if(stack.length > 0) {
-                    let start = stack.pop();
-                    blocks[start] = i; 
-                    blocks[i] = start; 
-                }
-            }
+            if (l.endsWith('{')) { stack.push(i); }
+            else if (l === '}') { if(stack.length > 0) { let start = stack.pop(); blocks[start] = i; blocks[i] = start; } }
         }
         return { lines, blocks };
     }
 
-    // Funciones lógicas para I2C simulado sobre cables físicos
     function traceWire(startNode) {
         let q = [startNode]; let visited = []; let foundComps = [];
         while(q.length > 0) {
-            let curr = q.shift();
-            visited.push(curr);
+            let curr = q.shift(); visited.push(curr);
             connections.forEach(conn => {
                 let next = null;
                 if (conn.a.n === curr) next = conn.b.n;
@@ -819,9 +1375,7 @@ end>`;
         let oled = null;
         sclComps.forEach(sc => {
             if (sc.comp.type === 'OLED_I2C' && sc.node.id === 'SCL') {
-                sdaComps.forEach(sd => {
-                    if (sd.comp === sc.comp && sd.node.id === 'SDA') oled = sc.comp;
-                });
+                sdaComps.forEach(sd => { if (sd.comp === sc.comp && sd.node.id === 'SDA') oled = sc.comp; });
             }
         });
         return oled;
@@ -830,67 +1384,49 @@ end>`;
     function runRadionLogic(c) {
         if (!c.active || c.burned) {
             c.memory.d1 = false; c.memory.d2 = false; c.memory.d3 = false;
-            c.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
-            return;
+            c.intState = { pc: 0, wait: 0, vars: {}, parsed: null }; return;
         }
-        
         if (!c.intState) c.intState = { pc: 0, wait: 0, vars: {}, parsed: null };
         if (!c.intState.parsed) c.intState.parsed = preprocessCode(c.code);
-        
         const now = Date.now();
         if (c.intState.wait > now) return;
-
         const { lines, blocks } = c.intState.parsed;
-        let instructionsExecuted = 0;
-        const maxInstructions = 30; 
-
+        let instructionsExecuted = 0; const maxInstructions = 30;
         while(instructionsExecuted < maxInstructions) {
             if (c.intState.pc >= lines.length) break;
-
             let line = lines[c.intState.pc].trim();
-            if (!line || line.startsWith('//') || line === 'start<' || line === 'end>') { 
-                c.intState.pc++; instructionsExecuted++; continue; 
-            }
-
+            if (!line || line.startsWith('//') || line === 'start<' || line === 'end>') { c.intState.pc++; instructionsExecuted++; continue; }
             if (line.startsWith('if ')) {
-                let match = line.match(/if\s+(.+)==(HIGH|LOW)\s*\{/);
-                let conditionTrue = false;
+                let match = line.match(/if\s+(.+)==(HIGH|LOW)\s*\{/); let conditionTrue = false;
                 if (match) {
                     let varName = match[1].trim(); let state = match[2];
-                    let physPin = c.intState.vars[varName];
-                    let pinVal = false;
+                    let physPin = c.intState.vars[varName]; let pinVal = false;
                     if (physPin === 'D1') pinVal = c.nodes[3].signal;
                     if (physPin === 'D2') pinVal = c.nodes[4].signal;
                     if (physPin === 'D3') pinVal = c.nodes[5].signal;
-                    
                     conditionTrue = (state === 'HIGH') ? pinVal : !pinVal;
                 }
-                if (conditionTrue) c.intState.pc++; 
+                if (conditionTrue) c.intState.pc++;
                 else c.intState.pc = (blocks[c.intState.pc] !== undefined) ? blocks[c.intState.pc] + 1 : c.intState.pc + 1;
-            } 
-            else if (line.endsWith('{')) {
-                c.intState.pc++;
             }
+            else if (line.endsWith('{')) { c.intState.pc++; }
             else if (line === '}') {
                 let startLine = blocks[c.intState.pc];
                 if (startLine !== undefined) {
                     let startText = lines[startLine].trim();
-                    if (startText.startsWith('loop')) { c.intState.pc = startLine + 1; instructionsExecuted++; continue; } 
-                    else c.intState.pc++; 
+                    if (startText.startsWith('loop')) { c.intState.pc = startLine + 1; instructionsExecuted++; continue; }
+                    else c.intState.pc++;
                 } else c.intState.pc++;
             }
             else if (line.startsWith('delay')) {
-                 const parts = line.split(' ');
-                 const ms = parseInt(parts[1]) || 100;
-                 c.intState.wait = now + ms;
-                 c.intState.pc++; return; 
+                const parts = line.split(' '); const ms = parseInt(parts[1]) || 100;
+                c.intState.wait = now + ms; c.intState.pc++; return;
             }
             else if (line.startsWith('oled.')) {
                 let oled = getI2C_OLED(c);
                 if (oled && oled.active && !oled.burned) {
-                    if (line === 'oled.init') {
-                        oled.textLines = [""]; oled.initialized = true;
-                    } else if (line.startsWith('oled.print ')) {
+                    if (line === 'oled.init') { oled.textLines = [""]; oled.initialized = true; }
+                    else if (line.startsWith('oled.print ')) {
                         if (oled.initialized) {
                             let text = line.substring(11).replace(/"/g, '');
                             if(oled.textLines.length === 0) oled.textLines.push("");
@@ -901,12 +1437,10 @@ end>`;
                             let text = line.substring(13).replace(/"/g, '');
                             if(oled.textLines.length === 0) oled.textLines.push("");
                             oled.textLines[oled.textLines.length - 1] += text;
-                            if (oled.textLines.length >= 4) oled.textLines.shift(); // Max líneas
+                            if (oled.textLines.length >= 4) oled.textLines.shift();
                             oled.textLines.push("");
                         }
-                    } else if (line === 'oled.clear') {
-                        if (oled.initialized) oled.textLines = [""];
-                    }
+                    } else if (line === 'oled.clear') { if (oled.initialized) oled.textLines = [""]; }
                 }
                 c.intState.pc++;
             }
@@ -916,42 +1450,34 @@ end>`;
                 c.intState.pc++;
             }
             else if (line.includes(';')) {
-                const parts = line.split(';');
-                const varName = parts[0].trim(); const state = parts[1].trim();
+                const parts = line.split(';'); const varName = parts[0].trim(); const state = parts[1].trim();
                 const physicalPin = c.intState.vars[varName];
                 if (physicalPin === 'D1') c.memory.d1 = (state === 'HIGH');
                 if (physicalPin === 'D2') c.memory.d2 = (state === 'HIGH');
                 if (physicalPin === 'D3') c.memory.d3 = (state === 'HIGH');
                 c.intState.pc++;
             }
-            else c.intState.pc++; 
+            else c.intState.pc++;
             instructionsExecuted++;
         }
     }
 
     function updatePhysics() {
-        components.forEach(c => { 
-            c.state = 0; 
-            if(c.type !== 'CAPACITOR') c.active = false; 
-            if(c.type === 'RELAY') c.coilActiveThisFrame = false; 
+        components.forEach(c => {
+            c.state = 0;
+            if(c.type !== 'CAPACITOR') c.active = false;
+            if(c.type === 'RELAY') c.coilActiveThisFrame = false;
         });
         connections.forEach(conn => { conn.active = false; conn.flowDir = 1; });
-
         components.filter(c => c.type === 'CAPACITOR').forEach(cap => {
-            if (cap.charge > 0) cap.isSource = true;
-            else { cap.isSource = false; cap.active = false; }
+            if (cap.charge > 0) cap.isSource = true; else { cap.isSource = false; cap.active = false; }
         });
-
         components.forEach(c => c.nodes.forEach(n => n.signal = false));
-        
-        const sources = components.filter(c => 
-            (c.type === 'BATTERY' || 
-             (c.type === 'CAPACITOR' && c.isSource) || 
+        const sources = components.filter(c =>
+            (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource) ||
              (c.type === 'RSK90' && c.clockState) ||
-             (c.type === 'RADION' && (c.memory.d1 || c.memory.d2 || c.memory.d3))) 
-            && !c.burned
+             (c.type === 'RADION' && (c.memory.d1 || c.memory.d2 || c.memory.d3))) && !c.burned
         );
-
         sources.forEach(src => {
             let startNodes = [];
             if (src.type === 'BATTERY' || src.type === 'CAPACITOR') startNodes.push(src.nodes[0]);
@@ -961,7 +1487,6 @@ end>`;
                 if (src.memory.d2) startNodes.push(src.nodes[4]);
                 if (src.memory.d3) startNodes.push(src.nodes[5]);
             }
-
             startNodes.forEach(startNode => {
                 let q = [startNode]; startNode.signal = true;
                 while(q.length > 0) {
@@ -978,22 +1503,18 @@ end>`;
                             const sel = comp.selState;
                             if (curr === comp.nodes[0]) { if (!sel && !comp.nodes[3].signal) { comp.nodes[3].signal=true; q.push(comp.nodes[3]); } }
                             else if (curr === comp.nodes[1]) { if (sel && !comp.nodes[3].signal) { comp.nodes[3].signal=true; q.push(comp.nodes[3]); } }
-                            else if (curr === comp.nodes[3]) {
-                                let dest = sel ? comp.nodes[1] : comp.nodes[0];
-                                if(!dest.signal) { dest.signal=true; q.push(dest); }
-                            }
-                            continue; 
+                            else if (curr === comp.nodes[3]) { let dest = sel ? comp.nodes[1] : comp.nodes[0]; if(!dest.signal) { dest.signal=true; q.push(dest); } }
+                            continue;
                         }
                         if (comp.type === 'LED' && curr !== comp.nodes[0]) continue;
-                        if (comp.type === 'CAPACITOR' && curr !== comp.nodes[0]) continue; 
+                        if (comp.type === 'CAPACITOR' && curr !== comp.nodes[0]) continue;
                         if (comp.type === 'TRANSISTOR') continue;
-                        if (['AND', 'OR', 'NOT', 'XOR', 'RSK90', 'RADION', 'OLED_I2C'].includes(comp.type)) continue; 
+                        if (['AND', 'OR', 'NOT', 'XOR', 'RSK90', 'RADION', 'OLED_I2C'].includes(comp.type)) continue;
                         comp.nodes.forEach(n => { if (!n.signal) { n.signal = true; q.push(n); } });
                     }
                 }
             });
         });
-
         components.filter(c => (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource)) && !c.burned).forEach(bat => {
             let foundPaths = [];
             function dfs(currentNode, currentPath, visitedNodes) {
@@ -1004,13 +1525,12 @@ end>`;
                 });
                 const comp = components.find(c => c.nodes.includes(currentNode));
                 if (comp && comp !== bat && !comp.burned) {
-                    let outNodes = [];
-                    let direction = (currentNode === comp.nodes[0]) ? 1 : -1;
+                    let outNodes = []; let direction = (currentNode === comp.nodes[0]) ? 1 : -1;
                     if (comp.type === 'TRANSISTOR') {
                         if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[2]);
                         else if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]);
                     }
-                    else if (['AND', 'OR', 'NOT', 'XOR'].includes(comp.type)) { if (currentNode === comp.nodes[0] || currentNode === comp.nodes[1]) outNodes.push(comp.nodes[2]); } 
+                    else if (['AND', 'OR', 'NOT', 'XOR'].includes(comp.type)) { if (currentNode === comp.nodes[0] || currentNode === comp.nodes[1]) outNodes.push(comp.nodes[2]); }
                     else if (comp.type === 'RELAY') {
                         if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[1]);
                         if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
@@ -1024,9 +1544,9 @@ end>`;
                         if (currentNode === comp.nodes[3]) { if (sel) outNodes.push(comp.nodes[1]); else outNodes.push(comp.nodes[0]); }
                     }
                     else if (comp.type === 'RSK90') {
-                        if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); } 
+                        if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); }
                         if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
-                        if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]); 
+                        if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]);
                     }
                     else if (comp.type === 'RADION') {
                         if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); }
@@ -1040,7 +1560,6 @@ end>`;
                         if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[1]);
                     }
                     else { outNodes.push(comp.nodes.find(n => n !== currentNode)); }
-
                     outNodes.forEach(otherNode => {
                         if (otherNode && !visitedNodes.includes(otherNode)) {
                             let canCross = false;
@@ -1048,18 +1567,15 @@ end>`;
                             if ((comp.type === 'SWITCH' || comp.type === 'PUSH_BTN') && comp.closed) canCross = true;
                             if (comp.type === 'RELAY') {
                                 if ((currentNode === comp.nodes[0] && otherNode === comp.nodes[1]) || (currentNode === comp.nodes[1] && otherNode === comp.nodes[0])) canCross = true;
-                                if ((currentNode === comp.nodes[2] && otherNode === comp.nodes[3]) || (currentNode === comp.nodes[3] && otherNode === comp.nodes[2])) {
-                                    if(comp.coilState) canCross = true;
-                                }
+                                if ((currentNode === comp.nodes[2] && otherNode === comp.nodes[3]) || (currentNode === comp.nodes[3] && otherNode === comp.nodes[2])) { if(comp.coilState) canCross = true; }
                             }
-                            if (comp.type === 'MUX') canCross = true; 
-                            if (comp.type === 'LED' && direction === 1) canCross = true; 
+                            if (comp.type === 'MUX') canCross = true;
+                            if (comp.type === 'LED' && direction === 1) canCross = true;
                             if (comp.type === 'CAPACITOR' && bat.type === 'BATTERY') canCross = true;
                             if (comp.type === 'AND' && comp.nodes[0].signal && comp.nodes[1].signal) canCross = true;
                             if (comp.type === 'OR' && (comp.nodes[0].signal || comp.nodes[1].signal)) canCross = true;
                             if (comp.type === 'XOR' && ((comp.nodes[0].signal && !comp.nodes[1].signal) || (!comp.nodes[0].signal && comp.nodes[1].signal))) canCross = true;
                             if (comp.type === 'NOT' && currentNode === comp.nodes[0] && !comp.nodes[1].signal) canCross = true;
-                            
                             if (comp.type === 'RSK90') {
                                 if ((currentNode === comp.nodes[0] && otherNode === comp.nodes[1]) || (currentNode === comp.nodes[1] && otherNode === comp.nodes[0])) canCross = true;
                                 if (comp.clockState && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[2]) || (currentNode === comp.nodes[2] && otherNode === comp.nodes[0]))) canCross = true;
@@ -1075,10 +1591,9 @@ end>`;
                                 const isPwr = (n) => n === comp.nodes[0] || n === comp.nodes[1];
                                 if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
                             }
-
                             if (comp.type === 'TRANSISTOR') {
                                 const baseSignal = comp.nodes[1].signal;
-                                if (comp.mode === 'NPN') { if (baseSignal) canCross = true; } 
+                                if (comp.mode === 'NPN') { if (baseSignal) canCross = true; }
                                 else { if (!baseSignal) canCross = true; }
                             }
                             if (canCross) dfs(otherNode, [...currentPath, {t: 'comp', comp, dir: direction}], [...visitedNodes, otherNode]);
@@ -1088,14 +1603,14 @@ end>`;
             }
             dfs(bat.nodes[0], [], [bat.nodes[0]]);
             if (foundPaths.length > 0) {
-                if (bat.type === 'CAPACITOR') bat.charge -= 2.0; 
+                if (bat.type === 'CAPACITOR') bat.charge -= 2.0;
                 foundPaths.forEach(path => {
                     let rSum = 0.1; let ledCount = 0; let pathComps = [];
                     path.forEach(step => {
                         if (step.t === 'comp') {
                             pathComps.push(step.comp);
                             if (step.comp.type === 'RESISTOR') rSum += step.comp.val;
-                            if (step.comp.type === 'RELAY') rSum += 50; 
+                            if (step.comp.type === 'RELAY') rSum += 50;
                             if (step.comp.type === 'RSK90') rSum += 1000;
                             if (step.comp.type === 'RADION') rSum += 1200;
                             if (step.comp.type === 'OLED_I2C') rSum += 1000;
@@ -1103,7 +1618,7 @@ end>`;
                             if (['AND', 'OR', 'NOT', 'XOR', 'MUX'].includes(step.comp.type)) rSum += 10;
                             if (step.comp.type === 'CAPACITOR' && bat.type === 'BATTERY') {
                                 let chargeRate = 50 / (step.comp.val || 10);
-                                step.comp.charge = Math.min(100, step.comp.charge + chargeRate); step.comp.active = true; 
+                                step.comp.charge = Math.min(100, step.comp.charge + chargeRate); step.comp.active = true;
                             }
                         }
                     });
@@ -1133,10 +1648,8 @@ end>`;
                 });
             }
         });
-        
         components.filter(c => c.type === 'RELAY').forEach(r => r.coilState = r.coilActiveThisFrame);
         components.filter(c => c.type === 'MUX').forEach(m => { m.selState = m.nodes[2].signal; });
-
         components.filter(c => c.type === 'RSK90').forEach(c => {
             if (c.active && !c.burned) {
                 const now = Date.now();
@@ -1148,25 +1661,36 @@ end>`;
     }
 
     function drawGrid(camX, camY, zoom) {
-        ctx.strokeStyle = "#222"; ctx.lineWidth = 1 / zoom; 
         const size = 50;
         const halfW = (canvas.width / 2) / zoom; const halfH = (canvas.height / 2) / zoom;
         const startX = Math.floor((camX - halfW) / size) * size - size; const endX = camX + halfW + size;
         const startY = Math.floor((camY - halfH) / size) * size - size; const endY = camY + halfH + size;
+
+        // Dots grid instead of lines for cleaner look
+        ctx.fillStyle = "#1a221a";
+        for(let x = startX; x < endX; x += size) {
+            for(let y = startY; y < endY; y += size) {
+                ctx.fillRect(x - 0.5/zoom, y - 0.5/zoom, 1.5/zoom, 1.5/zoom);
+            }
+        }
+
+        // Subtle axis lines
+        ctx.strokeStyle = "#1a2a1a"; ctx.lineWidth = 1/zoom;
+        ctx.setLineDash([2/zoom, 8/zoom]);
         ctx.beginPath();
-        for(let x = startX; x < endX; x += size) { ctx.moveTo(x, startY); ctx.lineTo(x, endY); }
-        for(let y = startY; y < endY; y += size) { ctx.moveTo(startX, y); ctx.lineTo(endX, y); }
+        ctx.moveTo(0, startY); ctx.lineTo(0, endY);
+        ctx.moveTo(startX, 0); ctx.lineTo(endX, 0);
         ctx.stroke();
+        ctx.setLineDash([]);
     }
 
     function draw() {
-        if(targetCfg == null && !isDesktopMode) { 
+        if(targetCfg == null && !isDesktopMode) {
             if (vMouse.moving.up) vMouse.y -= vMouse.speed; if (vMouse.moving.down) vMouse.y += vMouse.speed;
             if (vMouse.moving.left) vMouse.x -= vMouse.speed; if (vMouse.moving.right) vMouse.x += vMouse.speed;
         }
-
-        if(!isDesktopMode) { 
-            const edgeMargin = 50; 
+        if(!isDesktopMode) {
+            const edgeMargin = 50;
             let screenMouseX = (vMouse.x - camera.x) * camera.zoom + canvas.width / 2;
             let screenMouseY = (vMouse.y - camera.y) * camera.zoom + canvas.height / 2;
             if (screenMouseX < edgeMargin) camera.x -= (edgeMargin - screenMouseX) / camera.zoom;
@@ -1174,21 +1698,19 @@ end>`;
             if (screenMouseY < edgeMargin) camera.y -= (edgeMargin - screenMouseY) / camera.zoom;
             if (screenMouseY > canvas.height - edgeMargin) camera.y += (screenMouseY - (canvas.height - edgeMargin)) / camera.zoom;
         }
-
         if (vMouse.selectionMode && selectionBox && !isDesktopMode) {
             selectionBox.w = vMouse.x - selectionBox.x; selectionBox.h = vMouse.y - selectionBox.y;
         }
-
         if (!isDesktopMode) {
-             if (vMouse.isDown && !vMouse.lastDown && targetCfg == null && !vMouse.selectionMode) {
+            if (vMouse.isDown && !vMouse.lastDown && targetCfg == null && !vMouse.selectionMode) {
                 let clickOnSomething = false; let nHit = null;
                 components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c, n}; }));
-                if (nHit) { drawingCable = nHit; clickOnSomething = true; } 
+                if (nHit) { drawingCable = nHit; clickOnSomething = true; }
                 else {
                     let compHit = components.find(c => vMouse.x > c.x && vMouse.x < c.x+c.w && vMouse.y > c.y && vMouse.y < c.y+c.h);
                     if (compHit) {
                         clickOnSomething = true;
-                        if (selectedItems.includes(compHit)) { draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; } 
+                        if (selectedItems.includes(compHit)) { draggingComp = { group: true, ref: compHit, ox: vMouse.x, oy: vMouse.y }; }
                         else { selectedItems.forEach(c => c.selected = false); selectedItems = []; draggingComp = {c: compHit, ox:vMouse.x-compHit.x, oy:vMouse.y-compHit.y}; }
                     }
                 }
@@ -1203,8 +1725,7 @@ end>`;
                 draggingComp = drawingCable = null;
             }
         }
-
-        if (draggingComp) { 
+        if (draggingComp) {
             if (draggingComp.group) {
                 const dx = vMouse.x - draggingComp.ox; const dy = vMouse.y - draggingComp.oy;
                 selectedItems.forEach(c => { c.x += dx; c.y += dy; });
@@ -1212,12 +1733,15 @@ end>`;
             } else { draggingComp.c.x = vMouse.x-draggingComp.ox; draggingComp.c.y = vMouse.y-draggingComp.oy; }
         }
         vMouse.lastDown = vMouse.isDown;
-        
         updatePhysics();
         rotAnim += 0.2; time += 0.5;
 
+        // Update coords
+        document.getElementById('cx').textContent = Math.round(vMouse.x);
+        document.getElementById('cy').textContent = Math.round(vMouse.y);
+        document.getElementById('cz').textContent = camera.zoom.toFixed(1);
+
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.scale(camera.zoom, camera.zoom);
@@ -1225,18 +1749,39 @@ end>`;
 
         drawGrid(camera.x, camera.y, camera.zoom);
 
+        // Draw connections
         connections.forEach(conn => {
-            ctx.strokeStyle = conn.active ? "#00ff41" : "#333"; ctx.lineWidth = 3; 
-            if (conn.active) { ctx.setLineDash([8, 8]); ctx.lineDashOffset = -time * conn.flowDir; } else { ctx.setLineDash([]); }
-            ctx.beginPath(); ctx.moveTo(conn.a.c.x+conn.a.n.x, conn.a.c.y+conn.a.n.y); ctx.lineTo(conn.b.c.x+conn.b.n.x, conn.b.c.y+conn.b.n.y); ctx.stroke();
-            ctx.setLineDash([]);
+            const p1 = {x: conn.a.c.x+conn.a.n.x, y: conn.a.c.y+conn.a.n.y};
+            const p2 = {x: conn.b.c.x+conn.b.n.x, y: conn.b.c.y+conn.b.n.y};
+
+            if (conn.active) {
+                // Glow effect
+                ctx.strokeStyle = "rgba(0,255,65,0.15)"; ctx.lineWidth = 8;
+                ctx.setLineDash([]);
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                // Animated flow
+                ctx.strokeStyle = "#00ff41"; ctx.lineWidth = 2;
+                ctx.setLineDash([6, 6]); ctx.lineDashOffset = -time * conn.flowDir;
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                ctx.setLineDash([]);
+            } else {
+                ctx.strokeStyle = "#1e2e1e"; ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+            }
         });
 
-        if (drawingCable) { ctx.strokeStyle = "#888"; ctx.beginPath(); ctx.moveTo(drawingCable.c.x+drawingCable.n.x, drawingCable.c.y+drawingCable.n.y); ctx.lineTo(vMouse.x, vMouse.y); ctx.stroke(); }
+        if (drawingCable) {
+            ctx.strokeStyle = "rgba(0,170,255,0.6)"; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
+            ctx.beginPath(); ctx.moveTo(drawingCable.c.x+drawingCable.n.x, drawingCable.c.y+drawingCable.n.y); ctx.lineTo(vMouse.x, vMouse.y); ctx.stroke();
+            ctx.setLineDash([]);
+        }
 
         components.forEach(c => {
             if (c.type === 'WAYPOINT') {
-                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(c.x+c.nodes[0].x, c.y+c.nodes[0].y, 4, 0, Math.PI*2); ctx.fill(); return; 
+                ctx.fillStyle = "#334433";
+                ctx.beginPath(); ctx.arc(c.x+c.nodes[0].x, c.y+c.nodes[0].y, 4, 0, Math.PI*2); ctx.fill();
+                return;
             }
 
             ctx.save();
@@ -1246,174 +1791,286 @@ end>`;
 
             if(c.selected || selectedItems.includes(c)) {
                 let drawW = (c.rotation % 2 === 0) ? c.w : c.h; let drawH = (c.rotation % 2 === 0) ? c.h : c.w;
-                ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
-                ctx.strokeRect(c.x-5, c.y-5, drawW+10, drawH+10); ctx.setLineDash([]);
+                ctx.strokeStyle = "rgba(0,170,255,0.8)"; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+                ctx.strokeRect(c.x-6, c.y-6, drawW+12, drawH+12); ctx.setLineDash([]);
             }
 
-            ctx.fillStyle = "#111"; ctx.strokeStyle = c.burned ? "#e74c3c" : "#444"; ctx.lineWidth = 2;
-            let drawW = (c.rotation % 2 === 0) ? c.w : c.h; let drawH = (c.rotation % 2 === 0) ? c.h : c.w;
-            
-            if(c.type === 'RADION') ctx.fillStyle = "#27ae60"; 
-            else ctx.fillStyle = "#111";
+            let drawW = (c.rotation % 2 === 0) ? c.w : c.h;
+            let drawH = (c.rotation % 2 === 0) ? c.h : c.w;
 
+            // Base component body
             if (c.type !== 'OLED_I2C') {
-                ctx.fillRect(c.x, c.y, drawW, drawH); ctx.strokeRect(c.x, c.y, drawW, drawH);
+                ctx.fillStyle = c.type === 'RADION' ? "#0d2a0d" : "#0d130d";
+                ctx.fillRect(c.x, c.y, drawW, drawH);
+                ctx.strokeStyle = c.burned ? "#ff2244" : (c.active ? "#2a4a2a" : "#1e2a1e");
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(c.x, c.y, drawW, drawH);
             }
-            if(c.burned) { ctx.fillStyle = "#e74c3c"; ctx.font = "bold 12px Arial"; ctx.fillText("¡QUEMADO!", c.x+5, c.y-5); }
+
+            if(c.burned) {
+                ctx.fillStyle = "rgba(255,34,68,0.15)"; ctx.fillRect(c.x, c.y, drawW, drawH);
+                ctx.fillStyle = "#ff2244"; ctx.font = "bold 9px 'Share Tech Mono'";
+                ctx.fillText("⚡QUEMADO", c.x+4, c.y-4);
+            }
 
             if (c.type === 'LED') {
-                ctx.strokeStyle = c.state && !c.burned ? "yellow" : (c.burned ? "#311" : "#555");
-                if (c.state && !c.burned) { ctx.shadowBlur = 10; ctx.shadowColor = "yellow"; }
-                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+20); ctx.lineTo(c.x+40, c.y+40); ctx.lineTo(c.x+60, c.y+30); ctx.closePath(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(c.x+60, c.y+20); ctx.lineTo(c.x+60, c.y+40); ctx.stroke(); ctx.shadowBlur = 0;
-            } else if (c.type === 'MOTOR') {
-                ctx.strokeStyle = c.state !== 0 && !c.burned ? "#00ff41" : "#555";
-                ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 15, 0, Math.PI*2); ctx.stroke();
-                ctx.fillStyle = "white"; ctx.font = "12px monospace"; ctx.fillText("M", c.x+47, c.y+34);
-                if (c.state !== 0 && !c.burned) {
-                    ctx.save(); ctx.translate(c.x+50, c.y+30); ctx.rotate(rotAnim * c.state); ctx.strokeStyle = "yellow"; 
-                    ctx.beginPath(); ctx.arc(0,0, 22, 0, Math.PI*0.7); ctx.stroke(); ctx.fillStyle = "yellow"; 
-                    ctx.beginPath(); ctx.moveTo(22,-5); ctx.lineTo(28,5); ctx.lineTo(16,5); ctx.fill(); ctx.restore();
+                if (c.state && !c.burned) {
+                    ctx.shadowBlur = 16; ctx.shadowColor = "#ffe080";
+                    ctx.fillStyle = "rgba(255,224,0,0.08)"; ctx.fillRect(c.x, c.y, drawW, drawH);
                 }
-            } else if (c.type === 'SWITCH' || c.type === 'PUSH_BTN') {
-                ctx.strokeStyle = "white"; ctx.beginPath(); ctx.moveTo(c.x+20, c.y+30);
-                if (c.closed) ctx.lineTo(c.x+80, c.y+30); else ctx.lineTo(c.x+60, c.y+10); ctx.stroke();
-                if(c.type === 'PUSH_BTN') { ctx.beginPath(); ctx.arc(c.x+50, c.y+50, 4, 0, Math.PI*2); ctx.fill(); }
-            } else if (c.type === 'RELAY') {
-                ctx.strokeStyle = c.coilState ? "#00ff41" : "#888"; 
-                ctx.beginPath(); ctx.moveTo(c.x+10, c.y+15); 
-                for(let i=0; i<4; i++) { ctx.arc(c.x+10, c.y+20+(i*6), 3, Math.PI*1.5, Math.PI*0.5, false); ctx.arc(c.x+10, c.y+23+(i*6), 3, Math.PI*0.5, Math.PI*1.5, true); }
-                ctx.lineTo(c.x+10, c.y+45); ctx.stroke();
-                ctx.strokeStyle = "white"; ctx.beginPath(); ctx.moveTo(c.x+90, c.y+20); 
-                if (c.coilState) ctx.lineTo(c.x+90, c.y+40); else ctx.lineTo(c.x+80, c.y+35); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(c.x+90, c.y+40); ctx.lineTo(c.x+90, c.y+45); ctx.stroke();
-                ctx.fillStyle = "#aaa"; ctx.font="8px Arial"; ctx.fillText("COIL", c.x+15, c.y+30); ctx.fillText("SW", c.x+70, c.y+30);
-            } 
+                ctx.strokeStyle = c.state && !c.burned ? "#ffe080" : (c.burned ? "#331111" : "#444");
+                ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+18); ctx.lineTo(c.x+40, c.y+42); ctx.lineTo(c.x+62, c.y+30); ctx.closePath(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+62, c.y+18); ctx.lineTo(c.x+62, c.y+42); ctx.stroke();
+                if (c.state && !c.burned) {
+                    ctx.strokeStyle = "rgba(255,224,0,0.4)"; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(c.x+68, c.y+20); ctx.lineTo(c.x+75, c.y+15); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(c.x+68, c.y+26); ctx.lineTo(c.x+78, c.y+24); ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "#3a4a3a"; ctx.font = "8px 'Share Tech Mono'"; ctx.fillText("LED", c.x+42, c.y+55);
+            }
+            else if (c.type === 'MOTOR') {
+                ctx.strokeStyle = c.state !== 0 && !c.burned ? "#00ff41" : "#2a3a2a";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 16, 0, Math.PI*2); ctx.stroke();
+                ctx.fillStyle = "#2a3a2a"; ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 12, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#00bb30"; ctx.font = "bold 11px 'Orbitron'"; ctx.fillText("M", c.x+46, c.y+34);
+                if (c.state !== 0 && !c.burned) {
+                    ctx.save(); ctx.translate(c.x+50, c.y+30); ctx.rotate(rotAnim * c.state);
+                    ctx.strokeStyle = "#00ff41"; ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI*0.7); ctx.stroke();
+                    ctx.fillStyle = "#00ff41"; ctx.beginPath(); ctx.moveTo(22,-4); ctx.lineTo(27,4); ctx.lineTo(17,4); ctx.fill();
+                    ctx.restore();
+                }
+            }
+            else if (c.type === 'SWITCH' || c.type === 'PUSH_BTN') {
+                ctx.strokeStyle = c.closed ? "#00ff41" : "#3a4a3a"; ctx.lineWidth = 1.5;
+                if (c.closed) { ctx.shadowBlur = 4; ctx.shadowColor = "#00ff41"; }
+                ctx.beginPath(); ctx.moveTo(c.x+20, c.y+30);
+                if (c.closed) ctx.lineTo(c.x+80, c.y+30); else ctx.lineTo(c.x+60, c.y+12);
+                ctx.stroke(); ctx.shadowBlur = 0;
+                if(c.type === 'PUSH_BTN') {
+                    ctx.fillStyle = c.closed ? "#00ff41" : "#2a3a2a";
+                    ctx.beginPath(); ctx.arc(c.x+50, c.y+50, 5, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = "#3a4a3a"; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.arc(c.x+50, c.y+50, 5, 0, Math.PI*2); ctx.stroke();
+                }
+                ctx.fillStyle = "#2a3a2a"; ctx.font = "8px 'Share Tech Mono'"; ctx.fillText(c.type==='SWITCH'?'SW':'BTN', c.x+38, c.y+10);
+            }
+            else if (c.type === 'RELAY') {
+                ctx.strokeStyle = c.coilState ? "#00ff41" : "#3a4a3a"; ctx.lineWidth = 1.2;
+                ctx.beginPath(); ctx.moveTo(c.x+12, c.y+15);
+                for(let i=0; i<4; i++) { ctx.arc(c.x+12, c.y+20+(i*6), 3, Math.PI*1.5, Math.PI*0.5, false); ctx.arc(c.x+12, c.y+23+(i*6), 3, Math.PI*0.5, Math.PI*1.5, true); }
+                ctx.lineTo(c.x+12, c.y+45); ctx.stroke();
+                ctx.strokeStyle = "#3a4a3a"; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(c.x+88, c.y+20);
+                if (c.coilState) ctx.lineTo(c.x+88, c.y+40); else ctx.lineTo(c.x+78, c.y+35);
+                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+88, c.y+40); ctx.lineTo(c.x+88, c.y+45); ctx.stroke();
+                ctx.fillStyle = "#2a3a2a"; ctx.font = "8px 'Share Tech Mono'";
+                ctx.fillText("COIL", c.x+18, c.y+30); ctx.fillText("SW", c.x+68, c.y+30);
+            }
             else if (c.type === 'MUX') {
-                ctx.strokeStyle = "#3498db"; ctx.lineWidth = 2;
+                ctx.strokeStyle = "#004488"; ctx.lineWidth = 1.5;
+                ctx.fillStyle = "#0a1525";
                 ctx.beginPath();
-                ctx.moveTo(c.x+20, c.y+10); ctx.lineTo(c.x+80, c.y+20); ctx.lineTo(c.x+80, c.y+40); ctx.lineTo(c.x+20, c.y+50);
-                ctx.closePath(); ctx.stroke();
+                ctx.moveTo(c.x+22, c.y+10); ctx.lineTo(c.x+78, c.y+20); ctx.lineTo(c.x+78, c.y+40); ctx.lineTo(c.x+22, c.y+50); ctx.closePath();
+                ctx.fill(); ctx.stroke();
                 const sel = c.selState;
-                ctx.fillStyle = sel ? "#222" : "#00ff41"; ctx.beginPath(); ctx.arc(c.x+30, c.y+20, 3, 0, Math.PI*2); ctx.fill(); 
-                ctx.fillStyle = sel ? "#00ff41" : "#222"; ctx.beginPath(); ctx.arc(c.x+30, c.y+40, 3, 0, Math.PI*2); ctx.fill(); 
-                ctx.fillStyle = "#3498db"; ctx.font = "bold 10px monospace"; ctx.fillText("MUX", c.x+35, c.y+33);
-                ctx.fillStyle = "#aaa"; ctx.font = "8px monospace"; 
-                ctx.fillText("A", c.x+5, c.y+15); ctx.fillText("B", c.x+5, c.y+45); ctx.fillText("S", c.x+45, c.y+55); ctx.fillText("Q", c.x+85, c.y+33);
+                ctx.fillStyle = sel ? "#0a1525" : "#00ff41"; ctx.beginPath(); ctx.arc(c.x+32, c.y+22, 3, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = sel ? "#00ff41" : "#0a1525"; ctx.beginPath(); ctx.arc(c.x+32, c.y+38, 3, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#004488"; ctx.font = "bold 9px 'Orbitron'"; ctx.fillText("MUX", c.x+38, c.y+33);
+                ctx.fillStyle = "#2a4a6a"; ctx.font = "8px 'Share Tech Mono'";
+                ctx.fillText("A", c.x+6, c.y+16); ctx.fillText("B", c.x+6, c.y+42); ctx.fillText("S", c.x+44, c.y+55); ctx.fillText("Q", c.x+82, c.y+33);
             }
             else if (c.type === 'RSK90') {
-                ctx.strokeStyle = c.active ? "#e67e22" : "#555"; ctx.lineWidth = 2;
-                ctx.strokeRect(c.x+15, c.y+10, 70, 40); ctx.fillStyle = "#222"; ctx.fillRect(c.x+15, c.y+10, 70, 40);
-                ctx.fillStyle = c.clockState ? "#e67e22" : "#333"; ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 4, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "#e67e22"; ctx.font = "bold 10px monospace"; ctx.fillText("RSK90", c.x+35, c.y+25);
-                ctx.fillStyle = "#aaa"; ctx.font = "8px monospace"; ctx.fillText("VCC", c.x+18, c.y+18); ctx.fillText("GND", c.x+18, c.y+45); ctx.fillText("OUT", c.x+60, c.y+33);
+                ctx.strokeStyle = c.active ? "#cc6600" : "#2a2a1a"; ctx.lineWidth = 1.5;
+                ctx.fillStyle = "#1a1200"; ctx.fillRect(c.x+15, c.y+8, 70, 44); ctx.strokeRect(c.x+15, c.y+8, 70, 44);
+                ctx.fillStyle = c.clockState ? "#ff9900" : "#221800";
+                ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 5, 0, Math.PI*2); ctx.fill();
+                if (c.clockState) { ctx.shadowBlur = 8; ctx.shadowColor = "#ff9900"; ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 5, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; }
+                ctx.fillStyle = "#cc6600"; ctx.font = "bold 9px 'Orbitron'"; ctx.fillText("RSK90", c.x+32, c.y+24);
+                ctx.fillStyle = "#4a3a1a"; ctx.font = "8px 'Share Tech Mono'";
+                ctx.fillText("VCC", c.x+18, c.y+18); ctx.fillText("GND", c.x+18, c.y+46); ctx.fillText("OUT", c.x+60, c.y+35);
             }
             else if (c.type === 'RADION') {
-                ctx.strokeStyle = c.active ? "#00ff41" : "#111"; ctx.lineWidth = 2;
-                ctx.fillStyle = "#111"; ctx.fillRect(c.x+35, c.y+10, 40, 90);
-                ctx.strokeStyle = "#555"; ctx.strokeRect(c.x+35, c.y+10, 40, 90);
-                ctx.fillStyle = "#fff"; ctx.font = "bold 10px monospace";
-                ctx.save(); ctx.translate(c.x+40, c.y+80); ctx.rotate(-Math.PI/2); ctx.fillText("RADION 1.1", 0, 0); ctx.restore();
-
-                ctx.fillStyle = "#000"; ctx.font = "9px monospace";
-                ctx.fillText("VCC", c.x+20, c.y+18); ctx.fillText("GND", c.x+20, c.y+38); ctx.fillText("GND", c.x+20, c.y+58);
-                ctx.fillText("D1", c.x+80, c.y+18); ctx.fillText("D2", c.x+80, c.y+38); ctx.fillText("D3", c.x+80, c.y+58);
-                ctx.fillText("SCL", c.x+80, c.y+78); ctx.fillText("SDA", c.x+80, c.y+98);
-                if (c.active && !c.burned) { ctx.fillStyle = "#00ff41"; ctx.beginPath(); ctx.arc(c.x+45, c.y+20, 2, 0, Math.PI*2); ctx.fill(); }
+                // PCB board style
+                ctx.fillStyle = "#0a1a0a"; ctx.fillRect(c.x+30, c.y+5, 50, 100); ctx.strokeStyle = "#1a4a1a"; ctx.lineWidth = 1; ctx.strokeRect(c.x+30, c.y+5, 50, 100);
+                // Pin traces
+                ctx.strokeStyle = "#0a2a0a"; ctx.lineWidth = 2;
+                for(let i=0; i<5; i++) { ctx.beginPath(); ctx.moveTo(c.x+15, c.y+12+i*20); ctx.lineTo(c.x+30, c.y+12+i*20); ctx.stroke(); }
+                for(let i=0; i<5; i++) { ctx.beginPath(); ctx.moveTo(c.x+80, c.y+12+i*20); ctx.lineTo(c.x+95, c.y+12+i*20); ctx.stroke(); }
+                // Chip body
+                ctx.fillStyle = "#111a11";
+                ctx.fillRect(c.x+35, c.y+20, 40, 60);
+                ctx.strokeStyle = "#1a3a1a"; ctx.lineWidth = 1; ctx.strokeRect(c.x+35, c.y+20, 40, 60);
+                // Label
+                ctx.save(); ctx.translate(c.x+45, c.y+78); ctx.rotate(-Math.PI/2);
+                ctx.fillStyle = "#2a6a2a"; ctx.font = "bold 8px 'Orbitron'"; ctx.fillText("RADION 1.1", 0, 0); ctx.restore();
+                // Status LED
+                if (c.active && !c.burned) {
+                    ctx.fillStyle = "#00ff41"; ctx.shadowBlur = 6; ctx.shadowColor = "#00ff41";
+                    ctx.beginPath(); ctx.arc(c.x+68, c.y+25, 2.5, 0, Math.PI*2); ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+                // Pin labels
+                ctx.fillStyle = "#2a4a2a"; ctx.font = "7px 'Share Tech Mono'";
+                ctx.fillText("VCC", c.x+1, c.y+18); ctx.fillText("GND", c.x+1, c.y+38); ctx.fillText("GND", c.x+1, c.y+58);
+                ctx.fillText("D1", c.x+82, c.y+18); ctx.fillText("D2", c.x+82, c.y+38); ctx.fillText("D3", c.x+82, c.y+58);
+                ctx.fillText("SCL", c.x+82, c.y+78); ctx.fillText("SDA", c.x+82, c.y+98);
+                // Memory state dots
+                ctx.fillStyle = c.memory && c.memory.d1 ? "#00ff41" : "#1a2a1a"; ctx.beginPath(); ctx.arc(c.x+38, c.y+25, 2, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = c.memory && c.memory.d2 ? "#00ff41" : "#1a2a1a"; ctx.beginPath(); ctx.arc(c.x+38, c.y+35, 2, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = c.memory && c.memory.d3 ? "#00ff41" : "#1a2a1a"; ctx.beginPath(); ctx.arc(c.x+38, c.y+45, 2, 0, Math.PI*2); ctx.fill();
             }
             else if (c.type === 'OLED_I2C') {
-                ctx.fillStyle = "#111"; ctx.fillRect(c.x, c.y, c.w, c.h);
-                ctx.strokeStyle = c.burned ? "#e74c3c" : "#555"; ctx.strokeRect(c.x, c.y, c.w, c.h);
-                
-                ctx.fillStyle = "#000"; ctx.fillRect(c.x+5, c.y+15, c.w-10, c.h-20);
-                ctx.strokeStyle = "#333"; ctx.strokeRect(c.x+5, c.y+15, c.w-10, c.h-20);
-
-                ctx.fillStyle = "#aaa"; ctx.font = "8px monospace";
-                ctx.fillText("VCC", c.x+12, c.y+12); ctx.fillText("GND", c.x+38, c.y+12);
-                ctx.fillText("SCL", c.x+62, c.y+12); ctx.fillText("SDA", c.x+88, c.y+12);
-                
+                // OLED housing
+                ctx.fillStyle = "#0a0a10"; ctx.fillRect(c.x, c.y, c.w, c.h);
+                ctx.strokeStyle = c.burned ? "#ff2244" : "#222233"; ctx.lineWidth = 1.5; ctx.strokeRect(c.x, c.y, c.w, c.h);
+                // Screen bezel
+                ctx.fillStyle = "#060606"; ctx.fillRect(c.x+4, c.y+14, c.w-8, c.h-18);
+                ctx.strokeStyle = "#111116"; ctx.lineWidth = 1; ctx.strokeRect(c.x+4, c.y+14, c.w-8, c.h-18);
+                // Pin labels
+                ctx.fillStyle = "#1a1a2a"; ctx.font = "7px 'Share Tech Mono'";
+                ctx.fillText("VCC", c.x+10, c.y+11); ctx.fillText("GND", c.x+37, c.y+11);
+                ctx.fillText("SCL", c.x+62, c.y+11); ctx.fillText("SDA", c.x+88, c.y+11);
+                // Screen content
                 if (c.active && !c.burned && c.initialized && c.textLines) {
-                    ctx.fillStyle = "#00ff41"; ctx.font = "10px monospace";
-                    for(let i=0; i<c.textLines.length; i++) {
-                        ctx.fillText(c.textLines[i], c.x+8, c.y+26 + (i*13));
+                    ctx.fillStyle = "#00ff41";
+                    ctx.font = "10px 'Share Tech Mono'";
+                    ctx.shadowBlur = 3; ctx.shadowColor = "#00ff41";
+                    for(let i = 0; i < c.textLines.length; i++) {
+                        ctx.fillText(c.textLines[i], c.x+7, c.y+26 + (i*13));
                     }
+                    ctx.shadowBlur = 0;
+                } else if (!c.initialized || !c.active) {
+                    ctx.fillStyle = "#0a0a0a"; ctx.fillRect(c.x+5, c.y+15, c.w-10, c.h-19);
                 }
             }
             else if (c.type === 'BATTERY') {
-                ctx.fillStyle = "#00ff41"; ctx.font = "12px monospace"; ctx.fillText(`BAT ${c.val}V`, c.x+25, c.y+35);
-            } else if (c.type === 'CAPACITOR') {
-                ctx.fillStyle = `rgb(0, ${Math.min(255, c.charge*2.55)}, 0)`; 
-                ctx.fillRect(c.x+40, c.y+10, 20, 40); ctx.strokeStyle = "#fff"; ctx.strokeRect(c.x+40, c.y+10, 20, 40);
-                ctx.fillStyle = "#fff"; ctx.font = "10px monospace"; ctx.fillText(`${Math.floor(c.charge)}%`, c.x+35, c.y+65);
-                ctx.font = "9px monospace"; ctx.fillText(`${c.val}uF`, c.x+35, c.y+8);
-                ctx.beginPath(); ctx.moveTo(c.x+35, c.y+15); ctx.lineTo(c.x+35, c.y+45); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(c.x+45, c.y+15); ctx.lineTo(c.x+45, c.y+45); ctx.stroke();
-            } else if (c.type === 'TRANSISTOR') {
-                ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+                // Battery shape
+                ctx.fillStyle = "#1a2a1a"; ctx.fillRect(c.x+10, c.y+15, 75, 30);
+                ctx.strokeStyle = c.active && !c.burned ? "#00ff41" : "#2a3a2a"; ctx.lineWidth = 1.5;
+                ctx.strokeRect(c.x+10, c.y+15, 75, 30);
+                ctx.fillStyle = "#2a3a2a"; ctx.fillRect(c.x+85, c.y+21, 6, 18);
+                ctx.fillStyle = c.active && !c.burned ? "#00ff41" : "#3a5a3a";
+                ctx.font = "bold 11px 'Orbitron'"; ctx.fillText(`${c.val}V`, c.x+35, c.y+36);
+                ctx.fillStyle = "#1a3a1a"; ctx.font = "7px 'Share Tech Mono'"; ctx.fillText("BATT", c.x+40, c.y+52);
+            }
+            else if (c.type === 'CAPACITOR') {
+                const pct = c.charge / 100;
+                ctx.fillStyle = `rgba(0,${Math.floor(180*pct)},0,0.3)`;
+                ctx.fillRect(c.x+35, c.y+10, 30, 40);
+                ctx.strokeStyle = "#3a4a3a"; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(c.x+35, c.y+10); ctx.lineTo(c.x+35, c.y+50); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+50, c.y+10); ctx.lineTo(c.x+50, c.y+50); ctx.stroke();
+                // Charge bar
+                ctx.fillStyle = "#1a2a1a"; ctx.fillRect(c.x+40, c.y+12, 10, 36);
+                ctx.fillStyle = `rgb(0, ${Math.floor(255*pct)}, 0)`;
+                ctx.fillRect(c.x+40, c.y+12+(36*(1-pct)), 10, 36*pct);
+                ctx.fillStyle = "#3a4a3a"; ctx.font = "9px 'Share Tech Mono'";
+                ctx.fillText(`${Math.floor(c.charge)}%`, c.x+30, c.y+62);
+                ctx.font = "7px 'Share Tech Mono'"; ctx.fillText(`${c.val}uF`, c.x+32, c.y+8);
+            }
+            else if (c.type === 'TRANSISTOR') {
+                ctx.strokeStyle = "#3a4a3a"; ctx.lineWidth = 1.5;
                 ctx.beginPath(); ctx.arc(c.x+50, c.y+30, 20, 0, Math.PI*2); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+15); ctx.lineTo(c.x+40, c.y+45); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+30); ctx.lineTo(c.x+20, c.y+50); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+20); ctx.lineTo(c.x+60, c.y+10); ctx.lineTo(c.x+60, c.y+10); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(c.x+40, c.y+40); ctx.lineTo(c.x+80, c.y+30); ctx.stroke();
-                ctx.fillStyle = "#fff";
-                if (c.mode === 'NPN') { ctx.beginPath(); ctx.moveTo(c.x+70, c.y+32); ctx.lineTo(c.x+60, c.y+35); ctx.lineTo(c.x+62, c.y+28); ctx.fill(); } 
-                else { ctx.beginPath(); ctx.moveTo(c.x+45, c.y+39); ctx.lineTo(c.x+55, c.y+36); ctx.lineTo(c.x+53, c.y+43); ctx.fill(); }
-                ctx.font = "10px monospace"; ctx.fillText(c.mode, c.x+35, c.y+33);
-                ctx.fillStyle = "#aaa"; ctx.font="8px Arial"; ctx.fillText("C", c.x+25, c.y+15); ctx.fillText("E", c.x+70, c.y+25); ctx.fillText("B", c.x+25, c.y+45);
-            } else if (c.type === 'RESISTOR') {
-                ctx.strokeStyle = c.burned ? "#e74c3c" : "#888"; ctx.beginPath();
-                ctx.moveTo(c.x+20, c.y+30); ctx.lineTo(c.x+30, c.y+20); ctx.lineTo(c.x+40, c.y+40);
-                ctx.lineTo(c.x+50, c.y+20); ctx.lineTo(c.x+60, c.y+40); ctx.lineTo(c.x+70, c.y+30); ctx.stroke();
-                ctx.fillStyle = "#00ff41"; ctx.font = "10px monospace"; ctx.fillText(`${c.val}Ω`, c.x+35, c.y+15);
-            } else if (['AND','OR','NOT','XOR'].includes(c.type)) {
-                ctx.strokeStyle = c.active && !c.burned ? "#3498db" : (c.burned ? "#e74c3c" : "#555");
-                if (c.type === 'AND') { ctx.beginPath(); ctx.moveTo(c.x+30, c.y+15); ctx.lineTo(c.x+60, c.y+15); ctx.arc(c.x+60, c.y+30, 15, -Math.PI/2, Math.PI/2); ctx.lineTo(c.x+30, c.y+45); ctx.closePath(); ctx.stroke(); }
-                else if (c.type === 'OR') { ctx.beginPath(); ctx.moveTo(c.x+30, c.y+15); ctx.quadraticCurveTo(c.x+50, c.y+15, c.x+70, c.y+30); ctx.quadraticCurveTo(c.x+50, c.y+45, c.x+30, c.y+45); ctx.quadraticCurveTo(c.x+45, c.y+30, c.x+30, c.y+15); ctx.stroke(); }
-                else if (c.type === 'XOR') { 
-                    ctx.beginPath(); ctx.moveTo(c.x+35, c.y+15); ctx.quadraticCurveTo(c.x+55, c.y+15, c.x+70, c.y+30); ctx.quadraticCurveTo(c.x+55, c.y+45, c.x+35, c.y+45); ctx.quadraticCurveTo(c.x+50, c.y+30, c.x+35, c.y+15); ctx.stroke(); 
-                    ctx.beginPath(); ctx.moveTo(c.x+28, c.y+15); ctx.quadraticCurveTo(c.x+43, c.y+30, c.x+28, c.y+45); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+42, c.y+15); ctx.lineTo(c.x+42, c.y+45); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+42, c.y+30); ctx.lineTo(c.x+22, c.y+50); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+42, c.y+20); ctx.lineTo(c.x+62, c.y+10); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(c.x+42, c.y+40); ctx.lineTo(c.x+80, c.y+30); ctx.stroke();
+                ctx.fillStyle = "#c8e8c8";
+                if (c.mode === 'NPN') { ctx.beginPath(); ctx.moveTo(c.x+70, c.y+32); ctx.lineTo(c.x+60, c.y+35); ctx.lineTo(c.x+62, c.y+28); ctx.fill(); }
+                else { ctx.beginPath(); ctx.moveTo(c.x+47, c.y+39); ctx.lineTo(c.x+57, c.y+36); ctx.lineTo(c.x+55, c.y+43); ctx.fill(); }
+                ctx.fillStyle = "#3a5a3a"; ctx.font = "8px 'Orbitron'"; ctx.fillText(c.mode, c.x+36, c.y+33);
+                ctx.fillStyle = "#2a3a2a"; ctx.font = "7px 'Share Tech Mono'"; ctx.fillText("C", c.x+26, c.y+14); ctx.fillText("E", c.x+70, c.y+24); ctx.fillText("B", c.x+26, c.y+48);
+            }
+            else if (c.type === 'RESISTOR') {
+                ctx.strokeStyle = c.burned ? "#ff2244" : "#3a6a3a"; ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(c.x+18, c.y+30); ctx.lineTo(c.x+28, c.y+20); ctx.lineTo(c.x+38, c.y+40); ctx.lineTo(c.x+48, c.y+20); ctx.lineTo(c.x+58, c.y+40); ctx.lineTo(c.x+68, c.y+30); ctx.stroke();
+                ctx.fillStyle = "#2a4a2a"; ctx.font = "9px 'Share Tech Mono'"; ctx.fillText(`${c.val}Ω`, c.x+33, c.y+14);
+            }
+            else if (['AND','OR','NOT','XOR'].includes(c.type)) {
+                const isActive = c.active && !c.burned;
+                ctx.strokeStyle = isActive ? "#0066cc" : (c.burned ? "#ff2244" : "#1a3a5a");
+                ctx.lineWidth = 1.5;
+                ctx.fillStyle = "#0a1525";
+                if (c.type === 'AND') {
+                    ctx.beginPath(); ctx.moveTo(c.x+28, c.y+14); ctx.lineTo(c.x+62, c.y+14); ctx.arc(c.x+62, c.y+30, 16, -Math.PI/2, Math.PI/2); ctx.lineTo(c.x+28, c.y+46); ctx.closePath(); ctx.fill(); ctx.stroke();
                 }
-                else if (c.type === 'NOT') { 
-                    ctx.beginPath(); ctx.moveTo(c.x+30, c.y+15); ctx.lineTo(c.x+70, c.y+30); ctx.lineTo(c.x+30, c.y+45); ctx.closePath(); ctx.stroke(); 
+                else if (c.type === 'OR') {
+                    ctx.beginPath(); ctx.moveTo(c.x+28, c.y+14); ctx.quadraticCurveTo(c.x+50, c.y+14, c.x+72, c.y+30); ctx.quadraticCurveTo(c.x+50, c.y+46, c.x+28, c.y+46); ctx.quadraticCurveTo(c.x+46, c.y+30, c.x+28, c.y+14); ctx.fill(); ctx.stroke();
+                }
+                else if (c.type === 'XOR') {
+                    ctx.beginPath(); ctx.moveTo(c.x+34, c.y+14); ctx.quadraticCurveTo(c.x+56, c.y+14, c.x+72, c.y+30); ctx.quadraticCurveTo(c.x+56, c.y+46, c.x+34, c.y+46); ctx.quadraticCurveTo(c.x+50, c.y+30, c.x+34, c.y+14); ctx.fill(); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(c.x+26, c.y+14); ctx.quadraticCurveTo(c.x+42, c.y+30, c.x+26, c.y+46); ctx.stroke();
+                }
+                else if (c.type === 'NOT') {
+                    ctx.beginPath(); ctx.moveTo(c.x+28, c.y+14); ctx.lineTo(c.x+70, c.y+30); ctx.lineTo(c.x+28, c.y+46); ctx.closePath(); ctx.fill(); ctx.stroke();
                     ctx.beginPath(); ctx.arc(c.x+73, c.y+30, 3, 0, Math.PI*2); ctx.stroke();
-                    ctx.fillStyle = "#aaa"; ctx.font = "8px Arial"; ctx.fillText("PWR", c.x+5, c.y+12); ctx.fillText("IN", c.x+5, c.y+55);
+                    ctx.fillStyle = "#1a3a5a"; ctx.font = "7px 'Share Tech Mono'"; ctx.fillText("PWR", c.x+4, c.y+12); ctx.fillText("IN", c.x+6, c.y+55);
                 }
-                ctx.fillStyle = "#3498db"; ctx.font = "bold 12px monospace"; ctx.fillText(c.type, c.x+(c.type==='NOT'?40:35), c.y+33);
+                if (isActive) { ctx.shadowBlur = 6; ctx.shadowColor = "#0066cc"; }
+                ctx.fillStyle = isActive ? "#0066cc" : "#1a3a5a"; ctx.font = "bold 9px 'Orbitron'"; ctx.fillText(c.type, c.x+(c.type==='NOT'?38:33), c.y+33);
+                ctx.shadowBlur = 0;
             }
             ctx.restore();
 
+            // Draw nodes
             c.nodes.forEach(n => {
-                ctx.fillStyle = (n.id==='+'||n.id==='A'||n.id==='M1'||n.id==='R1'||n.id==='I1'||n.id==='I2'||n.id==='PWR'||n.id==='IN'||n.id==='C+'||n.id==='VCC') ? "#00ff41" : "#ff3131";
-                if (c.type === 'TRANSISTOR' || c.type === 'MUX' || n.id==='S' || n.id==='COM' || n.id==='OUT') ctx.fillStyle = "#3498db"; 
-                if (c.type === 'RADION' && (n.id === 'D1' || n.id === 'D2' || n.id === 'D3')) ctx.fillStyle = "#2ecc71";
-                if (c.type === 'RADION' && (n.id === 'SCL' || n.id === 'SDA')) ctx.fillStyle = "#f1c40f"; // I2C color
-                if (c.type === 'OLED_I2C' && (n.id === 'SCL' || n.id === 'SDA')) ctx.fillStyle = "#f1c40f"; 
-                if (c.type === 'RADION' && (n.id === 'GND' || n.id === 'G')) ctx.fillStyle = "#ff3131";
+                let nodeColor = "#1a4a1a";
+                if (n.id==='+' || n.id==='A' || n.id==='M1' || n.id==='R1' || n.id==='I1' || n.id==='I2' || n.id==='PWR' || n.id==='IN' || n.id==='C+' || n.id==='VCC') nodeColor = "#00aa30";
+                else if (n.id==='-' || n.id==='C' || n.id==='M2' || n.id==='R2' || n.id==='GND' || n.id==='G') nodeColor = "#aa0020";
+                if (c.type === 'TRANSISTOR' || c.type === 'MUX' || n.id==='S' || n.id==='COM' || n.id==='OUT') nodeColor = "#004488";
+                if (c.type === 'RADION' && (n.id === 'D1' || n.id === 'D2' || n.id === 'D3')) nodeColor = "#007730";
+                if (c.type === 'RADION' && (n.id === 'SCL' || n.id === 'SDA')) nodeColor = "#886600";
+                if (c.type === 'OLED_I2C' && (n.id === 'SCL' || n.id === 'SDA')) nodeColor = "#886600";
+                if (c.type === 'RELAY' && n.id === 'NO') nodeColor = "#aa0020";
 
-                if (c.type === 'RELAY' && n.id === 'NO') ctx.fillStyle = "#ff3131";
-                ctx.beginPath(); ctx.arc(c.x+n.x, c.y+n.y, 6, 0, Math.PI*2); ctx.fill();
-                if(n.signal) { ctx.strokeStyle="#00ff41"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(c.x+n.x, c.y+n.y, 8, 0, Math.PI*2); ctx.stroke(); }
+                ctx.fillStyle = nodeColor;
+                ctx.beginPath(); ctx.arc(c.x+n.x, c.y+n.y, 5, 0, Math.PI*2); ctx.fill();
+
+                if (n.signal) {
+                    ctx.shadowBlur = 8; ctx.shadowColor = "#00ff41";
+                    ctx.strokeStyle = "#00ff41"; ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.arc(c.x+n.x, c.y+n.y, 7, 0, Math.PI*2); ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
             });
         });
-        
+
+        // Selection box
         if (selectionBox) {
-            ctx.strokeStyle = "#3498db"; ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = "rgba(0,170,255,0.7)"; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
             ctx.strokeRect(selectionBox.x, selectionBox.y, selectionBox.w, selectionBox.h);
-            ctx.fillStyle = "rgba(52, 152, 219, 0.2)"; ctx.fillRect(selectionBox.x, selectionBox.y, selectionBox.w, selectionBox.h); ctx.setLineDash([]);
+            ctx.fillStyle = "rgba(0,100,200,0.06)"; ctx.fillRect(selectionBox.x, selectionBox.y, selectionBox.w, selectionBox.h);
+            ctx.setLineDash([]);
         }
 
-        ctx.strokeStyle = "white"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(vMouse.x, vMouse.y, 10, 0, Math.PI*2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(vMouse.x-15, vMouse.y); ctx.lineTo(vMouse.x+15, vMouse.y); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(vMouse.x, vMouse.y-15); ctx.lineTo(vMouse.x, vMouse.y+15); ctx.stroke();
+        // Crosshair cursor
+        ctx.strokeStyle = "rgba(0,255,65,0.6)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(vMouse.x, vMouse.y, 8, 0, Math.PI*2); ctx.stroke();
+        ctx.strokeStyle = "rgba(0,255,65,0.4)";
+        ctx.beginPath(); ctx.moveTo(vMouse.x-14, vMouse.y); ctx.lineTo(vMouse.x-9, vMouse.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(vMouse.x+9, vMouse.y); ctx.lineTo(vMouse.x+14, vMouse.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(vMouse.x, vMouse.y-14); ctx.lineTo(vMouse.x, vMouse.y-9); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(vMouse.x, vMouse.y+9); ctx.lineTo(vMouse.x, vMouse.y+14); ctx.stroke();
 
         ctx.restore();
-        const modeText = isDesktopMode ? "MODO PC" : "MODO MOVIL";
-        ctx.fillStyle = "rgba(0, 255, 65, 0.3)"; ctx.font = "bold 12px monospace"; ctx.textAlign = "right";
-        ctx.fillText(`Simulic Pro 1.8 [I2C OLED UPDATE]`, canvas.width - 15, canvas.height - 15); ctx.textAlign = "left"; 
+
+        // Watermark
+        ctx.fillStyle = "rgba(0,100,0,0.25)";
+        ctx.font = "10px 'Orbitron'";
+        ctx.textAlign = "right";
+        ctx.fillText("SIMULIC PRO v1.8 [I2C-OLED]", canvas.width - 14, canvas.height - 12);
+        ctx.textAlign = "left";
 
         requestAnimationFrame(draw);
     }
     draw();
 </script>
+
 </body>
 </html>
