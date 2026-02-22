@@ -41,27 +41,30 @@
         --radius-lg: 10px;
     }
 
-    * { user-select: none; box-sizing: border-box; touch-action: none; margin: 0; padding: 0; }
+    /* FIX FLASH: -webkit-tap-highlight-color elimina el highlight negro nativo
+       del sistema operativo que aparece en touchstart en iOS/Android.
+       Sin esto, el navegador pinta su propio overlay oscuro por 1 frame. */
+    * {
+        user-select: none;
+        box-sizing: border-box;
+        touch-action: none;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+    }
 
     body {
-        background: var(--bg-deep);
+        background:
+            radial-gradient(ellipse 60% 40% at 15% 0%, rgba(0,212,255,0.04) 0%, transparent 70%),
+            radial-gradient(ellipse 40% 30% at 85% 100%, rgba(0,230,118,0.03) 0%, transparent 70%),
+            var(--bg-deep);
         color: var(--text-bright);
         font-family: 'Inter', sans-serif;
         display: flex;
         flex-direction: column;
         height: 100vh;
         overflow: hidden;
-    }
-
-    body::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        background:
-            radial-gradient(ellipse 60% 40% at 15% 0%, rgba(0,212,255,0.04) 0%, transparent 70%),
-            radial-gradient(ellipse 40% 30% at 85% 100%, rgba(0,230,118,0.03) 0%, transparent 70%);
-        pointer-events: none;
-        z-index: 0;
     }
 
     /* ═══════════════════════════════════
@@ -323,7 +326,12 @@
         z-index: 1;
     }
 
-    canvas { width: 100%; height: 100%; display: block; }
+    canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: var(--bg-deep);
+    }
 
     /* ═══════════════════════════════════
        ZOOM + HUD
@@ -384,82 +392,155 @@
     /* ═══════════════════════════════════
        VIRTUAL CONTROLS
     ═══════════════════════════════════ */
-    #virtual-controls {
-        position: relative;
-        z-index: 10;
-        background: rgba(11,14,23,0.85);
-        backdrop-filter: blur(20px);
-        border-top: 1px solid var(--glass-border);
-        height: 170px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 24px;
-        flex-shrink: 0;
-        gap: 16px;
+    #virtual-controls { display: none !important; }
+
+    /* Menú contextual flotante para touch nativo */
+    #touch-ctx-menu {
+        display: none;
+        position: fixed;
+        z-index: 200;
+        background: rgba(11,14,23,0.96);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        padding: 6px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        flex-direction: column;
+        gap: 2px;
+        min-width: 160px;
+        animation: tcm-in 0.15s ease;
+    }
+    #touch-ctx-menu.visible { display: flex; }
+
+    @keyframes tcm-in {
+        from { opacity:0; transform: scale(0.88) translateY(6px); }
+        to   { opacity:1; transform: scale(1)    translateY(0); }
     }
 
-    .dpad {
-        display: grid;
-        grid-template-columns: repeat(3, 46px);
-        grid-template-rows: repeat(2, 46px);
-        gap: 4px;
-    }
-
-    .btn-v {
-        background: var(--bg-surface);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-sm);
-        display: flex; align-items: center; justify-content: center;
-        color: var(--text-dim);
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.1s;
-    }
-
-    .btn-v:active {
-        background: var(--bg-active);
-        border-color: var(--glass-border-cyan);
-        color: var(--cyan);
-    }
-
-    .btn-up { grid-column: 2; }
-    .btn-left { grid-column: 1; grid-row: 2; }
-    .btn-down { grid-column: 2; grid-row: 2; }
-    .btn-right { grid-column: 3; grid-row: 2; }
-
-    .actions {
-        display: grid;
-        grid-template-columns: repeat(3, 54px);
-        grid-template-rows: repeat(2, 54px);
-        gap: 5px;
-    }
-
-    .btn-action {
-        border-radius: var(--radius-sm);
+    .tcm-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 11px 14px;
+        border-radius: 9px;
         font-family: 'DM Mono', monospace;
-        font-size: 8px;
-        font-weight: 500;
-        letter-spacing: 0.5px;
-        border: 1px solid;
+        font-size: 12px;
+        color: rgba(255,255,255,0.75);
         cursor: pointer;
-        transition: all 0.1s;
+        transition: background 0.1s;
+        user-select: none;
+    }
+    .tcm-item:active { background: rgba(255,255,255,0.08); }
+    .tcm-item .tcm-icon { font-size: 15px; width: 20px; text-align: center; }
+    .tcm-item.tcm-danger { color: rgba(255,71,87,0.85); }
+    .tcm-item.tcm-danger:active { background: rgba(255,71,87,0.1); }
+    .tcm-sep { height: 1px; background: rgba(255,255,255,0.06); margin: 3px 0; }
+
+    #fx-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 100;
+        background: transparent;
     }
 
-    .btn-action:active { transform: scale(0.93); }
+    /* FIX CÍRCULO NEGRO: el ripple empezaba en width:0/height:0, lo que
+       hacía que el navegador mobile pintara un círculo negro sólido durante
+       el primer frame de la animación (antes de que border-radius surtiera
+       efecto visible). Solución: empezar desde un tamaño ya visible (20px)
+       y con opacity baja, así el elemento nunca es un punto negro opaco. */
+    .touch-ripple {
+        position: fixed;
+        pointer-events: none;
+        border-radius: 50%;
+        border: 1.5px solid rgba(0,212,255,0.5);
+        /* Sin background: transparent explícito, el navegador asignaba
+           el color de sistema (#000) en el primer frame */
+        background: transparent;
+        animation: ripple-anim 0.4s ease-out forwards;
+        z-index: 100;
+        will-change: transform, opacity;
+        transform: translate(-50%, -50%);
+    }
+    @keyframes ripple-anim {
+        /* Arrancamos desde 20px ya visible, no desde 0 */
+        from { width:20px; height:20px; opacity:0.5; transform:translate(-50%,-50%); }
+        to   { width:60px; height:60px; opacity:0;   transform:translate(-50%,-50%); }
+    }
 
-    .btn-click { background: rgba(0,230,118,0.08); border-color: rgba(0,230,118,0.25); color: var(--green); }
-    .btn-del   { background: rgba(255,71,87,0.08);  border-color: rgba(255,71,87,0.25);  color: var(--red); }
-    .btn-use   { background: rgba(255,183,0,0.08);  border-color: rgba(255,183,0,0.25);  color: var(--amber); }
-    .btn-cfg   { background: rgba(167,139,250,0.08);border-color: rgba(167,139,250,0.25);color: var(--purple); }
-    .btn-rot   { background: rgba(0,212,255,0.08);  border-color: rgba(0,212,255,0.25);  color: var(--cyan); }
-    .btn-sel   { background: var(--bg-surface);     border-color: var(--glass-border);   color: var(--text-mid); }
+    .hold-ring {
+        position: fixed;
+        pointer-events: none;
+        border-radius: 50%;
+        border: 2px solid rgba(0,230,118,0.6);
+        width: 48px; height: 48px;
+        z-index: 100;
+        will-change: transform, opacity;
+        animation: hold-ring-anim 0.45s ease-out forwards;
+    }
+    @keyframes hold-ring-anim {
+        from { transform: translate(-50%,-50%) scale(0.3); opacity:0.9; }
+        to   { transform: translate(-50%,-50%) scale(1);   opacity:0; }
+    }
 
-    .btn-click:active { background: rgba(0,230,118,0.2); }
-    .btn-del:active   { background: rgba(255,71,87,0.2); }
-    .btn-use:active   { background: rgba(255,183,0,0.2); }
-    .btn-cfg:active   { background: rgba(167,139,250,0.2); }
-    .btn-rot:active   { background: rgba(0,212,255,0.2); }
+    .hold-progress {
+        position: fixed;
+        pointer-events: none;
+        width: 52px; height: 52px;
+        z-index: 101;
+        will-change: transform;
+        background: transparent;
+        overflow: visible;
+    }
+    .hold-progress circle {
+        fill: none;
+        stroke: rgba(0,212,255,0.8);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-dasharray: 138;
+        stroke-dashoffset: 138;
+        transform-origin: 26px 26px;
+        transform: rotate(-90deg);
+        animation: hold-progress-anim 0.44s linear forwards;
+    }
+    @keyframes hold-progress-anim {
+        from { stroke-dashoffset: 138; }
+        to   { stroke-dashoffset: 0; }
+    }
+
+    #cable-badge {
+        display: none;
+        position: fixed;
+        top: 60px; left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,212,255,0.15);
+        border: 1px solid rgba(0,212,255,0.4);
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-family: 'DM Mono', monospace;
+        font-size: 11px;
+        color: rgba(0,212,255,0.9);
+        z-index: 150;
+        pointer-events: auto;
+        backdrop-filter: blur(8px);
+        animation: badge-in 0.2s ease;
+        display: none;
+        align-items: center;
+        gap: 10px;
+    }
+    #cable-badge.visible { display: flex; }
+    #cable-badge-cancel {
+        background: rgba(255,80,80,0.2);
+        border: 1px solid rgba(255,80,80,0.5);
+        border-radius: 10px;
+        color: rgba(255,100,100,0.95);
+        font-size: 10px;
+        padding: 2px 8px;
+        cursor: pointer;
+        font-family: 'DM Mono', monospace;
+    }
+    @keyframes badge-in {
+        from { opacity:0; transform: translateX(-50%) translateY(-8px); }
+        to   { opacity:1; transform: translateX(-50%) translateY(0); }
+    }
 
     /* ═══════════════════════════════════
        MODAL
@@ -591,7 +672,6 @@
     .code-status-item { display: flex; align-items: center; gap: 4px; }
     .code-status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
 
-    /* ── LOG Console ── */
     #log-console {
         background: rgba(0,0,0,0.6);
         border-top: 1px solid var(--glass-border);
@@ -916,7 +996,6 @@
 
     .ctx-separator { height: 1px; background: var(--glass-border); margin: 3px 0; }
 
-    /* Desktop mode */
     .desktop-mode #virtual-controls { display: none !important; }
     .desktop-mode #zoom-controls { top: auto; bottom: 16px; right: 16px; }
 
@@ -1002,6 +1081,7 @@
 </div>
 
 <canvas id="circuitCanvas"></canvas>
+<div id="fx-overlay"></div>
 
 <!-- MODAL -->
 <div id="modal">
@@ -1024,7 +1104,6 @@
                 <button class="code-snippet-btn" onclick="openCodePanel('libs')" id="tab-libs">Libs</button>
                 <button class="code-snippet-btn" onclick="openCodePanel('demos')" id="tab-demos">Demos</button>
             </div>
-            <!-- PANEL DE SNIPPETS / LIBS / DEMOS -->
             <div id="code-panel" style="display:none; background:rgba(0,0,0,0.5); border-bottom:1px solid var(--glass-border); max-height:120px; overflow-y:auto; padding:6px 8px; flex-wrap:wrap; gap:4px; scrollbar-width:thin;">
             </div>
             <div class="code-body">
@@ -1036,14 +1115,13 @@
                 <div class="code-status-item"><span id="m-line-count">0 líneas</span></div>
                 <div class="code-status-item"><span id="m-char-count">0 chars</span></div>
             </div>
-            <!-- CONSOLA LOG -->
             <div id="log-console">
                 <div class="console-header">
                     <span class="console-header-label">▸ OUTPUT / CONSOLE</span>
                     <button class="console-clear-btn" onclick="clearConsole()">clear ✕</button>
                 </div>
                 <div id="log-console-body"></div>
-                </div>
+            </div>
         </div>
 
         <div class="modal-actions">
@@ -1178,24 +1256,23 @@ end></pre>
 
 </div>
 
-<!-- VIRTUAL CONTROLS -->
+<!-- Badge de cable activo (móvil) -->
 
-<div id="virtual-controls">
-    <div class="dpad">
-        <div class="btn-v btn-up" id="vUp">▲</div>
-        <div class="btn-v btn-left" id="vLeft">◀</div>
-        <div class="btn-v btn-down" id="vDown">▼</div>
-        <div class="btn-v btn-right" id="vRight">▶</div>
-    </div>
-    <div class="actions">
-        <button class="btn-action btn-click" id="vClick">CABLE</button>
-        <button class="btn-action btn-use"   id="vUse">USAR</button>
-        <button class="btn-action btn-rot"   id="vRot">ROTAR</button>
-        <button class="btn-action btn-cfg"   id="vCfg">AJUSTAR</button>
-        <button class="btn-action btn-del"   id="vDel">BORRAR</button>
-        <button class="btn-action btn-sel"   id="vSel">SELECT</button>
-    </div>
+<div id="cable-badge">〜 Toca un nodo para conectar <span id="cable-badge-cancel">✕ cancelar</span></div>
+
+<!-- MENÚ CONTEXTUAL TOUCH NATIVO -->
+
+<div id="touch-ctx-menu">
+    <div class="tcm-item" id="tcm-use">    <span class="tcm-icon">▶</span> Usar</div>
+    <div class="tcm-item" id="tcm-cable">  <span class="tcm-icon">〜</span> Cable</div>
+    <div class="tcm-sep"></div>
+    <div class="tcm-item" id="tcm-cfg">    <span class="tcm-icon">⚙</span> Ajustar</div>
+    <div class="tcm-item" id="tcm-rot">    <span class="tcm-icon">↻</span> Rotar</div>
+    <div class="tcm-sep"></div>
+    <div class="tcm-item tcm-danger" id="tcm-del"><span class="tcm-icon">✕</span> Borrar</div>
 </div>
+
+<div id="virtual-controls"></div>
 
 <script>
     let isDesktopMode = false;
@@ -1341,12 +1418,19 @@ end></pre>
 
     function loadOledDemo() {
         clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
-        const radion = spawn('RADION',-100,-30); const oled = spawn('OLED_I2C',100,-30);
-        const bat = spawn('BATTERY',-260,-30);
-        connect(bat,0,radion,0); connect(bat,1,radion,1); connect(bat,0,oled,0); connect(bat,1,oled,1);
-        connect(radion,6,oled,2); connect(radion,7,oled,3);
+        const radion = spawn('RADION',-100,-30);
+        const oled   = spawn('OLED_I2C',110,-30);
+        const bat    = spawn('BATTERY',-270,-30);
+        connect(bat,0,radion,0); connect(bat,1,radion,1);
+        connect(bat,0,oled,0);   connect(bat,1,oled,1);
+        const radSCL = radion.nodes.findIndex(n=>n.id==='SCL');
+        const radSDA = radion.nodes.findIndex(n=>n.id==='SDA');
+        const oledSCL = oled.nodes.findIndex(n=>n.id==='SCL');
+        const oledSDA = oled.nodes.findIndex(n=>n.id==='SDA');
+        connect(radion,radSCL,oled,oledSCL);
+        connect(radion,radSDA,oled,oledSDA);
         radion.code = `start<\noled.init\noled.println "HELLO WORLD!"\ndelay 1000\noled.println "RADION 1.1 I2C"\ndelay 1000\noled.println "STATUS: OK"\nloop{\n  delay 500\n  oled.print "."\n}\nend>`;
-        radion.intState = { pc:0, wait:0, vars:{}, parsed:null };
+        radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
     }
 
     function loadMotorDriverDemo() {
@@ -1367,19 +1451,26 @@ end></pre>
 
     function loadServoDemo() {
         clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
-        const bat    = spawn('BATTERY',  -260,  20);
+        const bat    = spawn('BATTERY',  -280,  30);
         const radion = spawn('RADION',    -80, -50);
-        const btn1   = spawn('PUSH_BTN', -260, -90);
-        const btn2   = spawn('PUSH_BTN', -260,  90);
-        const servo  = spawn('SERVO',     120,  10);
-        // Alimentación
+        const oled   = spawn('OLED_I2C',  80, -130);
+        const btn1   = spawn('PUSH_BTN', -280, -90);
+        const btn2   = spawn('PUSH_BTN', -280,  110);
+        const servo  = spawn('SERVO',     140,  30);
         connect(bat,0,radion,0); connect(bat,1,radion,1);
-        // Botón 1 → D2 (subir ángulo), Botón 2 → D3 (bajar ángulo)
+        connect(bat,0,oled,0);   connect(bat,1,oled,1);
+        connect(bat,0,servo,0);  connect(bat,1,servo,1);
         connect(bat,0,btn1,0); connect(btn1,1,radion,4);
         connect(bat,0,btn2,0); connect(btn2,1,radion,5);
-        // D4 → SIG del servo, alimentación del servo
-        connect(radion,6,servo,2);
-        connect(bat,0,servo,0); connect(bat,1,servo,1);
+        const d4idx  = radion.nodes.findIndex(n=>n.id==='D4');
+        const sigIdx = servo.nodes.findIndex(n=>n.id==='SIG');
+        connect(radion,d4idx,servo,sigIdx);
+        const radSCL  = radion.nodes.findIndex(n=>n.id==='SCL');
+        const radSDA  = radion.nodes.findIndex(n=>n.id==='SDA');
+        const oledSCL = oled.nodes.findIndex(n=>n.id==='SCL');
+        const oledSDA = oled.nodes.findIndex(n=>n.id==='SDA');
+        connect(radion,radSCL,oled,oledSCL);
+        connect(radion,radSDA,oled,oledSDA);
         radion.code = `start<
 // Servo con dos botones: subir/bajar angulo
 pinUp=D2
@@ -1429,8 +1520,18 @@ end>`;
     let targetCfg=null, selectionBox=null, selectedItems=[], camera={x:0,y:0,zoom:1.0};
     let contextTarget=null, isPanning=false;
 
-    function resize() { canvas.width = container.clientWidth; canvas.height = container.clientHeight; }
-    window.addEventListener('resize', resize); resize();
+    function resize() {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        if (canvas.width === w && canvas.height === h) return;
+        canvas.width = w;
+        canvas.height = h;
+    }
+    window.addEventListener('resize', resize);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', resize);
+    }
+    resize();
 
     canvas.addEventListener('wheel', (e) => {
         if (!isDesktopMode) return;
@@ -1501,37 +1602,366 @@ end>`;
         contextTarget = null;
     }
 
-    const bind = (id,k) => {
-        const el=document.getElementById(id);
-        const set=(v)=>{ if(isDesktopMode)return; vMouse.moving[k]=v; };
-        el.addEventListener('touchstart',(e)=>{e.preventDefault();set(true);},{passive:false});
-        el.addEventListener('touchend',(e)=>{e.preventDefault();set(false);});
-        el.addEventListener('touchcancel',()=>set(false));
-        el.addEventListener('mousedown',()=>set(true));
-        el.addEventListener('mouseup',()=>set(false));
-        el.addEventListener('mouseleave',()=>set(false));
-    };
-    bind('vUp','up'); bind('vDown','down'); bind('vLeft','left'); bind('vRight','right');
+    // ═══════════════════════════════════════════════════════════════
+    // TOUCH NATIVO MÓVIL — interacción directa en el canvas
+    // ═══════════════════════════════════════════════════════════════
+    (function setupMobileTouch() {
+
+        const HOLD_MS    = 440;
+        const DRAG_THR   = 8;
+        const NODE_HIT   = 26;
+        const PINCH_SENS = 0.012;
+
+        let touchCtxTarget = null;
+
+        function toWorld(cx, cy) {
+            const rect = canvas.getBoundingClientRect();
+            const sx = (cx - rect.left) / camera.zoom;
+            const sy = (cy - rect.top)  / camera.zoom;
+            const wx = sx + camera.x - (canvas.width  / 2) / camera.zoom;
+            const wy = sy + camera.y - (canvas.height / 2) / camera.zoom;
+            return { x: wx, y: wy };
+        }
+
+        function compAt(wx, wy) {
+            const hits = components.filter(c => wx > c.x && wx < c.x+c.w && wy > c.y && wy < c.y+c.h);
+            if (!hits.length) return null;
+            const sel = hits.find(c => selectedItems.includes(c));
+            if (sel) return sel;
+            return hits[hits.length - 1];
+        }
+
+        function nodeAt(wx, wy) {
+            let hit = null;
+            components.forEach(c => c.nodes.forEach(n => {
+                if (Math.hypot(c.x+n.x-wx, c.y+n.y-wy) < NODE_HIT) hit = {c, n};
+            }));
+            return hit;
+        }
+
+        const fxOverlay = document.getElementById('fx-overlay');
+
+        function spawnRipple(cx, cy) {
+            requestAnimationFrame(() => {
+                const el = document.createElement('div');
+                el.className = 'touch-ripple';
+                el.style.left = cx + 'px';
+                el.style.top  = cy + 'px';
+                fxOverlay.appendChild(el);
+                el.addEventListener('animationend', () => el.remove());
+            });
+        }
+
+        let holdProgressEl = null;
+        function spawnHoldProgress(cx, cy) {
+            if (holdProgressEl) holdProgressEl.remove();
+            requestAnimationFrame(() => {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 52 52');
+                svg.setAttribute('width', '52');
+                svg.setAttribute('height', '52');
+                svg.className = 'hold-progress';
+                svg.style.cssText = `left:${cx - 26}px; top:${cy - 26}px; background:transparent;`;
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', '26'); circle.setAttribute('cy', '26'); circle.setAttribute('r', '22');
+                circle.setAttribute('fill', 'none');
+                svg.appendChild(circle);
+                fxOverlay.appendChild(svg);
+                holdProgressEl = svg;
+                svg.addEventListener('animationend', () => { if(holdProgressEl===svg) holdProgressEl=null; svg.remove(); });
+            });
+        }
+        function cancelHoldProgress() {
+            if (holdProgressEl) { holdProgressEl.remove(); holdProgressEl = null; }
+        }
+
+        function spawnHoldRing(cx, cy) {
+            cancelHoldProgress();
+            requestAnimationFrame(() => {
+                const el = document.createElement('div');
+                el.className = 'hold-ring';
+                el.style.left = cx + 'px';
+                el.style.top  = cy + 'px';
+                fxOverlay.appendChild(el);
+                el.addEventListener('animationend', () => el.remove());
+            });
+        }
+
+        const cableBadge = document.getElementById('cable-badge');
+        document.getElementById('cable-badge-cancel').addEventListener('click', () => {
+            drawingCable = null;
+            updateCableBadge();
+        });
+        function updateCableBadge() {
+            drawingCable ? cableBadge.classList.add('visible') : cableBadge.classList.remove('visible');
+        }
+
+        const tcmMenu = document.getElementById('touch-ctx-menu');
+
+        function showTCM(cx, cy, comp) {
+            touchCtxTarget = comp;
+            const menuW = 170, menuH = 220;
+            const vw = window.innerWidth, vh = window.innerHeight;
+            let mx = cx + 12, my = cy - menuH / 2;
+            if (mx + menuW > vw) mx = cx - menuW - 12;
+            if (my < 8) my = 8;
+            if (my + menuH > vh - 8) my = vh - menuH - 8;
+            tcmMenu.style.left = mx + 'px';
+            tcmMenu.style.top  = my + 'px';
+            tcmMenu.classList.add('visible');
+            document.getElementById('tcm-use').style.display =
+                (comp && (comp.type==='SWITCH'||comp.type==='PUSH_BTN')) ? 'flex' : 'none';
+            document.getElementById('tcm-cable').style.display = comp ? 'flex' : 'none';
+        }
+
+        function hideTCM() {
+            tcmMenu.classList.remove('visible');
+            touchCtxTarget = null;
+        }
+
+        document.getElementById('tcm-use').addEventListener('click', () => {
+            if (!touchCtxTarget) return hideTCM();
+            if (touchCtxTarget.type === 'SWITCH') touchCtxTarget.closed = !touchCtxTarget.closed;
+            if (touchCtxTarget.type === 'PUSH_BTN') touchCtxTarget.closed = !touchCtxTarget.closed;
+            hideTCM();
+        });
+        document.getElementById('tcm-cable').addEventListener('click', () => {
+            if (!touchCtxTarget) return hideTCM();
+            drawingCable = { c: touchCtxTarget, n: touchCtxTarget.nodes[0] };
+            vMouse.x = touchCtxTarget.x + touchCtxTarget.nodes[0].x;
+            vMouse.y = touchCtxTarget.y + touchCtxTarget.nodes[0].y;
+            hideTCM();
+            updateCableBadge();
+        });
+        document.getElementById('tcm-cfg').addEventListener('click', () => {
+            if (!touchCtxTarget) return hideTCM();
+            const t = touchCtxTarget; hideTCM(); openCfg(t);
+        });
+        document.getElementById('tcm-rot').addEventListener('click', () => {
+            if (!touchCtxTarget) return hideTCM();
+            rotateComponent(touchCtxTarget); hideTCM();
+        });
+        document.getElementById('tcm-del').addEventListener('click', () => {
+            if (!touchCtxTarget) return hideTCM();
+            components = components.filter(c => c !== touchCtxTarget);
+            connections = connections.filter(conn =>
+                components.includes(conn.a.c) && components.includes(conn.b.c));
+            if (selectedItems.includes(touchCtxTarget)) selectedItems = [];
+            hideTCM();
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            if (!tcmMenu.classList.contains('visible')) return;
+            if (!tcmMenu.contains(e.target)) hideTCM();
+        }, { passive: true });
+
+        const gestures = new Map();
+        let lastPinchDist = null;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (isDesktopMode) return;
+            e.preventDefault();
+            if (tcmMenu.classList.contains('visible')) { hideTCM(); return; }
+
+            for (const t of e.changedTouches) {
+                const w = toWorld(t.clientX, t.clientY);
+                const comp   = compAt(w.x, w.y);
+                const node   = nodeAt(w.x, w.y);
+
+                const holdProgressTimer = setTimeout(() => spawnHoldProgress(t.clientX, t.clientY), 80);
+
+                const holdTimer = setTimeout(() => {
+                    const g = gestures.get(t.identifier);
+                    if (!g || g.moved) return;
+                    spawnHoldRing(t.clientX, t.clientY);
+                    if (g.comp) {
+                        selectedItems.forEach(c => c.selected = false); selectedItems = [];
+                        showTCM(t.clientX, t.clientY, g.comp);
+                    } else {
+                        selectionBox = { x: g.wx, y: g.wy, w: 0, h: 0 };
+                        g.selecting = true;
+                    }
+                }, HOLD_MS);
+
+                gestures.set(t.identifier, {
+                    startX: t.clientX, startY: t.clientY,
+                    wx: w.x, wy: w.y,
+                    comp, node,
+                    moved: false, selecting: false,
+                    dragging: false,
+                    holdTimer, holdProgressTimer
+                });
+            }
+
+            if (e.touches.length === 2) {
+                gestures.forEach(g => { clearTimeout(g.holdTimer); g.holdTimer = null; clearTimeout(g.holdProgressTimer); g.holdProgressTimer = null; });
+                const t0 = e.touches[0], t1 = e.touches[1];
+                lastPinchDist = Math.hypot(t0.clientX-t1.clientX, t0.clientY-t1.clientY);
+                draggingComp = drawingCable = null;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isDesktopMode) return;
+            e.preventDefault();
+
+            if (e.touches.length === 2 && lastPinchDist !== null) {
+                const t0 = e.touches[0], t1 = e.touches[1];
+                const d = Math.hypot(t0.clientX-t1.clientX, t0.clientY-t1.clientY);
+                const delta = d - lastPinchDist;
+                camera.zoom = Math.min(3, Math.max(0.25, camera.zoom + delta * PINCH_SENS));
+                lastPinchDist = d;
+                return;
+            }
+            lastPinchDist = null;
+
+            for (const t of e.changedTouches) {
+                const g = gestures.get(t.identifier);
+                if (!g) continue;
+                const ddx = t.clientX - g.startX;
+                const ddy = t.clientY - g.startY;
+                const dist = Math.hypot(ddx, ddy);
+
+                if (!g.moved && dist > DRAG_THR) {
+                    g.moved = true;
+                    clearTimeout(g.holdTimer);
+                    g.holdTimer = null;
+                    clearTimeout(g.holdProgressTimer);
+                    g.holdProgressTimer = null;
+                    cancelHoldProgress();
+
+                    if (g.node && !drawingCable) {
+                        drawingCable = g.node;
+                        updateCableBadge();
+                    } else if (g.comp && !g.node) {
+                        g.dragging = true;
+                        if (selectedItems.includes(g.comp)) {
+                            draggingComp = { group: true, ref: g.comp, ox: g.wx, oy: g.wy };
+                        } else {
+                            selectedItems.forEach(c => c.selected = false); selectedItems = [];
+                            draggingComp = { c: g.comp, ox: g.wx - g.comp.x, oy: g.wy - g.comp.y };
+                        }
+                    }
+                }
+                if (!g.moved) continue;
+
+                const w = toWorld(t.clientX, t.clientY);
+                vMouse.x = w.x; vMouse.y = w.y;
+
+                if (g.selecting && selectionBox) {
+                    selectionBox.w = w.x - selectionBox.x;
+                    selectionBox.h = w.y - selectionBox.y;
+
+                } else if (draggingComp && g.dragging) {
+                    if (draggingComp.group) {
+                        const mvx = w.x - draggingComp.ox;
+                        const mvy = w.y - draggingComp.oy;
+                        selectedItems.forEach(c => { c.x += mvx; c.y += mvy; });
+                        draggingComp.ox = w.x; draggingComp.oy = w.y;
+                    } else {
+                        draggingComp.c.x = w.x - draggingComp.ox;
+                        draggingComp.c.y = w.y - draggingComp.oy;
+                    }
+
+                } else if (!g.comp && !g.node && !g.selecting && !drawingCable) {
+                    const panX = (t.clientX - (g.lastX || g.startX)) / camera.zoom;
+                    const panY = (t.clientY - (g.lastY || g.startY)) / camera.zoom;
+                    camera.x -= panX; camera.y -= panY;
+                }
+                g.lastX = t.clientX; g.lastY = t.clientY;
+            }
+        }, { passive: false });
+
+        function onTouchEnd(e) {
+            if (isDesktopMode) return;
+            lastPinchDist = null;
+
+            for (const t of e.changedTouches) {
+                const g = gestures.get(t.identifier);
+                if (!g) continue;
+                clearTimeout(g.holdTimer);
+                clearTimeout(g.holdProgressTimer);
+                cancelHoldProgress();
+
+                const w = toWorld(t.clientX, t.clientY);
+
+                if (!g.moved) {
+                    // ── TAP puro ─────────────────────────────────
+                    spawnRipple(t.clientX, t.clientY);
+
+                    if (g.node) {
+                        if (!drawingCable) {
+                            drawingCable = g.node;
+                        } else if (drawingCable.c !== g.node.c) {
+                            connections.push({ a: drawingCable, b: g.node });
+                            drawingCable = null;
+                        }
+                        updateCableBadge();
+
+                    } else if (g.comp) {
+                        if (drawingCable) {
+                            let closest = null, minD = Infinity;
+                            g.comp.nodes.forEach(n => {
+                                const d = Math.hypot(g.comp.x+n.x-w.x, g.comp.y+n.y-w.y);
+                                if (d < minD) { minD = d; closest = { c: g.comp, n }; }
+                            });
+                            if (closest && closest.c !== drawingCable.c) {
+                                connections.push({ a: drawingCable, b: closest });
+                            }
+                            drawingCable = null;
+                            updateCableBadge();
+
+                        } else if (g.comp.type === 'PUSH_BTN') {
+                            g.comp.closed = true;
+                            setTimeout(() => { g.comp.closed = false; }, 180);
+
+                        } else if (g.comp.type === 'SWITCH') {
+                            g.comp.closed = !g.comp.closed;
+
+                        } else {
+                            selectedItems.forEach(c => c.selected = false);
+                            selectedItems = [];
+                        }
+
+                    } else {
+                        if (drawingCable) {
+                            const wp = spawn('WAYPOINT', w.x, w.y);
+                            connections.push({ a: drawingCable, b: { c: wp, n: wp.nodes[0] } });
+                            drawingCable = { c: wp, n: wp.nodes[0] };
+                            updateCableBadge();
+                        } else {
+                            selectedItems.forEach(c => c.selected = false);
+                            selectedItems = [];
+                        }
+                    }
+
+                } else if (g.selecting && selectionBox) {
+                    applySelection(); selectionBox = null;
+
+                } else if (drawingCable && g.moved) {
+                    const targetNode = nodeAt(w.x, w.y);
+                    if (targetNode && targetNode.c !== drawingCable.c) {
+                        connections.push({ a: drawingCable, b: targetNode });
+                    } else {
+                        const wp = spawn('WAYPOINT', w.x, w.y);
+                        connections.push({ a: drawingCable, b: { c: wp, n: wp.nodes[0] } });
+                    }
+                    drawingCable = null;
+                    updateCableBadge();
+                }
+
+                draggingComp = null;
+                gestures.delete(t.identifier);
+            }
+        }
+
+        canvas.addEventListener('touchend',    onTouchEnd, { passive: false });
+        canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+    })();
 
     const clearAllMovement = () => { vMouse.moving = {}; };
-    document.addEventListener('visibilitychange', clearAllMovement);
-    document.getElementById('virtual-controls').addEventListener('touchend', (e)=>{
-        if(e.touches.length === 0) clearAllMovement();
-    });
-    document.getElementById('virtual-controls').addEventListener('touchcancel', clearAllMovement);
     window.addEventListener('blur', clearAllMovement);
-
-    const setupBtn = (id,fn) => {
-        const el=document.getElementById(id);
-        el.addEventListener('mousedown',()=>{if(!isDesktopMode)fn(true);}); el.addEventListener('mouseup',()=>{if(!isDesktopMode)fn(false);});
-        el.addEventListener('touchstart',(e)=>{if(!isDesktopMode){e.preventDefault();fn(true);}}); el.addEventListener('touchend',(e)=>{if(!isDesktopMode){e.preventDefault();fn(false);}});
-    };
-    setupBtn('vClick',(v)=>vMouse.isDown=v);
-    setupBtn('vSel',(v)=>{
-        vMouse.selectionMode=v;
-        if(v){selectionBox={x:vMouse.x,y:vMouse.y,w:0,h:0};}
-        else{if(selectionBox&&Math.abs(selectionBox.w)>5)applySelection();selectionBox=null;}
-    });
 
     function clearAll(force=false) {
         if(force||confirm("¿Borrar todo?")) { components=[]; connections=[]; selectedItems=[]; drawingCable=null; }
@@ -1553,54 +1983,12 @@ end>`;
         return Math.hypot(p.x-(v.x+t*(w.x-v.x)),p.y-(v.y+t*(w.y-v.y)));
     }
 
-    document.getElementById('vDel').addEventListener('click',()=>{
-        if(selectedItems.length>0){
-            components=components.filter(c=>!selectedItems.includes(c));
-            connections=connections.filter(conn=>components.includes(conn.a.c)&&components.includes(conn.b.c));
-            selectedItems=[];return;
-        }
-        let cableDeleted=false;
-        connections=connections.filter(conn=>{
-            if(cableDeleted)return true;
-            const p1={x:conn.a.c.x+conn.a.n.x,y:conn.a.c.y+conn.a.n.y};
-            const p2={x:conn.b.c.x+conn.b.n.x,y:conn.b.c.y+conn.b.n.y};
-            if(distToSegment(vMouse,p1,p2)<10){cableDeleted=true;return false;}
-            return true;
-        });
-        if(!cableDeleted){
-            components=components.filter(c=>!(vMouse.x>c.x&&vMouse.x<c.x+c.w&&vMouse.y>c.y&&vMouse.y<c.y+c.h));
-            connections=connections.filter(conn=>components.includes(conn.a.c)&&components.includes(conn.b.c));
-        }
-    });
-
-    document.getElementById('vRot').addEventListener('click',()=>{
-        if(selectedItems.length>0){selectedItems.forEach(c=>{if(c.type!=='WAYPOINT')rotateComponent(c);});}
-        else{const hit=components.find(c=>vMouse.x>c.x&&vMouse.x<c.x+c.w&&vMouse.y>c.y&&vMouse.y<c.y+c.h);if(hit&&hit.type!=='WAYPOINT')rotateComponent(hit);}
-    });
-
     function rotateComponent(c) {
         c.rotation=(c.rotation+1)%4;
         const cx=c.w/2, cy=c.h/2;
         c.nodes.forEach(n=>{const dx=n.x-cx,dy=n.y-cy;n.x=cx-dy;n.y=cy+dx;});
         [c.w,c.h]=[c.h,c.w];
     }
-
-    const vUseBtn=document.getElementById('vUse');
-    const handleUse=(active)=>{
-        components.filter(c=>c.type==='PUSH_BTN').forEach(c=>{
-            if(vMouse.x>c.x&&vMouse.x<c.x+c.w&&vMouse.y>c.y&&vMouse.y<c.y+c.h)c.closed=active;
-            if(!active)c.closed=false;
-        });
-        if(active){components.forEach(c=>{if(c.type==='SWITCH'&&vMouse.x>c.x&&vMouse.x<c.x+c.w&&vMouse.y>c.y&&vMouse.y<c.y+c.h)c.closed=!c.closed;});}
-    };
-    vUseBtn.addEventListener('mousedown',()=>handleUse(true)); vUseBtn.addEventListener('mouseup',()=>handleUse(false));
-    vUseBtn.addEventListener('touchstart',(e)=>{e.preventDefault();handleUse(true);}); vUseBtn.addEventListener('touchend',(e)=>{e.preventDefault();handleUse(false);});
-
-    document.getElementById('vCfg').addEventListener('click',()=>{
-        if(selectedItems.length>1)return;
-        const hit=components.find(c=>vMouse.x>c.x&&vMouse.x<c.x+c.w&&vMouse.y>c.y&&vMouse.y<c.y+c.h);
-        if(hit)openCfg(hit);
-    });
 
     // ── CODE EDITOR HELPERS ──
     function syncLineNums() {
@@ -1617,11 +2005,9 @@ end>`;
     }
 
     // ── CONSOLA LOG ──────────────────────────────────────────────
-    // consoleOwner: referencia al Radion actualmente abierto en el editor
     let consoleOwner = null;
 
     function logConsole(msg, type) {
-        // type: 'init' | 'print' | 'info' | 'warn' | 'error' | 'dim'
         const body = document.getElementById('log-console-body');
         if (!body) return;
         const now = new Date();
@@ -1635,7 +2021,6 @@ end>`;
                                           `[OUT ${ts}] `;
         line.textContent = prefix + msg;
         body.appendChild(line);
-        // Auto-scroll al fondo
         const cons = document.getElementById('log-console');
         cons.scrollTop = cons.scrollHeight;
     }
@@ -2179,7 +2564,6 @@ end>`
         syncLineNums();
     }
 
-    // Mantener compatibilidad
     function insertSnippet(type) {
         const map = { 'loop':'\nloop{\n  \n}', 'delay':'\ndelay 500', 'if':'\nif condicion {\n  \n}', 'oled':'\noled.init\noled.clear\noled.println "Hola"' };
         insertCode(map[type] || '');
@@ -2233,8 +2617,9 @@ end>`
         document.getElementById('modal').classList.remove('code-mode');
         targetCfg=null;
     }
+
     // ═══════════════════════════════════════════════════════════════
-    // LOG VALIDATOR — análisis estático antes de ejecutar
+    // LOG VALIDATOR
     // ═══════════════════════════════════════════════════════════════
     function validateLOG(code) {
         const errors   = [];
@@ -2254,7 +2639,6 @@ end>`
         const KEYWORDS     = ['loop','while','for','if','else','delay','toggle','print','println','start<','end>','console','oled','pin','math','str','timer'];
         const VALID_PINS   = ['D1','D2','D3','D4','A1'];
 
-        // ── 1. Estructura start< / end> ──────────────────────────
         const trimmed = code.trim();
         if (!trimmed.startsWith('start<')) {
             errors.push({ line: 1, msg: 'Falta "start<" al inicio del programa' });
@@ -2263,7 +2647,6 @@ end>`
             errors.push({ line: lines.length, msg: 'Falta "end>" al final del programa' });
         }
 
-        // ── 2. Llaves balanceadas ────────────────────────────────
         let braceCount = 0;
         let lastOpenLine = -1;
         for (let i = 0; i < lines.length; i++) {
@@ -2279,7 +2662,6 @@ end>`
             errors.push({ line: lastOpenLine, msg: `Bloque abierto sin cerrar (falta ${braceCount} "}")` });
         }
 
-        // ── 3. Análisis línea por línea ──────────────────────────
         const declaredVars = new Set();
 
         for (let i = 0; i < lines.length; i++) {
@@ -2289,7 +2671,6 @@ end>`
 
             if (!l || l.startsWith('//') || l === 'start<' || l === 'end>' || l === '}' || l === 'else {' || l === 'else{') continue;
 
-            // ── delay ────────────────────────────────────────────
             if (l.startsWith('delay ')) {
                 const arg = l.slice(6).trim();
                 if (!arg) errors.push({ line: lnum, msg: '"delay" necesita un argumento: delay 500' });
@@ -2299,7 +2680,6 @@ end>`
                 continue;
             }
 
-            // ── toggle ───────────────────────────────────────────
             if (l.startsWith('toggle ')) {
                 const arg = l.slice(7).trim();
                 if (!VALID_PINS.includes(arg) && !declaredVars.has(arg)) {
@@ -2308,7 +2688,6 @@ end>`
                 continue;
             }
 
-            // ── loop / while / for / if ──────────────────────────
             if (l.startsWith('loop{') || l === 'loop{') continue;
             if (l.startsWith('loop ')) continue;
             if (l.startsWith('while ')) {
@@ -2326,7 +2705,6 @@ end>`
                 continue;
             }
 
-            // ── Llamadas a librerías como sentencia ──────────────
             const libCallMatch = l.match(/^(math|str|timer|pin|oled|console|servo)\.([\w.]+)\(?/);
             if (libCallMatch) {
                 const lib = libCallMatch[1];
@@ -2338,7 +2716,6 @@ end>`
                 continue;
             }
 
-            // ── var;HIGH / var;LOW ────────────────────────────────
             if (l.includes(';')) {
                 const parts   = l.split(';');
                 const varName = parts[0].trim();
@@ -2354,13 +2731,11 @@ end>`
                 continue;
             }
 
-            // ── var = expr (asignación) ───────────────────────────
             if (l.includes('=') && !l.startsWith('if ') && !l.startsWith('while ') && !l.startsWith('for ')) {
                 const eqIdx  = l.indexOf('=');
                 const vName  = l.slice(0, eqIdx).trim();
                 const expr   = l.slice(eqIdx + 1).trim();
 
-                // nombre de variable válido
                 if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(vName)) {
                     errors.push({ line: lnum, msg: `Nombre de variable inválido: "${vName}"` });
                     continue;
@@ -2368,13 +2743,11 @@ end>`
 
                 declaredVars.add(vName);
 
-                // expresión vacía
                 if (!expr) {
                     errors.push({ line: lnum, msg: `Asignación vacía en "${vName} ="` });
                     continue;
                 }
 
-                // función de librería desconocida en la expresión
                 const exprLibMatch = expr.match(/^(math|str|timer|pin|console|servo)\.([\w]+)\(/);
                 if (exprLibMatch) {
                     const lib = exprLibMatch[1];
@@ -2386,7 +2759,6 @@ end>`
                     continue;
                 }
 
-                // expresión con solo letras que no es pin/HIGH/LOW/variable/keyword
                 if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expr)) {
                     const isKnown = VALID_PINS.includes(expr) || expr==='HIGH' || expr==='LOW' || expr==='true' || expr==='false' || expr==='PI' || declaredVars.has(expr) || KEYWORDS.some(k=>expr.startsWith(k));
                     if (!isKnown) {
@@ -2396,13 +2768,10 @@ end>`
                 continue;
             }
 
-            // ── Línea que no encaja en ningún patrón válido ───────
-            // Ignorar líneas que son apertura de bloque, cierre, o start/end
             const isBlock   = l.endsWith('{');
             const isKnownKW = KEYWORDS.some(k => l.startsWith(k));
             if (!isBlock && !isKnownKW && l !== '}') {
-                // comprobar si es una palabra completamente desconocida
-                if (!/^[a-zA-Z_]/.test(l)) continue; // números, etc.
+                if (!/^[a-zA-Z_]/.test(l)) continue;
                 errors.push({ line: lnum, msg: `Instrucción no reconocida: "${l.length > 30 ? l.slice(0,30)+'…' : l}"` });
             }
         }
@@ -2413,14 +2782,12 @@ end>`
     function saveCfg(){
         if(!targetCfg) return;
 
-        // No-Radion: guardar valor y cerrar directamente
         if(targetCfg.type==='BATTERY'||targetCfg.type==='RESISTOR'||targetCfg.type==='CAPACITOR'){
             targetCfg.val=Math.max(0.1,parseFloat(document.getElementById('m-val').value)||0);
             closeCfg();
             return;
         }
 
-        // Radion: solo validar, NO cerrar
         if(targetCfg.type==='RADION'){
             const code = document.getElementById('m-code-area').value;
             const { errors, warnings } = validateLOG(code);
@@ -2434,11 +2801,9 @@ end>`
                 logConsole(`─── ${errors.length} error(es), ${warnings.length} aviso(s) — corrige antes de Submit ───`, 'dim');
             }
             targetCfg._lastValidation = { errors, warnings, code };
-            // el modal permanece abierto
         }
     }
 
-    // ── SUBMIT: solo carga el código si la última validación fue OK ──
     function submitCfg() {
         if (!targetCfg || targetCfg.type !== 'RADION') return;
         const v = targetCfg._lastValidation;
@@ -2447,7 +2812,6 @@ end>`
             logConsole('✖ Haz clic en Save primero para validar el código', 'error');
             return;
         }
-        // Verificar que el código no cambió desde la última validación
         const currentCode = document.getElementById('m-code-area').value;
         if (currentCode !== v.code) {
             clearConsole();
@@ -2461,7 +2825,6 @@ end>`
             logConsole('Corrige los errores y vuelve a hacer Save', 'dim');
             return;
         }
-        // Todo OK → cargar a la Radion
         targetCfg.code = v.code;
         targetCfg.memory = {d1:false, d2:false, d3:false};
         targetCfg.intState = {pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null};
@@ -2493,11 +2856,11 @@ end>`
         else if(type==='RADION'){
             comp.w=110;comp.h=130;
             comp.nodes=[
-                {id:'VCC',x:15,y:15},{id:'GND',x:15,y:35},{id:'G',x:15,y:55},  // 0,1,2
-                {id:'D1',x:95,y:15},{id:'D2',x:95,y:35},{id:'D3',x:95,y:55},    // 3,4,5
-                {id:'D4',x:95,y:75},                                              // 6 — digital/PWM/servo
-                {id:'A1',x:15,y:75},                                              // 7 — analógico entrada
-                {id:'SCL',x:95,y:95},{id:'SDA',x:95,y:115}                       // 8,9
+                {id:'VCC',x:15,y:15},{id:'GND',x:15,y:35},{id:'G',x:15,y:55},
+                {id:'D1',x:95,y:15},{id:'D2',x:95,y:35},{id:'D3',x:95,y:55},
+                {id:'D4',x:95,y:75},
+                {id:'A1',x:15,y:75},
+                {id:'SCL',x:95,y:95},{id:'SDA',x:95,y:115}
             ];
             comp.code=`start<\npin1=D1\nloop{\n  pin1;HIGH\n  delay 500\n  pin1;LOW\n  delay 500\n}\nend>`;
             comp.memory={d1:false,d2:false,d3:false,d4:false};
@@ -2513,25 +2876,25 @@ end>`
         else if(type==='SERVO'){
             comp.w=90; comp.h=70;
             comp.nodes=[
-                {id:'VCC',  x:15, y:0},   // 0 — alimentación +
-                {id:'GND',  x:45, y:0},   // 1 — alimentación GND
-                {id:'SIG',  x:75, y:0},   // 2 — señal PWM desde D4
+                {id:'VCC',  x:15, y:0},
+                {id:'GND',  x:45, y:0},
+                {id:'SIG',  x:75, y:0},
             ];
-            comp.angle = 90;       // ángulo actual 0–180°
+            comp.angle = 90;
             comp.targetAngle = 90;
             comp.lastPulse = 0;
         }
         else if(type==='L298N'){
             comp.w=130; comp.h=100;
             comp.nodes=[
-                {id:'VCC', x:0,  y:20}, // 0 — alimentación +
-                {id:'GND', x:0,  y:50}, // 1 — alimentación GND
-                {id:'IN1', x:0,  y:75}, // 2 — control D1 Radion
-                {id:'IN2', x:30, y:100},// 3 — control D2 Radion
-                {id:'OUT1',x:130,y:30}, // 4 — motor terminal A
-                {id:'OUT2',x:130,y:70}, // 5 — motor terminal B
+                {id:'VCC', x:0,  y:20},
+                {id:'GND', x:0,  y:50},
+                {id:'IN1', x:0,  y:75},
+                {id:'IN2', x:30, y:100},
+                {id:'OUT1',x:130,y:30},
+                {id:'OUT2',x:130,y:70},
             ];
-            comp.motorDir = 0; // -1 izq, 0 stop, 1 der
+            comp.motorDir = 0;
         }
         components.push(comp); return comp;
     }
@@ -2572,8 +2935,6 @@ end>`
 
     // ═══════════════════════════════════════════════════════════════
     // RADION LOG v2.0 — Intérprete completo
-    // Nuevas features: while, for, else, toggle, funciones math.*,
-    // str.*, timer.*, pin.*, oled.draw.*, oled.setCursor, oled.printAt
     // ═══════════════════════════════════════════════════════════════
     function runRadionLogic(c) {
         if (!c.active || c.burned) {
@@ -2589,7 +2950,6 @@ end>`
         const now = Date.now();
         if (c.intState.wait > now) return;
 
-        // ── Procesar pin.blink activos (no bloqueante) ───────────
         Object.keys(c.intState.pinBlink).forEach(pin => {
             const pb = c.intState.pinBlink[pin];
             if (!pb.active) return;
@@ -2606,7 +2966,6 @@ end>`
         let ix = 0;
         const max = 80;
 
-        // ── Leer señal de pin digital ────────────────────────────
         function readPin(pin) {
             if (pin === 'D1') return c.nodes[3].signal ? 1 : 0;
             if (pin === 'D2') return c.nodes[4].signal ? 1 : 0;
@@ -2616,7 +2975,6 @@ end>`
             return 0;
         }
 
-        // ── Escribir pin digital ─────────────────────────────────
         function writePin(pin, state) {
             if (pin === 'D1') c.memory.d1 = state;
             if (pin === 'D2') c.memory.d2 = state;
@@ -2624,7 +2982,6 @@ end>`
             if (pin === 'D4') c.memory.d4 = state;
         }
 
-        // ── Resolver variable a pin físico ───────────────────────
         function resolvePin(name) {
             const v = c.intState.vars[name];
             if (v === 'D1' || v === 'D2' || v === 'D3' || v === 'D4' || v === 'A1') return v;
@@ -2632,15 +2989,12 @@ end>`
             return null;
         }
 
-        // ── Llamadas a funciones de librería ─────────────────────
-        // Detecta "lib.fn(args)" o "lib.fn(arg1,arg2,...)"
         function callLibFunc(expr) {
             const m = expr.match(/^(math|str|timer|pin|oled)\.([\w]+)\((.*)?\)$/);
             if (!m) return undefined;
             const [, lib, fn, rawArgs] = m;
             const args = rawArgs ? rawArgs.split(',').map(a => evalExpr(a.trim())) : [];
 
-            // ── math ─────────────────────────────────────────────
             if (lib === 'math') {
                 if (fn === 'abs')    return Math.abs(args[0]);
                 if (fn === 'max')    return Math.max(args[0], args[1]);
@@ -2664,7 +3018,6 @@ end>`
                 if (fn === 'pi')    return Math.PI;
             }
 
-            // ── str ──────────────────────────────────────────────
             if (lib === 'str') {
                 const sa = args.map(a => String(a));
                 if (fn === 'concat')  return sa.join('');
@@ -2679,7 +3032,6 @@ end>`
                 if (fn === 'num')     return parseFloat(sa[0]) || 0;
             }
 
-            // ── timer ────────────────────────────────────────────
             if (lib === 'timer') {
                 const id = rawArgs.split(',')[0].trim();
                 if (fn === 'set') {
@@ -2705,7 +3057,6 @@ end>`
                 }
             }
 
-            // ── pin ──────────────────────────────────────────────
             if (lib === 'pin') {
                 const pinName = rawArgs ? rawArgs.split(',')[0].trim() : '';
                 const physPin = resolvePin(pinName) || pinName;
@@ -2733,20 +3084,14 @@ end>`
                 }
             }
 
-            // ── servo ────────────────────────────────────────────
-            // servo.write(pin, angulo)  → mueve el servo conectado al pin
-            // servo.read(pin)           → devuelve el ángulo actual del servo
             if (lib === 'servo') {
                 const pinName = rawArgs ? rawArgs.split(',')[0].trim() : 'D4';
                 const physPin = resolvePin(pinName) || pinName;
                 if (fn === 'write') {
                     const targetAngle = Math.min(180, Math.max(0, parseFloat(args[1]) || 0));
-                    // Activar el pin de señal para que haya corriente
                     c.memory.d4 = true;
-                    // Buscar el servo conectado al pin físico
                     const pinNode = physPin === 'D4' ? c.nodes[6] : null;
                     if (pinNode) {
-                        // Rastrear el servo conectado a ese nodo
                         connections.forEach(conn => {
                             let other = null;
                             if (conn.a.n === pinNode) other = conn.b;
@@ -2778,23 +3123,19 @@ end>`
             return undefined;
         }
 
-        // ── Evalúa expresión aritmética / funciones / valores ────
         function evalExpr(expr) {
             if (!expr) return 0;
             expr = expr.trim();
 
-            // Llamada a función de librería
             if (/^(math|str|timer|pin|servo)\.([\w]+)\(/.test(expr)) {
                 const r = callLibFunc(expr);
                 if (r !== undefined) return r;
             }
 
-            // Paréntesis
             if (expr.startsWith('(') && expr.endsWith(')')) {
                 return evalExpr(expr.slice(1, -1));
             }
 
-            // Operadores de baja precedencia: + - (derecha a izquierda)
             for (let i = expr.length - 1; i >= 0; i--) {
                 const ch = expr[i];
                 if (ch === '+' || ch === '-') {
@@ -2809,7 +3150,6 @@ end>`
                 }
             }
 
-            // Operadores alta precedencia: * / %
             for (let i = expr.length - 1; i >= 0; i--) {
                 const ch = expr[i];
                 if (ch === '*' || ch === '/' || ch === '%') {
@@ -2826,25 +3166,20 @@ end>`
                 }
             }
 
-            // Literales numéricos
             if (!isNaN(parseFloat(expr)) && isFinite(expr)) return parseFloat(expr);
 
-            // Constantes
             if (expr === 'HIGH') return 1;
             if (expr === 'LOW')  return 0;
             if (expr === 'true') return 1;
             if (expr === 'false') return 0;
             if (expr === 'PI')   return Math.PI;
 
-            // String literal
             if (expr.startsWith('"') && expr.endsWith('"')) return expr.slice(1, -1);
 
-            // Pin directo
             if (expr === 'D1') return readPin('D1');
             if (expr === 'D2') return readPin('D2');
             if (expr === 'D3') return readPin('D3');
 
-            // Variable
             const v = c.intState.vars[expr];
             if (v !== undefined) {
                 if (v === 'D1' || v === 'D2' || v === 'D3') return readPin(v);
@@ -2854,17 +3189,13 @@ end>`
             return expr;
         }
 
-        // ── Evalúa condición booleana ────────────────────────────
         function evalCond(condStr) {
             condStr = condStr.trim();
-            // NOT
             if (condStr.startsWith('!')) return !evalCond(condStr.slice(1).trim());
-            // AND
             if (condStr.includes(' and ')) {
                 const parts = condStr.split(' and ');
                 return parts.every(p => evalCond(p.trim()));
             }
-            // OR
             if (condStr.includes(' or ')) {
                 const parts = condStr.split(' or ');
                 return parts.some(p => evalCond(p.trim()));
@@ -2893,7 +3224,6 @@ end>`
             return v !== 0 && v !== 'LOW' && v !== '' && v !== false;
         }
 
-        // ── Resuelve token para mostrar en OLED ─────────────────
         function resolveDisplay(token) {
             if (token.startsWith('"') && token.endsWith('"')) return token.slice(1, -1);
             const val = evalExpr(token);
@@ -2903,7 +3233,6 @@ end>`
             return String(val);
         }
 
-        // ── Genera barra visual para OLED ────────────────────────
         function makeBar(val, lo, hi, width) {
             width = width || 8;
             const pct = Math.max(0, Math.min(1, (val - lo) / (hi - lo)));
@@ -2911,27 +3240,22 @@ end>`
             return '[' + '█'.repeat(filled) + '░'.repeat(width - filled) + ']';
         }
 
-        // ── Bucle principal del intérprete ───────────────────────
         try {
         while (ix < max) {
             if (c.intState.pc >= lines.length) break;
             let line = lines[c.intState.pc].trim();
 
-            // Vacíos, comentarios, delimitadores
             if (!line || line.startsWith('//') || line === 'start<' || line === 'end>') {
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── else { ───────────────────────────────────────────
             if (line === 'else {' || line === 'else{') {
-                // Si llegamos aquí es que el if anterior fue TRUE → saltar else
                 c.intState.pc = (blocks[c.intState.pc] !== undefined)
                     ? blocks[c.intState.pc] + 1
                     : c.intState.pc + 1;
                 ix++; continue;
             }
 
-            // ── if <cond> { ──────────────────────────────────────
             if (line.startsWith('if ')) {
                 const condMatch = line.match(/^if\s+(.+?)\s*\{$/);
                 let cond = false;
@@ -2941,10 +3265,9 @@ end>`
                 } else {
                     const closeIdx = blocks[c.intState.pc];
                     if (closeIdx !== undefined) {
-                        // Hay else?
                         const nextLine = lines[closeIdx + 1] ? lines[closeIdx + 1].trim() : '';
                         if (nextLine === 'else {' || nextLine === 'else{') {
-                            c.intState.pc = closeIdx + 2; // entrar al else
+                            c.intState.pc = closeIdx + 2;
                         } else {
                             c.intState.pc = closeIdx + 1;
                         }
@@ -2955,7 +3278,6 @@ end>`
                 ix++; continue;
             }
 
-            // ── while <cond> { ───────────────────────────────────
             if (line.startsWith('while ')) {
                 const condMatch = line.match(/^while\s+(.+?)\s*\{$/);
                 let cond = false;
@@ -2970,7 +3292,6 @@ end>`
                 ix++; continue;
             }
 
-            // ── for <var>=<ini> to <fin> { ───────────────────────
             if (line.startsWith('for ')) {
                 const forMatch = line.match(/^for\s+(\w+)=(.+?)\s+to\s+(.+?)\s*\{$/);
                 if (forMatch) {
@@ -2993,18 +3314,15 @@ end>`
                 ix++; continue;
             }
 
-            // ── Bloque abierto { ─────────────────────────────────
             if (line.endsWith('{')) { c.intState.pc++; ix++; continue; }
 
-            // ── Cierre de bloque } ───────────────────────────────
             if (line === '}') {
                 const sl = blocks[c.intState.pc];
                 if (sl !== undefined) {
                     const headerLine = lines[sl].trim();
                     if (headerLine.startsWith('loop') || headerLine.startsWith('while')) {
-                        c.intState.pc = sl; ix++; continue; // volver al header
+                        c.intState.pc = sl; ix++; continue;
                     } else if (headerLine.startsWith('for ')) {
-                        // incrementar variable del for
                         const forMatch = headerLine.match(/^for\s+(\w+)=(.+?)\s+to\s+(.+?)\s*\{$/);
                         if (forMatch) {
                             const varName = forMatch[1];
@@ -3021,7 +3339,6 @@ end>`
                 ix++; continue;
             }
 
-            // ── delay <expr_ms> ──────────────────────────────────
             if (line.startsWith('delay ')) {
                 const ms = parseFloat(evalExpr(line.slice(6).trim())) || 100;
                 c.intState.wait = now + ms;
@@ -3029,7 +3346,6 @@ end>`
                 return;
             }
 
-            // ── toggle <pin> ─────────────────────────────────────
             if (line.startsWith('toggle ')) {
                 const varName = line.slice(7).trim();
                 const pin = resolvePin(varName);
@@ -3039,7 +3355,6 @@ end>`
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── print <expr> (alias corto) ───────────────────────
             if (line.startsWith('print ') && !line.startsWith('println')) {
                 const oled = getI2C_OLED(c);
                 if (oled && oled.active && oled.initialized) {
@@ -3061,7 +3376,6 @@ end>`
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── oled.* ───────────────────────────────────────────
             if (line.startsWith('oled.')) {
                 const oled = getI2C_OLED(c);
                 if (oled && oled.active && !oled.burned) {
@@ -3085,7 +3399,6 @@ end>`
                         }
 
                     } else if (line.startsWith('oled.draw.bar(')) {
-                        // oled.draw.bar(val, lo, hi)
                         const m = line.match(/oled\.draw\.bar\((.+),(.+),(.+)\)/);
                         if (m && oled.initialized) {
                             const bar = makeBar(evalExpr(m[1].trim()), evalExpr(m[2].trim()), evalExpr(m[3].trim()));
@@ -3094,7 +3407,6 @@ end>`
                         }
 
                     } else if (line.startsWith('oled.setCursor(')) {
-                        // oled.setCursor(col, row)
                         const m = line.match(/oled\.setCursor\((.+),(.+)\)/);
                         if (m && oled.initialized) {
                             const col = parseInt(evalExpr(m[1].trim())) || 0;
@@ -3104,7 +3416,6 @@ end>`
                         }
 
                     } else if (line.startsWith('oled.printAt(')) {
-                        // oled.printAt(col, row, "texto")
                         const m = line.match(/oled\.printAt\((.+),(.+),(.+)\)/);
                         if (m && oled.initialized) {
                             const col = parseInt(evalExpr(m[1].trim())) || 0;
@@ -3125,7 +3436,6 @@ end>`
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── console.* → salida a la consola LOG ──────────────
             if (line.startsWith('console.')) {
                 const isConsoleOnly = c === consoleOwner;
                 if (line.startsWith('console.print ') || line.startsWith('console.println ')) {
@@ -3148,14 +3458,11 @@ end>`
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── Llamadas a funciones de librería como sentencia ──
-            // ej: timer.set(t1,1000) | pin.blink(D1,200) | math.random(...)
             if (/^(math|str|timer|pin|servo)\.([\w]+)\(/.test(line)) {
                 callLibFunc(line);
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── var;HIGH / var;LOW (con condición inline opcional) ─
             if (line.includes(';')) {
                 const parts = line.split(';');
                 const varName = parts[0].trim();
@@ -3174,7 +3481,6 @@ end>`
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── var = expr ────────────────────────────────────────
             if (line.includes('=') && !line.startsWith('if ') && !line.startsWith('while ') && !line.startsWith('for ')) {
                 const eqIdx = line.indexOf('=');
                 const varName = line.slice(0, eqIdx).trim();
@@ -3187,7 +3493,6 @@ end>`
                 c.intState.pc++; ix++; continue;
             }
 
-            // Línea no reconocida → avanzar
             c.intState.pc++; ix++;
         }
         } catch(err) {
@@ -3258,31 +3563,32 @@ end>`
                     }
                     else if(comp.type==='OLED_I2C'){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);}
                     else if(comp.type==='L298N'){
-                        // nodos: 0=VCC, 1=GND, 2=IN1, 3=IN2, 4=OUT1, 5=OUT2
-                        // Alimentación interna VCC↔GND
                         if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);
                         if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);
                         const in1=comp.nodes[2].signal, in2=comp.nodes[3].signal;
-                        // FWD (IN1=H, IN2=L): VCC→OUT1, OUT2→GND (puente H)
                         if(in1&&!in2){
-                            if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[4]); // VCC → OUT1
-                            if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[0]); // OUT1 ← VCC
-                            if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[1]); // OUT2 → GND
-                            if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[5]); // GND → OUT2
+                            if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[4]);
+                            if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[0]);
+                            if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[1]);
+                            if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[5]);
                         }
-                        // REV (IN1=L, IN2=H): VCC→OUT2, OUT1→GND (puente H invertido)
                         if(!in1&&in2){
-                            if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[5]); // VCC → OUT2
-                            if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[0]); // OUT2 ← VCC
-                            if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[1]); // OUT1 → GND
-                            if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[4]); // GND → OUT1
+                            if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[5]);
+                            if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[0]);
+                            if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[1]);
+                            if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[4]);
                         }
+                    }
+                    else if(comp.type==='BATTERY'&&comp!==bat){
+                        if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);
+                        if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);
                     }
                     else{outNodes.push(comp.nodes.find(n=>n!==currentNode));}
                     outNodes.forEach(otherNode=>{
                         if(otherNode&&!visitedNodes.includes(otherNode)){
                             let canCross=false;
                             if(comp.type==='RESISTOR'||comp.type==='MOTOR'||comp.type==='WAYPOINT')canCross=true;
+                            if(comp.type==='BATTERY'&&comp!==bat)canCross=true;
                             if((comp.type==='SWITCH'||comp.type==='PUSH_BTN')&&comp.closed)canCross=true;
                             if(comp.type==='RELAY'){if((currentNode===comp.nodes[0]&&otherNode===comp.nodes[1])||(currentNode===comp.nodes[1]&&otherNode===comp.nodes[0]))canCross=true;if((currentNode===comp.nodes[2]&&otherNode===comp.nodes[3])||(currentNode===comp.nodes[3]&&otherNode===comp.nodes[2])){if(comp.coilState)canCross=true;}}
                             if(comp.type==='MUX')canCross=true;
@@ -3299,14 +3605,11 @@ end>`
                             if(comp.type==='L298N'){
                                 const in1=comp.nodes[2].signal, in2=comp.nodes[3].signal;
                                 const vcc=comp.nodes[0], gnd=comp.nodes[1], o1=comp.nodes[4], o2=comp.nodes[5];
-                                // Siempre: VCC↔GND para alimentación interna
                                 if((currentNode===vcc&&otherNode===gnd)||(currentNode===gnd&&otherNode===vcc))canCross=true;
-                                // FWD: VCC→OUT1 y OUT2→GND
                                 if(in1&&!in2){
                                     if((currentNode===vcc&&otherNode===o1)||(currentNode===o1&&otherNode===vcc))canCross=true;
                                     if((currentNode===o2&&otherNode===gnd)||(currentNode===gnd&&otherNode===o2))canCross=true;
                                 }
-                                // REV: VCC→OUT2 y OUT1→GND
                                 if(!in1&&in2){
                                     if((currentNode===vcc&&otherNode===o2)||(currentNode===o2&&otherNode===vcc))canCross=true;
                                     if((currentNode===o1&&otherNode===gnd)||(currentNode===gnd&&otherNode===o1))canCross=true;
@@ -3322,10 +3625,11 @@ end>`
             if(foundPaths.length>0){
                 if(bat.type==='CAPACITOR')bat.charge-=2.0;
                 foundPaths.forEach(path=>{
-                    let rSum=0.1,ledCount=0,pathComps=[];
+                    let rSum=0.1,ledCount=0,pathComps=[],extraVoltage=0;
                     path.forEach(step=>{
                         if(step.t==='comp'){
                             pathComps.push(step.comp);
+                            if(step.comp.type==='BATTERY'&&step.comp!==bat)extraVoltage+=step.comp.val;
                             if(step.comp.type==='RESISTOR')rSum+=step.comp.val;
                             if(step.comp.type==='RELAY')rSum+=50;
                             if(step.comp.type==='RSK90')rSum+=1000;
@@ -3338,7 +3642,7 @@ end>`
                             if(step.comp.type==='CAPACITOR'&&bat.type==='BATTERY'){let cr=50/(step.comp.val||10);step.comp.charge=Math.min(100,step.comp.charge+cr);step.comp.active=true;}
                         }
                     });
-                    let vNet=bat.val-(ledCount*2),current=vNet>0?(vNet/rSum):0,popped=false;
+                    let vNet=(bat.val+extraVoltage)-(ledCount*2),current=vNet>0?(vNet/rSum):0,popped=false;
                     if(current>0){
                         if(bat.type==='BATTERY'&&current>5.0){bat.burned=true;popped=true;}
                         pathComps.forEach(c=>{
@@ -3361,14 +3665,12 @@ end>`
         });
         components.filter(c=>c.type==='RELAY').forEach(r=>r.coilState=r.coilActiveThisFrame);
         components.filter(c=>c.type==='MUX').forEach(m=>{m.selState=m.nodes[2].signal;});
-        // L298N: calcular dirección según IN1/IN2
         components.filter(c=>c.type==='L298N').forEach(d=>{
             const in1=d.nodes[2].signal, in2=d.nodes[3].signal;
             if(in1&&!in2) d.motorDir=1;
             else if(!in1&&in2) d.motorDir=-1;
             else d.motorDir=0;
         });
-        // SERVO: mover ángulo suavemente hacia targetAngle
         components.filter(c=>c.type==='SERVO').forEach(s=>{
             if(!s.active||s.burned){s.angle=90;s.targetAngle=90;return;}
             const diff=s.targetAngle-s.angle;
@@ -3433,33 +3735,7 @@ end>`
     }
 
     function draw(){
-        if(targetCfg==null&&!isDesktopMode){
-            if(vMouse.moving.up)vMouse.y-=vMouse.speed; if(vMouse.moving.down)vMouse.y+=vMouse.speed;
-            if(vMouse.moving.left)vMouse.x-=vMouse.speed; if(vMouse.moving.right)vMouse.x+=vMouse.speed;
-        }
-        if(!isDesktopMode){
-            const em=50;
-            let smx=(vMouse.x-camera.x)*camera.zoom+canvas.width/2;
-            let smy=(vMouse.y-camera.y)*camera.zoom+canvas.height/2;
-            if(smx<em)camera.x-=(em-smx)/camera.zoom;
-            if(smx>canvas.width-em)camera.x+=(smx-(canvas.width-em))/camera.zoom;
-            if(smy<em)camera.y-=(em-smy)/camera.zoom;
-            if(smy>canvas.height-em)camera.y+=(smy-(canvas.height-em))/camera.zoom;
-        }
-        if(vMouse.selectionMode&&selectionBox&&!isDesktopMode){selectionBox.w=vMouse.x-selectionBox.x;selectionBox.h=vMouse.y-selectionBox.y;}
-        if(!isDesktopMode){
-            if(vMouse.isDown&&!vMouse.lastDown&&targetCfg==null&&!vMouse.selectionMode){
-                let clickOk=false,nHit=null;
-                components.forEach(c=>c.nodes.forEach(n=>{if(Math.hypot(c.x+n.x-vMouse.x,c.y+n.y-vMouse.y)<20)nHit={c,n};}));
-                if(nHit){drawingCable=nHit;clickOk=true;}
-                else{let ch=components.find(c=>vMouse.x>c.x&&vMouse.x<c.x+c.w&&vMouse.y>c.y&&vMouse.y<c.y+c.h);if(ch){clickOk=true;if(selectedItems.includes(ch))draggingComp={group:true,ref:ch,ox:vMouse.x,oy:vMouse.y};else{selectedItems.forEach(c=>c.selected=false);selectedItems=[];draggingComp={c:ch,ox:vMouse.x-ch.x,oy:vMouse.y-ch.y};}}}
-                if(!clickOk&&selectedItems.length>0){selectedItems.forEach(c=>c.selected=false);selectedItems=[];}
-            }else if(!vMouse.isDown&&vMouse.lastDown){
-                if(drawingCable){let tH=null;components.forEach(c=>c.nodes.forEach(n=>{if(c!==drawingCable.c&&Math.hypot(c.x+n.x-vMouse.x,c.y+n.y-vMouse.y)<20)tH={c,n};}));if(tH)connections.push({a:drawingCable,b:tH});else{const wp=spawn('WAYPOINT');connections.push({a:drawingCable,b:{c:wp,n:wp.nodes[0]}});}}
-                draggingComp=drawingCable=null;
-            }
-        }
-        if(draggingComp){
+        if(draggingComp && isDesktopMode){
             if(draggingComp.group){const dx=vMouse.x-draggingComp.ox,dy=vMouse.y-draggingComp.oy;selectedItems.forEach(c=>{c.x+=dx;c.y+=dy;});draggingComp.ox=vMouse.x;draggingComp.oy=vMouse.y;}
             else{draggingComp.c.x=vMouse.x-draggingComp.ox;draggingComp.c.y=vMouse.y-draggingComp.oy;}
         }
@@ -3584,39 +3860,32 @@ end>`
             }
             else if(c.type==='RADION'){
                 const cW=c.w, cH=c.h;
-                // Cuerpo principal
                 ctx.fillStyle='rgba(14,30,22,0.88)';
                 ctx.strokeStyle=c.active?'rgba(0,230,118,0.45)':'rgba(0,230,118,0.15)';
                 ctx.lineWidth=1;
                 ctx.fillRect(c.x+28,c.y+4,54,cH-8);
                 ctx.strokeRect(c.x+28,c.y+4,54,cH-8);
-                // Chip interior
                 ctx.fillStyle='rgba(0,0,0,0.3)';
                 ctx.fillRect(c.x+34,c.y+20,40,cH-40);
                 ctx.strokeStyle='rgba(0,230,118,0.12)';
                 ctx.strokeRect(c.x+34,c.y+20,40,cH-40);
-                // Label rotado
                 ctx.save(); ctx.translate(c.x+46,c.y+cH*0.62); ctx.rotate(-Math.PI/2);
                 label('RADION 1.1',0,0,'rgba(0,230,118,0.45)',7); ctx.restore();
-                // LED activo
                 if(c.active&&!c.burned){
                     ctx.fillStyle=C_GREEN; ctx.shadowBlur=6; ctx.shadowColor=C_GREEN;
                     ctx.beginPath(); ctx.arc(c.x+66,c.y+25,2.5,0,Math.PI*2); ctx.fill();
                     ctx.shadowBlur=0;
                 }
-                // Etiquetas pines izquierda (VCC/GND/GND/A1)
                 label('VCC',c.x+1,c.y+18,'rgba(0,230,118,0.6)',8);
                 label('GND',c.x+1,c.y+38,'rgba(255,71,87,0.6)',8);
                 label('GND',c.x+1,c.y+58,'rgba(255,71,87,0.5)',8);
                 label('A1', c.x+3,c.y+78,'rgba(255,183,0,0.75)',8);
-                // Etiquetas pines derecha (D1/D2/D3/D4/SCL/SDA)
                 label('D1',c.x+83,c.y+18,C_GREEN,8);
                 label('D2',c.x+83,c.y+38,C_GREEN,8);
                 label('D3',c.x+83,c.y+58,C_GREEN,8);
                 label('D4',c.x+83,c.y+78,'rgba(0,212,255,0.85)',8);
                 label('SCL',c.x+81,c.y+98,C_AMBER,8);
                 label('SDA',c.x+81,c.y+118,C_AMBER,8);
-                // Indicadores LED internos de pines digitales
                 const pinDots=[['d1',c.x+38,c.y+30],['d2',c.x+38,c.y+42],['d3',c.x+38,c.y+54],['d4',c.x+38,c.y+66]];
                 pinDots.forEach(([k,px,py])=>{
                     const on=c.memory&&c.memory[k];
@@ -3625,7 +3894,6 @@ end>`
                     ctx.beginPath(); ctx.arc(px,py,2.5,0,Math.PI*2); ctx.fill();
                     ctx.shadowBlur=0;
                 });
-                // Indicador A1 (amarillo)
                 ctx.fillStyle='rgba(255,183,0,0.25)';
                 ctx.fillRect(c.x+38,c.y+75,12,7);
                 ctx.fillStyle='rgba(255,183,0,0.6)'; ctx.font="6px 'DM Mono',monospace";
@@ -3633,72 +3901,88 @@ end>`
             }
             else if(c.type==='SERVO'){
                 const powered = c.active && !c.burned;
-                const ang = ((c.angle||90) * Math.PI) / 180; // 0..π
-                // Cuerpo principal
-                ctx.fillStyle='rgba(28,28,44,0.92)';
-                ctx.strokeStyle=powered?'rgba(0,212,255,0.5)':'rgba(0,212,255,0.15)';
-                ctx.lineWidth=1;
-                ctx.fillRect(c.x+5,c.y+18,60,45);
-                ctx.strokeRect(c.x+5,c.y+18,60,45);
-                // Tornillos esquinas
-                [[c.x+11,c.y+24],[c.x+59,c.y+24],[c.x+11,c.y+57],[c.x+59,c.y+57]].forEach(([sx,sy])=>{
-                    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=0.7;
+                const bodyX = c.x+5, bodyY = c.y+22, bodyW = 80, bodyH = 42;
+                const hubX  = c.x + 45, hubY = c.y + 22;
+
+                ctx.fillStyle  = powered ? 'rgba(20,26,46,0.95)' : 'rgba(20,24,38,0.88)';
+                ctx.strokeStyle= powered ? 'rgba(0,212,255,0.55)' : 'rgba(0,212,255,0.15)';
+                ctx.lineWidth  = 1;
+                ctx.fillRect(bodyX, bodyY, bodyW, bodyH);
+                ctx.strokeRect(bodyX, bodyY, bodyW, bodyH);
+
+                ctx.fillStyle  = powered ? 'rgba(10,18,40,0.95)' : 'rgba(12,16,30,0.9)';
+                ctx.strokeStyle= powered ? 'rgba(0,212,255,0.4)' : 'rgba(0,212,255,0.1)';
+                ctx.beginPath(); ctx.arc(hubX, hubY, 12, Math.PI, 0);
+                ctx.fill(); ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(0,212,255,0.07)';
+                ctx.lineWidth   = 1;
+                ctx.beginPath(); ctx.arc(hubX, hubY, 26, Math.PI, 0); ctx.stroke();
+
+                [[Math.PI,'0°'],[Math.PI*1.5,'90°'],[0,'180°']].forEach(([a,t])=>{
+                    const mx=hubX+Math.cos(a)*29, my=hubY+Math.sin(a)*29;
+                    ctx.fillStyle='rgba(0,212,255,0.2)'; ctx.font="5px 'DM Mono',monospace";
+                    ctx.textAlign='center'; ctx.fillText(t,mx,my+2);
+                });
+                ctx.textAlign='left';
+
+                const ang    = Math.PI - ((c.angle || 90) * Math.PI / 180);
+                const armLen = 28;
+                const tipX   = hubX + Math.cos(ang) * armLen;
+                const tipY   = hubY + Math.sin(ang) * armLen;
+
+                if(powered){
+                    ctx.shadowBlur  = 8;
+                    ctx.shadowColor = 'rgba(0,212,255,0.5)';
+                }
+                ctx.strokeStyle = powered ? 'rgba(0,212,255,0.9)' : 'rgba(255,255,255,0.25)';
+                ctx.lineWidth   = 3.5; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(hubX, hubY); ctx.lineTo(tipX, tipY); ctx.stroke();
+                ctx.shadowBlur  = 0; ctx.lineCap = 'butt';
+
+                ctx.fillStyle = powered ? 'rgba(0,212,255,1)' : 'rgba(255,255,255,0.3)';
+                ctx.beginPath(); ctx.arc(tipX, tipY, 3.5, 0, Math.PI*2); ctx.fill();
+
+                ctx.fillStyle   = powered ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)';
+                ctx.strokeStyle = powered ? 'rgba(0,212,255,0.6)' : 'rgba(255,255,255,0.1)';
+                ctx.lineWidth   = 1;
+                ctx.beginPath(); ctx.arc(hubX, hubY, 4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+                [[bodyX+8, bodyY+8],[bodyX+bodyW-8,bodyY+8],[bodyX+8,bodyY+bodyH-8],[bodyX+bodyW-8,bodyY+bodyH-8]].forEach(([sx,sy])=>{
+                    ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=0.7;
                     ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.stroke();
                     ctx.beginPath(); ctx.moveTo(sx-2,sy); ctx.lineTo(sx+2,sy); ctx.moveTo(sx,sy-2); ctx.lineTo(sx,sy+2); ctx.stroke();
                 });
-                // Hub del eje
-                const hubX=c.x+35, hubY=c.y+18;
-                ctx.fillStyle=powered?'rgba(0,212,255,0.15)':'rgba(255,255,255,0.07)';
-                ctx.strokeStyle=powered?'rgba(0,212,255,0.6)':'rgba(255,255,255,0.2)';
-                ctx.lineWidth=1;
-                ctx.beginPath(); ctx.arc(hubX,hubY,10,0,Math.PI*2); ctx.fill(); ctx.stroke();
-                // Brazo del servo (pivota desde hubX,hubY)
-                const armLen=22;
-                const armX=hubX+Math.cos(ang - Math.PI/2)*armLen;
-                const armY=hubY+Math.sin(ang - Math.PI/2)*armLen;
-                ctx.strokeStyle=powered?'rgba(0,212,255,0.9)':'rgba(255,255,255,0.3)';
-                ctx.lineWidth=3; ctx.lineCap='round';
-                if(powered){ctx.shadowBlur=6;ctx.shadowColor='rgba(0,212,255,0.6)';}
-                ctx.beginPath(); ctx.moveTo(hubX,hubY); ctx.lineTo(armX,armY); ctx.stroke();
-                ctx.shadowBlur=0; ctx.lineCap='butt';
-                // Círculo punta del brazo
-                ctx.fillStyle=powered?C_CYAN:'rgba(255,255,255,0.2)';
-                ctx.beginPath(); ctx.arc(armX,armY,3,0,Math.PI*2); ctx.fill();
-                // Eje central
-                ctx.fillStyle=powered?'rgba(0,212,255,0.9)':'rgba(255,255,255,0.4)';
-                ctx.beginPath(); ctx.arc(hubX,hubY,3,0,Math.PI*2); ctx.fill();
-                // Label + ángulo
-                label('SG90',c.x+22,c.y+36,'rgba(0,212,255,0.5)',8);
-                const degText=Math.round(c.angle||90)+'°';
-                label(degText,c.x+22,c.y+50,powered?'rgba(0,212,255,0.85)':'rgba(255,255,255,0.3)',9);
-                // Etiquetas de pines
-                label('VCC',c.x+8,c.y+12,'rgba(0,230,118,0.6)',7);
-                label('GND',c.x+30,c.y+12,'rgba(255,71,87,0.6)',7);
-                label('SIG',c.x+57,c.y+12,'rgba(0,212,255,0.7)',7);
-                // Arco de rango 0-180° (decorativo)
-                ctx.strokeStyle='rgba(0,212,255,0.08)'; ctx.lineWidth=1;
-                ctx.beginPath(); ctx.arc(hubX,hubY,15,Math.PI,0); ctx.stroke();
-                // Arco recorrido actual
-                if(powered){
-                    ctx.strokeStyle='rgba(0,212,255,0.3)'; ctx.lineWidth=2;
-                    ctx.beginPath(); ctx.arc(hubX,hubY,15,Math.PI,Math.PI+ang); ctx.stroke();
-                }
+
+                const goingCCW = ang > Math.PI;
+                ctx.strokeStyle = powered ? 'rgba(0,212,255,0.35)' : 'rgba(255,255,255,0.08)';
+                ctx.lineWidth   = 2;
+                ctx.beginPath();
+                ctx.arc(hubX, hubY, 20, Math.PI, ang, goingCCW); ctx.stroke();
+
+                ctx.fillStyle = 'rgba(0,212,255,0.4)'; ctx.font = "7px 'DM Mono',monospace";
+                ctx.fillText('SG90', bodyX+6, bodyY+16);
+
+                const degText = Math.round(c.angle || 90) + '°';
+                ctx.fillStyle = powered ? 'rgba(0,212,255,0.85)' : 'rgba(255,255,255,0.3)';
+                ctx.font = "bold 9px 'DM Mono',monospace";
+                ctx.fillText(degText, bodyX+bodyW-24, bodyY+16);
+
+                label('VCC', c.x+8,  c.y+12, 'rgba(0,230,118,0.6)', 7);
+                label('GND', c.x+35, c.y+12, 'rgba(255,71,87,0.6)',  7);
+                label('SIG', c.x+62, c.y+12, 'rgba(0,212,255,0.7)',  7);
             }
             else if(c.type==='L298N'){
-                // Cuerpo principal
                 ctx.fillStyle='rgba(20,14,36,0.9)';
                 ctx.strokeStyle=c.active&&!c.burned?'rgba(167,139,250,0.55)':'rgba(167,139,250,0.2)';
                 ctx.lineWidth=1;
                 ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
-                // Chip interior
                 ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fillRect(c.x+20,c.y+18,90,54);
                 ctx.strokeStyle='rgba(167,139,250,0.2)'; ctx.strokeRect(c.x+20,c.y+18,90,54);
-                // Label chip
                 ctx.fillStyle='rgba(167,139,250,0.7)'; ctx.font="bold 10px 'DM Mono',monospace";
                 ctx.fillText('L298N',c.x+42,c.y+40);
                 ctx.fillStyle='rgba(167,139,250,0.35)'; ctx.font="7px 'DM Mono',monospace";
                 ctx.fillText('MOTOR DRIVER',c.x+30,c.y+54);
-                // Indicadores IN1/IN2
                 const in1=c.nodes[2].signal, in2=c.nodes[3].signal;
                 ctx.fillStyle=in1?'rgba(0,230,118,0.8)':'rgba(255,255,255,0.1)';
                 ctx.beginPath(); ctx.arc(c.x+35,c.y+65,4,0,Math.PI*2); ctx.fill();
@@ -3706,7 +3990,6 @@ end>`
                 ctx.beginPath(); ctx.arc(c.x+55,c.y+65,4,0,Math.PI*2); ctx.fill();
                 ctx.fillStyle='rgba(167,139,250,0.4)'; ctx.font="7px 'DM Mono',monospace";
                 ctx.fillText('IN1',c.x+28,c.y+78); ctx.fillText('IN2',c.x+48,c.y+78);
-                // Dirección del motor
                 const dir=c.motorDir;
                 if(dir!==0&&!c.burned){
                     ctx.fillStyle='rgba(167,139,250,0.7)';
@@ -3717,7 +4000,6 @@ end>`
                     ctx.beginPath(); ctx.arc(c.x+95,c.y+44,8,0,Math.PI*0.75*dir+Math.PI*(dir===-1?1:0)); ctx.stroke();
                     ctx.shadowBlur=0;
                 }
-                // Pin labels
                 label('VCC',c.x-22,c.y+23,'rgba(0,230,118,0.6)');
                 label('GND',c.x-22,c.y+53,'rgba(255,71,87,0.5)');
                 label('IN1',c.x-22,c.y+78,'rgba(167,139,250,0.6)');
@@ -3826,20 +4108,22 @@ end>`
             ctx.setLineDash([]);
         }
 
-        ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1;
-        ctx.beginPath(); ctx.arc(vMouse.x,vMouse.y,5,0,Math.PI*2); ctx.stroke();
-        ctx.strokeStyle='rgba(255,255,255,0.1)';
-        ctx.beginPath(); ctx.moveTo(vMouse.x-12,vMouse.y); ctx.lineTo(vMouse.x-6,vMouse.y); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(vMouse.x+6,vMouse.y); ctx.lineTo(vMouse.x+12,vMouse.y); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(vMouse.x,vMouse.y-12); ctx.lineTo(vMouse.x,vMouse.y-6); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(vMouse.x,vMouse.y+6); ctx.lineTo(vMouse.x,vMouse.y+12); ctx.stroke();
+        if(isDesktopMode){
+            ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1;
+            ctx.beginPath(); ctx.arc(vMouse.x,vMouse.y,5,0,Math.PI*2); ctx.stroke();
+            ctx.strokeStyle='rgba(255,255,255,0.1)';
+            ctx.beginPath(); ctx.moveTo(vMouse.x-12,vMouse.y); ctx.lineTo(vMouse.x-6,vMouse.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(vMouse.x+6,vMouse.y); ctx.lineTo(vMouse.x+12,vMouse.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(vMouse.x,vMouse.y-12); ctx.lineTo(vMouse.x,vMouse.y-6); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(vMouse.x,vMouse.y+6); ctx.lineTo(vMouse.x,vMouse.y+12); ctx.stroke();
+        }
 
         ctx.restore();
 
         ctx.fillStyle='rgba(255,255,255,0.08)';
         ctx.font="9px 'DM Mono',monospace";
         ctx.textAlign='right';
-        ctx.fillText('Simulic Pro v1.9',canvas.width-14,canvas.height-12);
+        ctx.fillText('Simulic Pro v1.8',canvas.width-14,canvas.height-12);
         ctx.textAlign='left';
 
         requestAnimationFrame(draw);
