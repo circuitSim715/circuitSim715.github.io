@@ -3,6 +3,13 @@ Official email: industriescvc@gmail.com
 
 **CHANGE LOG**
 
+CircuitSim 1.9 update 2/22/2026:
+IMPORTANT CHANGES:
+* Added more pins to Radion board (D4, A1).
+* Added L298N Motor driver.
+* Big update to functions and libraries to LOG interpreter.
+* Added more demos (Radion L298N, Radion Servo).
+
 CircuitSim 1.8 update 2/21/2026:
 VERY IMPORTANT CHANGES:
 * UI revamp.
