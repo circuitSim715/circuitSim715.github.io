@@ -527,7 +527,7 @@
 
     .code-body {
         display: flex;
-        height: 220px;
+        height: 180px;
         overflow: hidden;
     }
 
@@ -590,6 +590,67 @@
 
     .code-status-item { display: flex; align-items: center; gap: 4px; }
     .code-status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+
+    /* ── LOG Console ── */
+    #log-console {
+        background: rgba(0,0,0,0.6);
+        border-top: 1px solid var(--glass-border);
+        height: 100px;
+        overflow-y: auto;
+        font-family: 'DM Mono', monospace;
+        font-size: 10px;
+        font-weight: 300;
+        line-height: 1.7;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+
+    .console-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 3px 10px;
+        background: rgba(0,0,0,0.4);
+        border-top: 1px solid var(--glass-border);
+        border-bottom: 1px solid var(--glass-border);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .console-header-label {
+        font-family: 'DM Mono', monospace;
+        font-size: 8px;
+        color: var(--text-dim);
+        letter-spacing: 1.5px;
+    }
+
+    .console-clear-btn {
+        font-family: 'DM Mono', monospace;
+        font-size: 8px;
+        color: rgba(255,71,87,0.5);
+        background: none;
+        border: 1px solid rgba(255,71,87,0.2);
+        border-radius: 3px;
+        padding: 1px 6px;
+        cursor: pointer;
+        transition: all 0.1s;
+    }
+
+    .console-clear-btn:hover { color: var(--red); border-color: rgba(255,71,87,0.5); background: rgba(255,71,87,0.06); }
+
+    .console-line {
+        padding: 0 10px;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    .console-line.log-init   { color: rgba(0,212,255,0.5); }
+    .console-line.log-info   { color: rgba(0,230,118,0.8); }
+    .console-line.log-warn   { color: rgba(255,183,0,0.85); }
+    .console-line.log-error  { color: rgba(255,71,87,0.9); }
+    .console-line.log-print  { color: #c8e6c9; }
+    .console-line.log-dim    { color: var(--text-dim); }
 
     .modal-titlebar {
         display: flex;
@@ -947,7 +1008,7 @@
     <div class="modal-titlebar">
         <div class="modal-accent"></div>
         <div id="m-title">CONFIGURE</div>
-        <div id="m-lang-badge" style="display:none; margin-left:auto; font-family:'DM Mono',monospace; font-size:8px; color:var(--cyan); border:1px solid rgba(0,212,255,0.25); padding:1px 7px; border-radius:3px; letter-spacing:1px;">LOG v1.1</div>
+        <div id="m-lang-badge" style="display:none; margin-left:auto; font-family:'DM Mono',monospace; font-size:8px; color:var(--cyan); border:1px solid rgba(0,212,255,0.25); padding:1px 7px; border-radius:3px; letter-spacing:1px;">LOG v2.0</div>
     </div>
     <div class="modal-body">
         <div class="modal-field" id="m-val-row">
@@ -958,26 +1019,37 @@
         <!-- PROFESSIONAL CODE EDITOR -->
         <div class="code-editor-wrap" id="m-code-editor">
             <div class="code-toolbar">
-                <span class="code-toolbar-label">RADION 1.1 · LOG EDITOR</span>
-                <button class="code-snippet-btn" onclick="insertSnippet('loop')">loop{}</button>
-                <button class="code-snippet-btn" onclick="insertSnippet('delay')">delay</button>
-                <button class="code-snippet-btn" onclick="insertSnippet('if')">if</button>
-                <button class="code-snippet-btn" onclick="insertSnippet('oled')">oled</button>
+                <span class="code-toolbar-label">RADION 1.1 · LOG v2.0</span>
+                <button class="code-snippet-btn" onclick="openCodePanel('snippets')" id="tab-snippets" style="color:var(--cyan);border-color:rgba(0,212,255,0.4);">Snippets</button>
+                <button class="code-snippet-btn" onclick="openCodePanel('libs')" id="tab-libs">Libs</button>
+                <button class="code-snippet-btn" onclick="openCodePanel('demos')" id="tab-demos">Demos</button>
+            </div>
+            <!-- PANEL DE SNIPPETS / LIBS / DEMOS -->
+            <div id="code-panel" style="display:none; background:rgba(0,0,0,0.5); border-bottom:1px solid var(--glass-border); max-height:120px; overflow-y:auto; padding:6px 8px; flex-wrap:wrap; gap:4px; scrollbar-width:thin;">
             </div>
             <div class="code-body">
                 <div class="code-lines" id="m-line-nums"></div>
-                <textarea id="m-code-area" spellcheck="false" placeholder="// LOG code..." oninput="syncLineNums()" onscroll="syncLineScroll()"></textarea>
+                <textarea id="m-code-area" spellcheck="false" placeholder="// LOG v2.0 code..." oninput="syncLineNums()" onscroll="syncLineScroll()"></textarea>
             </div>
             <div class="code-statusbar">
-                <div class="code-status-item"><div class="code-status-dot"></div><span>LOG v1.1</span></div>
+                <div class="code-status-item"><div class="code-status-dot"></div><span>LOG v2.0</span></div>
                 <div class="code-status-item"><span id="m-line-count">0 líneas</span></div>
                 <div class="code-status-item"><span id="m-char-count">0 chars</span></div>
             </div>
+            <!-- CONSOLA LOG -->
+            <div id="log-console">
+                <div class="console-header">
+                    <span class="console-header-label">▸ OUTPUT / CONSOLE</span>
+                    <button class="console-clear-btn" onclick="clearConsole()">clear ✕</button>
+                </div>
+                <div id="log-console-body"></div>
+                </div>
         </div>
 
         <div class="modal-actions">
             <button class="modal-btn modal-btn-toggle" id="m-toggle" onclick="toggleCompType()" style="display:none;">TYPE: NPN</button>
-            <button class="modal-btn modal-btn-save" onclick="saveCfg()">Save</button>
+            <button class="modal-btn modal-btn-save" id="m-btn-validate" onclick="saveCfg()">Save</button>
+            <button class="modal-btn" id="m-btn-submit" onclick="submitCfg()" style="display:none; background:rgba(0,230,118,0.12); border-color:rgba(0,230,118,0.35); color:var(--green);">Submit ↑</button>
             <button class="modal-btn" onclick="closeCfg()">Cancel</button>
             <button class="modal-btn modal-btn-rep" id="m-repair" onclick="repairCfg()" style="display:none;">Repair</button>
         </div>
@@ -1169,7 +1241,10 @@ end></pre>
         ],
         'boards': [{ id: 'RADION', label: 'Radion 1.1' }],
         'output_plus': [{ id: 'OLED_I2C', label: 'OLED Display' }],
-        'dev_plus': [{ id: 'L298N', label: 'L298N Motor Driver' }]
+        'dev_plus': [
+            { id: 'L298N', label: 'L298N Motor Driver' },
+            { id: 'SERVO', label: 'Servomotor SG90' }
+        ]
     };
 
     const demos = {
@@ -1180,7 +1255,8 @@ end></pre>
         'RADION': { label: 'Radion Blink', func: () => loadRadionDemo() },
         'INPUT':  { label: 'Radion Input', func: () => loadInputDemo() },
         'OLED':   { label: 'Radion OLED', func: () => loadOledDemo() },
-        'MDRIVER':{ label: 'Radion + L298N', func: () => loadMotorDriverDemo() }
+        'MDRIVER':{ label: 'Radion + L298N', func: () => loadMotorDriverDemo() },
+        'SERVO':  { label: 'Radion + Servo',  func: () => loadServoDemo() }
     };
 
     function selectCategory(cat, btnElement) {
@@ -1280,19 +1356,65 @@ end></pre>
         const btn    = spawn('PUSH_BTN',  -260, -80);
         const driver = spawn('L298N',       80,  -20);
         const motor  = spawn('MOTOR',      290,  20);
-        // Alimentación Radion desde batería
         connect(bat,0,radion,0); connect(bat,1,radion,1);
-        // Botón → D3 (entrada digital)
         connect(bat,0,btn,0); connect(btn,1,radion,5);
-        // Radion D1 → IN1, D2 → IN2 (señales de control)
         connect(radion,3,driver,2); connect(radion,4,driver,3);
-        // Alimentación driver desde batería
         connect(bat,0,driver,0); connect(bat,1,driver,1);
-        // Tierra común: GND driver ya comparte bat- con GND Radion
-        // Motor entre OUT1 y OUT2 del driver (puente H)
         connect(driver,4,motor,0); connect(driver,5,motor,1);
         radion.code = `start<\npinBtn=D3\npin1=D1\npin2=D2\nloop{\n  pinBtn=D3\n  if pinBtn==HIGH {\n    pin1;HIGH\n    pin2;LOW\n  }\n  if pinBtn==LOW {\n    pin1;LOW\n    pin2;HIGH\n  }\n}\nend>`;
-        radion.intState = { pc:0, wait:0, vars:{}, parsed:null };
+        radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
+    }
+
+    function loadServoDemo() {
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
+        const bat    = spawn('BATTERY',  -260,  20);
+        const radion = spawn('RADION',    -80, -50);
+        const btn1   = spawn('PUSH_BTN', -260, -90);
+        const btn2   = spawn('PUSH_BTN', -260,  90);
+        const servo  = spawn('SERVO',     120,  10);
+        // Alimentación
+        connect(bat,0,radion,0); connect(bat,1,radion,1);
+        // Botón 1 → D2 (subir ángulo), Botón 2 → D3 (bajar ángulo)
+        connect(bat,0,btn1,0); connect(btn1,1,radion,4);
+        connect(bat,0,btn2,0); connect(btn2,1,radion,5);
+        // D4 → SIG del servo, alimentación del servo
+        connect(radion,6,servo,2);
+        connect(bat,0,servo,0); connect(bat,1,servo,1);
+        radion.code = `start<
+// Servo con dos botones: subir/bajar angulo
+pinUp=D2
+pinDown=D3
+angulo=90
+servo.write(D4,angulo)
+oled.init
+oled.println "SERVO CTRL"
+loop{
+  pinUp=D2
+  pinDown=D3
+  if pinUp==HIGH {
+    angulo=angulo+5
+    angulo=math.clamp(angulo,0,180)
+    servo.write(D4,angulo)
+    console.print str.concat("Angulo: ",angulo)
+    delay 80
+  }
+  if pinDown==HIGH {
+    angulo=angulo-5
+    angulo=math.clamp(angulo,0,180)
+    servo.write(D4,angulo)
+    console.print str.concat("Angulo: ",angulo)
+    delay 80
+  }
+  oled.clear
+  oled.println "SERVO CTRL"
+  oled.print "Ang: "
+  oled.print angulo
+  oled.println " deg"
+  oled.draw.bar(angulo,0,180)
+  delay 20
+}
+end>`;
+        radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
     }
 
     selectCategory('active', document.querySelector('.cat-btn'));
@@ -1494,21 +1616,573 @@ end></pre>
         document.getElementById('m-line-nums').scrollTop = ta.scrollTop;
     }
 
-    // ── SNIPPET INSERTER (actualizado con ejemplos numéricos) ──
-    function insertSnippet(type) {
+    // ── CONSOLA LOG ──────────────────────────────────────────────
+    // consoleOwner: referencia al Radion actualmente abierto en el editor
+    let consoleOwner = null;
+
+    function logConsole(msg, type) {
+        // type: 'init' | 'print' | 'info' | 'warn' | 'error' | 'dim'
+        const body = document.getElementById('log-console-body');
+        if (!body) return;
+        const now = new Date();
+        const ts = now.toTimeString().slice(0,8);
+        const line = document.createElement('div');
+        line.className = `console-line log-${type || 'print'}`;
+        const prefix = type === 'error' ? `[ERR ${ts}] ` :
+                       type === 'warn'  ? `[WRN ${ts}] ` :
+                       type === 'init'  ? '' :
+                       type === 'dim'   ? `[LOG ${ts}] ` :
+                                          `[OUT ${ts}] `;
+        line.textContent = prefix + msg;
+        body.appendChild(line);
+        // Auto-scroll al fondo
+        const cons = document.getElementById('log-console');
+        cons.scrollTop = cons.scrollHeight;
+    }
+
+    function clearConsole() {
+        const body = document.getElementById('log-console-body');
+        if (body) body.innerHTML = '';
+        logConsole('LOG v2.0  ·  Radion 1.1  ·  Simulic Pro', 'init');
+        logConsole('─────────────────────────────────', 'dim');
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // LOG v2.0 — SNIPPETS, LIBRERÍAS Y DEMOS DE CÓDIGO
+    // ═══════════════════════════════════════════════════════
+
+    const LOG_SNIPPETS = [
+        { label:'loop{}',    code:'\nloop{\n  \n}' },
+        { label:'if/else',   code:'\nif condicion {\n  \n} else {\n  \n}' },
+        { label:'while{}',   code:'\nwhile condicion {\n  \n}' },
+        { label:'for',       code:'\nfor i=0 to 10 {\n  \n}' },
+        { label:'delay',     code:'\ndelay 500' },
+        { label:'pin HIGH',  code:'\npin1;HIGH' },
+        { label:'pin LOW',   code:'\npin1;LOW' },
+        { label:'toggle',    code:'\ntoggle pin1' },
+        { label:'print',     code:'\noled.print "Texto"' },
+        { label:'println',   code:'\noled.println "Texto"' },
+        { label:'oled.init', code:'\noled.init\noled.clear\noled.println "RADION 2.0"' },
+        { label:'math.abs',  code:'\nresult=math.abs(valor)' },
+        { label:'math.max',  code:'\nresult=math.max(a,b)' },
+        { label:'math.min',  code:'\nresult=math.min(a,b)' },
+        { label:'math.map',  code:'\nresult=math.map(val,0,100,0,255)' },
+        { label:'timer.set', code:'\ntimer.set(t1,1000)' },
+        { label:'timer.check',code:'\nif timer.check(t1) {\n  \n}' },
+        { label:'str.concat',code:'\nmsg=str.concat("Valor: ",contador)' },
+        { label:'str.len',   code:'\nn=str.len(texto)' },
+        { label:'pin.read',  code:'\nval=pin.read(D1)' },
+        { label:'console.print', code:'\nconsole.print "mensaje"' },
+        { label:'console.warn',  code:'\nconsole.warn "aviso"' },
+        { label:'console.error', code:'\nconsole.error "error"' },
+        { label:'console.info',  code:'\nconsole.info "info"' },
+        { label:'console.clear', code:'\nconsole.clear' },
+    ];
+
+    const LOG_LIBS = {
+        'math': {
+            desc: 'Funciones matemáticas avanzadas',
+            color: 'rgba(0,212,255,0.7)',
+            snippets: [
+                { label:'abs(x)',         code:'\nresult=math.abs(x)' },
+                { label:'max(a,b)',        code:'\nresult=math.max(a,b)' },
+                { label:'min(a,b)',        code:'\nresult=math.min(a,b)' },
+                { label:'pow(b,e)',        code:'\nresult=math.pow(base,exp)' },
+                { label:'sqrt(x)',         code:'\nresult=math.sqrt(x)' },
+                { label:'floor(x)',        code:'\nresult=math.floor(x)' },
+                { label:'ceil(x)',         code:'\nresult=math.ceil(x)' },
+                { label:'round(x)',        code:'\nresult=math.round(x)' },
+                { label:'clamp(v,lo,hi)',  code:'\nresult=math.clamp(valor,0,100)' },
+                { label:'map(v,i0,i1,o0,o1)', code:'\nresult=math.map(val,0,1023,0,255)' },
+                { label:'random(lo,hi)',   code:'\nresult=math.random(1,100)' },
+            ]
+        },
+        'str': {
+            desc: 'Manipulación de strings',
+            color: 'rgba(0,230,118,0.7)',
+            snippets: [
+                { label:'concat(a,b)',     code:'\nmsg=str.concat("Val:",numero)' },
+                { label:'len(s)',          code:'\nn=str.len(texto)' },
+                { label:'upper(s)',        code:'\nmsg=str.upper(texto)' },
+                { label:'lower(s)',        code:'\nmsg=str.lower(texto)' },
+                { label:'repeat(s,n)',     code:'\nmsg=str.repeat("*",10)' },
+                { label:'substr(s,i,n)',   code:'\nmsg=str.substr(texto,0,4)' },
+            ]
+        },
+        'timer': {
+            desc: 'Temporizadores no bloqueantes',
+            color: 'rgba(255,183,0,0.7)',
+            snippets: [
+                { label:'timer.set(id,ms)',   code:'\ntimer.set(t1,1000)' },
+                { label:'timer.check(id)',    code:'\nif timer.check(t1) {\n  // se dispara cada 1000ms\n}' },
+                { label:'timer.reset(id)',    code:'\ntimer.reset(t1)' },
+                { label:'timer.elapsed(id)',  code:'\nms=timer.elapsed(t1)' },
+            ]
+        },
+        'pin': {
+            desc: 'Control avanzado de pines',
+            color: 'rgba(167,139,250,0.7)',
+            snippets: [
+                { label:'pin.read(D1)',       code:'\nval=pin.read(D1)' },
+                { label:'pin.write(D1,H)',    code:'\npin.write(D1,HIGH)' },
+                { label:'pin.toggle(D1)',     code:'\npin.toggle(D1)' },
+                { label:'pin.pulse(D1,ms)',   code:'\npin.pulse(D1,100)' },
+                { label:'pin.blink(D1,ms)',   code:'\npin.blink(D1,200)' },
+                { label:'pin.off(D1)',        code:'\npin.off(D1)' },
+            ]
+        },
+        'oled': {
+            desc: 'Control completo de pantalla OLED',
+            color: 'rgba(255,100,100,0.7)',
+            snippets: [
+                { label:'oled.init',          code:'\noled.init' },
+                { label:'oled.clear',         code:'\noled.clear' },
+                { label:'oled.print "txt"',   code:'\noled.print "Texto"' },
+                { label:'oled.println "txt"', code:'\noled.println "Texto"' },
+                { label:'oled.print var',     code:'\noled.print variable' },
+                { label:'oled.draw.bar',      code:'\noled.draw.bar(valor,0,100)' },
+                { label:'oled.setCursor',     code:'\noled.setCursor(0,1)' },
+                { label:'oled.printAt',       code:'\noled.printAt(0,2,"Linea 3")' },
+            ]
+        },
+        'console': {
+            desc: 'Salida a la consola LOG del editor',
+            color: 'rgba(0,212,255,0.7)',
+            snippets: [
+                { label:'console.print "s"',   code:'\nconsole.print "mensaje"' },
+                { label:'console.print var',   code:'\nconsole.print variable' },
+                { label:'console.println "s"', code:'\nconsole.println "mensaje"' },
+                { label:'console.info "s"',    code:'\nconsole.info "info"' },
+                { label:'console.warn "s"',    code:'\nconsole.warn "advertencia"' },
+                { label:'console.error "s"',   code:'\nconsole.error "error"' },
+                { label:'console.clear',       code:'\nconsole.clear' },
+            ]
+        },
+        'servo': {
+            desc: 'Control de servomotor SG90 vía D4',
+            color: 'rgba(0,212,255,0.85)',
+            snippets: [
+                { label:'servo.write(D4,90)',  code:'\nservo.write(D4,90)' },
+                { label:'servo.write(D4,0)',   code:'\nservo.write(D4,0)' },
+                { label:'servo.write(D4,180)', code:'\nservo.write(D4,180)' },
+                { label:'servo.read(D4)',      code:'\nang=servo.read(D4)' },
+                { label:'servo sweep',         code:'\nfor ang=0 to 180 {\n  servo.write(D4,ang)\n  delay 15\n}' },
+            ]
+        },
+    };
+
+    const LOG_DEMOS = [
+        {
+            label: '🔴 Blink simple',
+            code: `start<
+pin1=D1
+loop{
+  pin1;HIGH
+  delay 500
+  pin1;LOW
+  delay 500
+}
+end>`
+        },
+        {
+            label: '🟢 Blink doble alternado',
+            code: `start<
+pin1=D1
+pin2=D2
+loop{
+  pin1;HIGH
+  pin2;LOW
+  delay 300
+  pin1;LOW
+  pin2;HIGH
+  delay 300
+}
+end>`
+        },
+        {
+            label: '🔵 Contador OLED',
+            code: `start<
+pin1=D1
+contador=0
+oled.init
+oled.println "CONTADOR"
+loop{
+  contador=contador+1
+  oled.clear
+  oled.println "CONTADOR LOG"
+  oled.print "Val: "
+  oled.println contador
+  if contador > 99 {
+    contador=0
+    oled.println "RESET!"
+    delay 500
+  }
+  delay 300
+}
+end>`
+        },
+        {
+            label: '🟡 Semáforo',
+            code: `start<
+pinR=D1
+pinG=D2
+pinA=D3
+oled.init
+loop{
+  pinR;HIGH
+  pinG;LOW
+  pinA;LOW
+  oled.clear
+  oled.println "SEMAFORO"
+  oled.println ">>> ROJO"
+  delay 2000
+  pinR;LOW
+  pinA;HIGH
+  oled.clear
+  oled.println "SEMAFORO"
+  oled.println ">>> AMBAR"
+  delay 800
+  pinA;LOW
+  pinG;HIGH
+  oled.clear
+  oled.println "SEMAFORO"
+  oled.println ">>> VERDE"
+  delay 2000
+}
+end>`
+        },
+        {
+            label: '⚡ Motor con botón',
+            code: `start<
+pinBtn=D3
+pin1=D1
+pin2=D2
+oled.init
+oled.println "MOTOR CTRL"
+loop{
+  pinBtn=D3
+  if pinBtn==HIGH {
+    pin1;HIGH
+    pin2;LOW
+    oled.clear
+    oled.println "MOTOR CTRL"
+    oled.println "DIR: FWD >>>"
+  }
+  if pinBtn==LOW {
+    pin1;LOW
+    pin2;HIGH
+    oled.clear
+    oled.println "MOTOR CTRL"
+    oled.println "DIR: REV <<<"
+  }
+  delay 50
+}
+end>`
+        },
+        {
+            label: '📊 Barra de progreso OLED',
+            code: `start<
+progreso=0
+oled.init
+loop{
+  progreso=progreso+5
+  if progreso > 100 {
+    progreso=0
+  }
+  oled.clear
+  oled.println "PROGRESS:"
+  oled.print "["
+  oled.print math.map(progreso,0,100,0,10)
+  oled.println "] "
+  oled.print progreso
+  oled.println "%"
+  delay 200
+}
+end>`
+        },
+        {
+            label: '⏱ Timer no bloqueante',
+            code: `start<
+pin1=D1
+pin2=D2
+oled.init
+timer.set(t1,1000)
+timer.set(t2,300)
+contador=0
+loop{
+  if timer.check(t1) {
+    contador=contador+1
+    oled.clear
+    oled.println "DUAL TIMER"
+    oled.print "Seg: "
+    oled.println contador
+    timer.reset(t1)
+  }
+  if timer.check(t2) {
+    toggle pin1
+    timer.reset(t2)
+  }
+  delay 10
+}
+end>`
+        },
+        {
+            label: '🔢 Fibonacci',
+            code: `start<
+oled.init
+a=0
+b=1
+oled.println "FIBONACCI"
+loop{
+  oled.clear
+  oled.println "FIBONACCI"
+  oled.print "A="
+  oled.println a
+  oled.print "B="
+  oled.println b
+  temp=a+b
+  a=b
+  b=temp
+  if b > 999 {
+    a=0
+    b=1
+    delay 1000
+  }
+  delay 700
+}
+end>`
+        },
+        {
+            label: '🎛 PWM simulado (blink variable)',
+            code: `start<
+pin1=D1
+velocidad=100
+paso=50
+oled.init
+loop{
+  pin1;HIGH
+  delay velocidad
+  pin1;LOW
+  delay velocidad
+  velocidad=velocidad+paso
+  if velocidad > 900 {
+    paso=math.abs(paso)*-1
+  }
+  if velocidad < 100 {
+    paso=math.abs(paso)
+    velocidad=100
+  }
+  oled.clear
+  oled.println "PWM SIM"
+  oled.print "Speed: "
+  oled.println velocidad
+}
+end>`
+        },
+        {
+            label: '🔐 Código secreto (3 pines)',
+            code: `start<
+pinA=D1
+pinB=D2
+pinC=D3
+intentos=0
+oled.init
+oled.println "ACCESS CTRL"
+oled.println "BTN D1+D2"
+loop{
+  pinA=D1
+  pinB=D2
+  pinC=D3
+  if pinA==HIGH {
+    if pinB==HIGH {
+      if pinC==LOW {
+        oled.clear
+        oled.println "ACCESS OK!"
+        pinC;HIGH
+        delay 1000
+        pinC;LOW
+        intentos=0
+      }
+    }
+  }
+  if pinA==HIGH {
+    if pinB==LOW {
+      intentos=intentos+1
+      oled.clear
+      oled.println "ACCESO DENEGADO"
+      oled.print "Intentos: "
+      oled.println intentos
+      delay 500
+    }
+  }
+  delay 100
+}
+end>`
+        },
+        {
+            label: '📈 Rampa de conteo',
+            code: `start<
+pin1=D1
+pin2=D2
+n=0
+dir=1
+oled.init
+loop{
+  n=n+dir
+  if n >= 10 {
+    dir=math.abs(dir)*-1
+    pin2;HIGH
+    pin1;LOW
+  }
+  if n <= 0 {
+    dir=math.abs(dir)
+    pin1;HIGH
+    pin2;LOW
+    n=0
+  }
+  oled.clear
+  oled.println "RAMPA"
+  oled.draw.bar(n,0,10)
+  oled.print " "
+  oled.println n
+  delay 150
+}
+end>`
+        },
+        {
+            label: '🌡 Simulador de temperatura',
+            code: `start<
+temp=20
+oled.init
+loop{
+  temp=temp+math.random(-1,2)
+  temp=math.clamp(temp,15,40)
+  oled.clear
+  oled.println "TEMP SENSOR"
+  oled.print "Temp: "
+  oled.print temp
+  oled.println " C"
+  if temp > 35 {
+    oled.println "! ALERTA ALTA"
+    pin1=D1
+    pin1;HIGH
+  }
+  if temp < 35 {
+    pin1=D1
+    pin1;LOW
+  }
+  delay 600
+}
+end>`
+        },
+        {
+            label: '🖥 Debug con consola',
+            code: `start<
+console.print "=== RADION BOOT ==="
+console.info "LOG v2.0 iniciado"
+pin1=D1
+contador=0
+loop{
+  pinBtn=D3
+  if pinBtn==HIGH {
+    contador=contador+1
+    console.print str.concat("BTN press #",contador)
+    pin1;HIGH
+    if contador > 5 {
+      console.warn "Muchas pulsaciones!"
+    }
+    delay 200
+    pin1;LOW
+  }
+  if contador > 9 {
+    console.error "Limite alcanzado, reset"
+    contador=0
+  }
+  delay 50
+}
+end>`
+        },
+    ];
+
+    let currentCodePanel = null;
+
+    function openCodePanel(tab) {
+        const panel = document.getElementById('code-panel');
+        const tabs = ['snippets','libs','demos'];
+        tabs.forEach(t => {
+            const btn = document.getElementById('tab-'+t);
+            if(btn){ btn.style.color=''; btn.style.borderColor=''; }
+        });
+        const activeBtn = document.getElementById('tab-'+tab);
+        if(activeBtn){ activeBtn.style.color='var(--cyan)'; activeBtn.style.borderColor='rgba(0,212,255,0.4)'; }
+
+        if (currentCodePanel === tab) {
+            panel.style.display = 'none';
+            currentCodePanel = null;
+            return;
+        }
+        currentCodePanel = tab;
+        panel.style.display = 'flex';
+        panel.innerHTML = '';
+
+        if (tab === 'snippets') {
+            LOG_SNIPPETS.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = 'code-snippet-btn';
+                btn.innerText = s.label;
+                btn.onclick = () => { insertCode(s.code); };
+                panel.appendChild(btn);
+            });
+        } else if (tab === 'libs') {
+            Object.keys(LOG_LIBS).forEach(libKey => {
+                const lib = LOG_LIBS[libKey];
+                const section = document.createElement('div');
+                section.style.cssText = 'width:100%; margin-bottom:6px;';
+                section.innerHTML = `<div style="font-family:'DM Mono',monospace;font-size:8px;color:${lib.color};letter-spacing:1px;margin-bottom:3px;">▸ ${libKey.toUpperCase()} — ${lib.desc}</div>`;
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
+                lib.snippets.forEach(s => {
+                    const btn = document.createElement('button');
+                    btn.className = 'code-snippet-btn';
+                    btn.innerText = s.label;
+                    btn.style.color = lib.color;
+                    btn.style.borderColor = lib.color.replace('0.7','0.3');
+                    btn.onclick = () => { insertCode(s.code); };
+                    row.appendChild(btn);
+                });
+                section.appendChild(row);
+                panel.appendChild(section);
+            });
+        } else if (tab === 'demos') {
+            LOG_DEMOS.forEach(d => {
+                const btn = document.createElement('button');
+                btn.className = 'code-snippet-btn';
+                btn.innerText = d.label;
+                btn.style.cssText = 'color:var(--purple);border-color:rgba(167,139,250,0.3);padding:3px 10px;font-size:9px;';
+                btn.onclick = () => {
+                    document.getElementById('m-code-area').value = d.code;
+                    syncLineNums();
+                    panel.style.display = 'none';
+                    currentCodePanel = null;
+                };
+                panel.appendChild(btn);
+            });
+        }
+    }
+
+    function insertCode(code) {
         const ta = document.getElementById('m-code-area');
-        const snippets = {
-            'loop':  '\nloop{\n  \n}',
-            'delay': '\ndelay 500',
-            'if':    '\nif contador > 0 {\n  \n}',
-            'oled':  '\noled.init\noled.println "Hola"\noled.print contador'
-        };
-        const s = snippets[type] || '';
         const pos = ta.selectionStart;
-        ta.value = ta.value.slice(0,pos) + s + ta.value.slice(pos);
-        ta.selectionStart = ta.selectionEnd = pos + s.length;
+        ta.value = ta.value.slice(0, pos) + code + ta.value.slice(pos);
+        ta.selectionStart = ta.selectionEnd = pos + code.length;
         ta.focus();
         syncLineNums();
+    }
+
+    // Mantener compatibilidad
+    function insertSnippet(type) {
+        const map = { 'loop':'\nloop{\n  \n}', 'delay':'\ndelay 500', 'if':'\nif condicion {\n  \n}', 'oled':'\noled.init\noled.clear\noled.println "Hola"' };
+        insertCode(map[type] || '');
     }
 
     function openCfg(c) {
@@ -1532,12 +2206,18 @@ end></pre>
             badge.style.display='block';
             modal.classList.add('code-mode');
             document.getElementById('m-code-area').value=c.code;
-            c.intState={pc:0,wait:0,vars:{},parsed:null};
+            c.intState={pc:0,wait:0,vars:{},timers:{},pinBlink:{},parsed:null};
+            consoleOwner = c;
+            clearConsole();
+            document.getElementById('m-btn-validate').style.display='inline-flex';
+            document.getElementById('m-btn-submit').style.display='inline-flex';
             setTimeout(syncLineNums, 50);
         } else {
             editor.style.display='none';
             badge.style.display='none';
             modal.classList.remove('code-mode');
+            document.getElementById('m-btn-validate').style.display='inline-flex';
+            document.getElementById('m-btn-submit').style.display='none';
         }
     }
 
@@ -1553,13 +2233,245 @@ end></pre>
         document.getElementById('modal').classList.remove('code-mode');
         targetCfg=null;
     }
-    function saveCfg(){
-        if(targetCfg){
-            if(targetCfg.type==='BATTERY'||targetCfg.type==='RESISTOR'||targetCfg.type==='CAPACITOR')
-                targetCfg.val=Math.max(0.1,parseFloat(document.getElementById('m-val').value)||0);
-            if(targetCfg.type==='RADION'){targetCfg.code=document.getElementById('m-code-area').value;targetCfg.intState={pc:0,wait:0,vars:{},parsed:null};}
+    // ═══════════════════════════════════════════════════════════════
+    // LOG VALIDATOR — análisis estático antes de ejecutar
+    // ═══════════════════════════════════════════════════════════════
+    function validateLOG(code) {
+        const errors   = [];
+        const warnings = [];
+        const lines    = code.split('\n');
+
+        const KNOWN_LIBS   = ['math','str','timer','pin','oled','console','servo'];
+        const KNOWN_MATH   = ['abs','max','min','pow','sqrt','floor','ceil','round','clamp','map','random','sin','cos','pi'];
+        const KNOWN_STR    = ['concat','len','upper','lower','repeat','substr','indexOf','replace','trim','num'];
+        const KNOWN_TIMER  = ['set','check','reset','elapsed','remaining'];
+        const KNOWN_PIN    = ['read','write','toggle','pulse','blink','stopBlink','off'];
+        const KNOWN_OLED   = ['init','clear','print','println','draw','setCursor','printAt','scroll','invert'];
+        const KNOWN_CONS   = ['print','println','warn','error','info','clear'];
+        const KNOWN_SERVO  = ['write','read'];
+        const KNOWN_LIB_FNS = { math:KNOWN_MATH, str:KNOWN_STR, timer:KNOWN_TIMER, pin:KNOWN_PIN, oled:KNOWN_OLED, console:KNOWN_CONS, servo:KNOWN_SERVO };
+
+        const KEYWORDS     = ['loop','while','for','if','else','delay','toggle','print','println','start<','end>','console','oled','pin','math','str','timer'];
+        const VALID_PINS   = ['D1','D2','D3','D4','A1'];
+
+        // ── 1. Estructura start< / end> ──────────────────────────
+        const trimmed = code.trim();
+        if (!trimmed.startsWith('start<')) {
+            errors.push({ line: 1, msg: 'Falta "start<" al inicio del programa' });
         }
-        closeCfg();
+        if (!trimmed.endsWith('end>')) {
+            errors.push({ line: lines.length, msg: 'Falta "end>" al final del programa' });
+        }
+
+        // ── 2. Llaves balanceadas ────────────────────────────────
+        let braceCount = 0;
+        let lastOpenLine = -1;
+        for (let i = 0; i < lines.length; i++) {
+            const l = lines[i].trim();
+            if (l.endsWith('{')) { braceCount++; lastOpenLine = i + 1; }
+            if (l === '}') braceCount--;
+            if (braceCount < 0) {
+                errors.push({ line: i + 1, msg: 'Llave de cierre "}" sin apertura correspondiente' });
+                braceCount = 0;
+            }
+        }
+        if (braceCount > 0) {
+            errors.push({ line: lastOpenLine, msg: `Bloque abierto sin cerrar (falta ${braceCount} "}")` });
+        }
+
+        // ── 3. Análisis línea por línea ──────────────────────────
+        const declaredVars = new Set();
+
+        for (let i = 0; i < lines.length; i++) {
+            const raw  = lines[i];
+            const l    = raw.trim();
+            const lnum = i + 1;
+
+            if (!l || l.startsWith('//') || l === 'start<' || l === 'end>' || l === '}' || l === 'else {' || l === 'else{') continue;
+
+            // ── delay ────────────────────────────────────────────
+            if (l.startsWith('delay ')) {
+                const arg = l.slice(6).trim();
+                if (!arg) errors.push({ line: lnum, msg: '"delay" necesita un argumento: delay 500' });
+                else if (isNaN(parseFloat(arg)) && !declaredVars.has(arg)) {
+                    warnings.push({ line: lnum, msg: `"delay ${arg}": variable "${arg}" no declarada antes de este punto` });
+                }
+                continue;
+            }
+
+            // ── toggle ───────────────────────────────────────────
+            if (l.startsWith('toggle ')) {
+                const arg = l.slice(7).trim();
+                if (!VALID_PINS.includes(arg) && !declaredVars.has(arg)) {
+                    errors.push({ line: lnum, msg: `"toggle ${arg}": "${arg}" no es un pin ni variable declarada` });
+                }
+                continue;
+            }
+
+            // ── loop / while / for / if ──────────────────────────
+            if (l.startsWith('loop{') || l === 'loop{') continue;
+            if (l.startsWith('loop ')) continue;
+            if (l.startsWith('while ')) {
+                if (!l.endsWith('{')) errors.push({ line: lnum, msg: '"while" debe terminar con "{"' });
+                continue;
+            }
+            if (l.startsWith('for ')) {
+                const m = l.match(/^for\s+(\w+)=(.+?)\s+to\s+(.+?)\s*\{$/);
+                if (!m) errors.push({ line: lnum, msg: 'Sintaxis de "for" incorrecta. Usa: for i=0 to 10 {' });
+                else declaredVars.add(m[1]);
+                continue;
+            }
+            if (l.startsWith('if ')) {
+                if (!l.endsWith('{')) errors.push({ line: lnum, msg: '"if" debe terminar con "{"' });
+                continue;
+            }
+
+            // ── Llamadas a librerías como sentencia ──────────────
+            const libCallMatch = l.match(/^(math|str|timer|pin|oled|console|servo)\.([\w.]+)\(?/);
+            if (libCallMatch) {
+                const lib = libCallMatch[1];
+                const fn  = libCallMatch[2].split('(')[0].split('.')[0];
+                const known = KNOWN_LIB_FNS[lib];
+                if (known && !known.includes(fn)) {
+                    errors.push({ line: lnum, msg: `Función desconocida "${lib}.${fn}()"` });
+                }
+                continue;
+            }
+
+            // ── var;HIGH / var;LOW ────────────────────────────────
+            if (l.includes(';')) {
+                const parts   = l.split(';');
+                const varName = parts[0].trim();
+                const rest    = parts[1] ? parts[1].trim() : '';
+                const inlineMatch = rest.match(/^(HIGH|LOW)\s+if\s+(.+)$/);
+                const stateStr = inlineMatch ? inlineMatch[1] : rest;
+                if (stateStr !== 'HIGH' && stateStr !== 'LOW') {
+                    errors.push({ line: lnum, msg: `Estado inválido "${stateStr}" — usa HIGH o LOW` });
+                }
+                if (!VALID_PINS.includes(varName) && !declaredVars.has(varName)) {
+                    warnings.push({ line: lnum, msg: `Pin "${varName}" no declarado. ¿Olvidaste "${varName}=D1"?` });
+                }
+                continue;
+            }
+
+            // ── var = expr (asignación) ───────────────────────────
+            if (l.includes('=') && !l.startsWith('if ') && !l.startsWith('while ') && !l.startsWith('for ')) {
+                const eqIdx  = l.indexOf('=');
+                const vName  = l.slice(0, eqIdx).trim();
+                const expr   = l.slice(eqIdx + 1).trim();
+
+                // nombre de variable válido
+                if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(vName)) {
+                    errors.push({ line: lnum, msg: `Nombre de variable inválido: "${vName}"` });
+                    continue;
+                }
+
+                declaredVars.add(vName);
+
+                // expresión vacía
+                if (!expr) {
+                    errors.push({ line: lnum, msg: `Asignación vacía en "${vName} ="` });
+                    continue;
+                }
+
+                // función de librería desconocida en la expresión
+                const exprLibMatch = expr.match(/^(math|str|timer|pin|console|servo)\.([\w]+)\(/);
+                if (exprLibMatch) {
+                    const lib = exprLibMatch[1];
+                    const fn  = exprLibMatch[2];
+                    const known = KNOWN_LIB_FNS[lib];
+                    if (known && !known.includes(fn)) {
+                        errors.push({ line: lnum, msg: `Función desconocida "${lib}.${fn}()"` });
+                    }
+                    continue;
+                }
+
+                // expresión con solo letras que no es pin/HIGH/LOW/variable/keyword
+                if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expr)) {
+                    const isKnown = VALID_PINS.includes(expr) || expr==='HIGH' || expr==='LOW' || expr==='true' || expr==='false' || expr==='PI' || declaredVars.has(expr) || KEYWORDS.some(k=>expr.startsWith(k));
+                    if (!isKnown) {
+                        warnings.push({ line: lnum, msg: `"${expr}" parece una variable no declarada` });
+                    }
+                }
+                continue;
+            }
+
+            // ── Línea que no encaja en ningún patrón válido ───────
+            // Ignorar líneas que son apertura de bloque, cierre, o start/end
+            const isBlock   = l.endsWith('{');
+            const isKnownKW = KEYWORDS.some(k => l.startsWith(k));
+            if (!isBlock && !isKnownKW && l !== '}') {
+                // comprobar si es una palabra completamente desconocida
+                if (!/^[a-zA-Z_]/.test(l)) continue; // números, etc.
+                errors.push({ line: lnum, msg: `Instrucción no reconocida: "${l.length > 30 ? l.slice(0,30)+'…' : l}"` });
+            }
+        }
+
+        return { errors, warnings };
+    }
+
+    function saveCfg(){
+        if(!targetCfg) return;
+
+        // No-Radion: guardar valor y cerrar directamente
+        if(targetCfg.type==='BATTERY'||targetCfg.type==='RESISTOR'||targetCfg.type==='CAPACITOR'){
+            targetCfg.val=Math.max(0.1,parseFloat(document.getElementById('m-val').value)||0);
+            closeCfg();
+            return;
+        }
+
+        // Radion: solo validar, NO cerrar
+        if(targetCfg.type==='RADION'){
+            const code = document.getElementById('m-code-area').value;
+            const { errors, warnings } = validateLOG(code);
+            clearConsole();
+            if (errors.length === 0 && warnings.length === 0) {
+                logConsole('✔ Validación OK — sin errores', 'info');
+                logConsole('Usa Submit ↑ para cargar el código a la Radion', 'dim');
+            } else {
+                warnings.forEach(w => logConsole(`⚠ Línea ${w.line}: ${w.msg}`, 'warn'));
+                errors.forEach(e => logConsole(`✖ Línea ${e.line}: ${e.msg}`, 'error'));
+                logConsole(`─── ${errors.length} error(es), ${warnings.length} aviso(s) — corrige antes de Submit ───`, 'dim');
+            }
+            targetCfg._lastValidation = { errors, warnings, code };
+            // el modal permanece abierto
+        }
+    }
+
+    // ── SUBMIT: solo carga el código si la última validación fue OK ──
+    function submitCfg() {
+        if (!targetCfg || targetCfg.type !== 'RADION') return;
+        const v = targetCfg._lastValidation;
+        if (!v) {
+            clearConsole();
+            logConsole('✖ Haz clic en Save primero para validar el código', 'error');
+            return;
+        }
+        // Verificar que el código no cambió desde la última validación
+        const currentCode = document.getElementById('m-code-area').value;
+        if (currentCode !== v.code) {
+            clearConsole();
+            logConsole('✖ El código cambió desde la última validación — vuelve a hacer Save', 'error');
+            return;
+        }
+        if (v.errors.length > 0) {
+            clearConsole();
+            logConsole(`✖ No se puede cargar: hay ${v.errors.length} error(es) sin corregir`, 'error');
+            v.errors.forEach(e => logConsole(`  · Línea ${e.line}: ${e.msg}`, 'error'));
+            logConsole('Corrige los errores y vuelve a hacer Save', 'dim');
+            return;
+        }
+        // Todo OK → cargar a la Radion
+        targetCfg.code = v.code;
+        targetCfg.memory = {d1:false, d2:false, d3:false};
+        targetCfg.intState = {pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null};
+        targetCfg._lastValidation = null;
+        clearConsole();
+        logConsole('✔ Código cargado a la Radion 1.1', 'info');
+        if (v.warnings.length > 0) {
+            logConsole(`ℹ ${v.warnings.length} aviso(s) ignorados al cargar`, 'warn');
+        }
+        setTimeout(() => closeCfg(), 700);
     }
     function repairCfg(){if(targetCfg)targetCfg.burned=false;closeCfg();}
 
@@ -1579,15 +2491,18 @@ end></pre>
         else if(type==='NOT')comp.nodes=[{id:'PWR',x:0,y:15},{id:'IN',x:0,y:45},{id:'OUT',x:100,y:30}];
         else if(type==='RSK90'){comp.nodes=[{id:'VCC',x:20,y:10},{id:'GND',x:20,y:50},{id:'OUT',x:80,y:30}];comp.lastTick=0;comp.clockState=false;}
         else if(type==='RADION'){
-            comp.w=110;comp.h=110;
+            comp.w=110;comp.h=130;
             comp.nodes=[
-                {id:'VCC',x:15,y:15},{id:'GND',x:15,y:35},{id:'G',x:15,y:55},
-                {id:'D1',x:95,y:15},{id:'D2',x:95,y:35},{id:'D3',x:95,y:55},
-                {id:'SCL',x:95,y:75},{id:'SDA',x:95,y:95}
+                {id:'VCC',x:15,y:15},{id:'GND',x:15,y:35},{id:'G',x:15,y:55},  // 0,1,2
+                {id:'D1',x:95,y:15},{id:'D2',x:95,y:35},{id:'D3',x:95,y:55},    // 3,4,5
+                {id:'D4',x:95,y:75},                                              // 6 — digital/PWM/servo
+                {id:'A1',x:15,y:75},                                              // 7 — analógico entrada
+                {id:'SCL',x:95,y:95},{id:'SDA',x:95,y:115}                       // 8,9
             ];
             comp.code=`start<\npin1=D1\nloop{\n  pin1;HIGH\n  delay 500\n  pin1;LOW\n  delay 500\n}\nend>`;
-            comp.memory={d1:false,d2:false,d3:false};
-            comp.intState={pc:0,wait:0,vars:{},parsed:null};
+            comp.memory={d1:false,d2:false,d3:false,d4:false};
+            comp.analog={a1:0};
+            comp.intState={pc:0,wait:0,vars:{},timers:{},pinBlink:{},parsed:null};
         }
         else if(type==='OLED_I2C'){
             comp.w=120;comp.h=80;
@@ -1595,6 +2510,17 @@ end></pre>
             comp.textLines=[];comp.initialized=false;
         }
         else if(type==='WAYPOINT'){comp.x=tx-5;comp.y=ty-5;comp.w=10;comp.h=10;comp.nodes=[{id:'W',x:5,y:5}];}
+        else if(type==='SERVO'){
+            comp.w=90; comp.h=70;
+            comp.nodes=[
+                {id:'VCC',  x:15, y:0},   // 0 — alimentación +
+                {id:'GND',  x:45, y:0},   // 1 — alimentación GND
+                {id:'SIG',  x:75, y:0},   // 2 — señal PWM desde D4
+            ];
+            comp.angle = 90;       // ángulo actual 0–180°
+            comp.targetAngle = 90;
+            comp.lastPulse = 0;
+        }
         else if(type==='L298N'){
             comp.w=130; comp.h=100;
             comp.nodes=[
@@ -1645,33 +2571,233 @@ end></pre>
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // RADION LOG v1.1 — Intérprete mejorado con variables numéricas
+    // RADION LOG v2.0 — Intérprete completo
+    // Nuevas features: while, for, else, toggle, funciones math.*,
+    // str.*, timer.*, pin.*, oled.draw.*, oled.setCursor, oled.printAt
     // ═══════════════════════════════════════════════════════════════
     function runRadionLogic(c) {
         if (!c.active || c.burned) {
-            c.memory.d1 = false; c.memory.d2 = false; c.memory.d3 = false;
-            c.intState = { pc:0, wait:0, vars:{}, parsed:null };
+            c.memory.d1 = false; c.memory.d2 = false; c.memory.d3 = false; c.memory.d4 = false;
+            c.intState = { pc:0, wait:0, vars:{}, timers:{}, parsed:null, pinBlink:{} };
             return;
         }
-        if (!c.intState) c.intState = { pc:0, wait:0, vars:{}, parsed:null };
+        if (!c.intState) c.intState = { pc:0, wait:0, vars:{}, timers:{}, parsed:null, pinBlink:{} };
+        if (!c.intState.timers) c.intState.timers = {};
+        if (!c.intState.pinBlink) c.intState.pinBlink = {};
         if (!c.intState.parsed) c.intState.parsed = preprocessCode(c.code);
 
         const now = Date.now();
         if (c.intState.wait > now) return;
 
+        // ── Procesar pin.blink activos (no bloqueante) ───────────
+        Object.keys(c.intState.pinBlink).forEach(pin => {
+            const pb = c.intState.pinBlink[pin];
+            if (!pb.active) return;
+            if (now - pb.last >= pb.ms) {
+                pb.state = !pb.state;
+                pb.last = now;
+                if (pin === 'D1') c.memory.d1 = pb.state;
+                if (pin === 'D2') c.memory.d2 = pb.state;
+                if (pin === 'D3') c.memory.d3 = pb.state;
+            }
+        });
+
         const { lines, blocks } = c.intState.parsed;
         let ix = 0;
-        const max = 50;
+        const max = 80;
 
-        // ── Evalúa expresión aritmética / valor atómico ──────────
+        // ── Leer señal de pin digital ────────────────────────────
+        function readPin(pin) {
+            if (pin === 'D1') return c.nodes[3].signal ? 1 : 0;
+            if (pin === 'D2') return c.nodes[4].signal ? 1 : 0;
+            if (pin === 'D3') return c.nodes[5].signal ? 1 : 0;
+            if (pin === 'D4') return c.nodes[6].signal ? 1 : 0;
+            if (pin === 'A1') return (c.analog && c.analog.a1 !== undefined) ? c.analog.a1 : (c.nodes[7].signal ? 1023 : 0);
+            return 0;
+        }
+
+        // ── Escribir pin digital ─────────────────────────────────
+        function writePin(pin, state) {
+            if (pin === 'D1') c.memory.d1 = state;
+            if (pin === 'D2') c.memory.d2 = state;
+            if (pin === 'D3') c.memory.d3 = state;
+            if (pin === 'D4') c.memory.d4 = state;
+        }
+
+        // ── Resolver variable a pin físico ───────────────────────
+        function resolvePin(name) {
+            const v = c.intState.vars[name];
+            if (v === 'D1' || v === 'D2' || v === 'D3' || v === 'D4' || v === 'A1') return v;
+            if (name === 'D1' || name === 'D2' || name === 'D3' || name === 'D4' || name === 'A1') return name;
+            return null;
+        }
+
+        // ── Llamadas a funciones de librería ─────────────────────
+        // Detecta "lib.fn(args)" o "lib.fn(arg1,arg2,...)"
+        function callLibFunc(expr) {
+            const m = expr.match(/^(math|str|timer|pin|oled)\.([\w]+)\((.*)?\)$/);
+            if (!m) return undefined;
+            const [, lib, fn, rawArgs] = m;
+            const args = rawArgs ? rawArgs.split(',').map(a => evalExpr(a.trim())) : [];
+
+            // ── math ─────────────────────────────────────────────
+            if (lib === 'math') {
+                if (fn === 'abs')    return Math.abs(args[0]);
+                if (fn === 'max')    return Math.max(args[0], args[1]);
+                if (fn === 'min')    return Math.min(args[0], args[1]);
+                if (fn === 'pow')    return Math.pow(args[0], args[1]);
+                if (fn === 'sqrt')   return Math.sqrt(Math.max(0, args[0]));
+                if (fn === 'floor')  return Math.floor(args[0]);
+                if (fn === 'ceil')   return Math.ceil(args[0]);
+                if (fn === 'round')  return Math.round(args[0]);
+                if (fn === 'clamp')  return Math.min(Math.max(args[0], args[1]), args[2]);
+                if (fn === 'map') {
+                    const [v, i0, i1, o0, o1] = args;
+                    return o0 + (v - i0) * (o1 - o0) / (i1 - i0);
+                }
+                if (fn === 'random') {
+                    const lo = Math.ceil(args[0]), hi = Math.floor(args[1]);
+                    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+                }
+                if (fn === 'sin')   return Math.sin(args[0]);
+                if (fn === 'cos')   return Math.cos(args[0]);
+                if (fn === 'pi')    return Math.PI;
+            }
+
+            // ── str ──────────────────────────────────────────────
+            if (lib === 'str') {
+                const sa = args.map(a => String(a));
+                if (fn === 'concat')  return sa.join('');
+                if (fn === 'len')     return sa[0].length;
+                if (fn === 'upper')   return sa[0].toUpperCase();
+                if (fn === 'lower')   return sa[0].toLowerCase();
+                if (fn === 'repeat')  return sa[0].repeat(Math.max(0, parseInt(args[1]) || 0));
+                if (fn === 'substr')  return sa[0].substr(parseInt(args[1]) || 0, parseInt(args[2]) || sa[0].length);
+                if (fn === 'indexOf') return sa[0].indexOf(sa[1]);
+                if (fn === 'replace') return sa[0].replace(sa[1], sa[2]);
+                if (fn === 'trim')    return sa[0].trim();
+                if (fn === 'num')     return parseFloat(sa[0]) || 0;
+            }
+
+            // ── timer ────────────────────────────────────────────
+            if (lib === 'timer') {
+                const id = rawArgs.split(',')[0].trim();
+                if (fn === 'set') {
+                    c.intState.timers[id] = { start: now, interval: parseFloat(args[1]) || 1000 };
+                    return 0;
+                }
+                if (fn === 'check') {
+                    const t = c.intState.timers[id];
+                    if (!t) return 0;
+                    return (now - t.start) >= t.interval ? 1 : 0;
+                }
+                if (fn === 'reset') {
+                    if (c.intState.timers[id]) c.intState.timers[id].start = now;
+                    return 0;
+                }
+                if (fn === 'elapsed') {
+                    const t = c.intState.timers[id];
+                    return t ? now - t.start : 0;
+                }
+                if (fn === 'remaining') {
+                    const t = c.intState.timers[id];
+                    return t ? Math.max(0, t.interval - (now - t.start)) : 0;
+                }
+            }
+
+            // ── pin ──────────────────────────────────────────────
+            if (lib === 'pin') {
+                const pinName = rawArgs ? rawArgs.split(',')[0].trim() : '';
+                const physPin = resolvePin(pinName) || pinName;
+                if (fn === 'read')   return readPin(physPin);
+                if (fn === 'write') {
+                    const state = args[1] === 1 || String(args[1]).toUpperCase() === 'HIGH';
+                    writePin(physPin, state);
+                    return 0;
+                }
+                if (fn === 'toggle') {
+                    if (physPin==='D1') c.memory.d1 = !c.memory.d1;
+                    if (physPin==='D2') c.memory.d2 = !c.memory.d2;
+                    if (physPin==='D3') c.memory.d3 = !c.memory.d3;
+                    if (physPin==='D4') c.memory.d4 = !c.memory.d4;
+                    return 0;
+                }
+                if (fn === 'off') { writePin(physPin, false); return 0; }
+                if (fn === 'blink') {
+                    c.intState.pinBlink[physPin] = { active:true, ms: parseFloat(args[1])||200, last: now, state: false };
+                    return 0;
+                }
+                if (fn === 'stopBlink') {
+                    if (c.intState.pinBlink[physPin]) c.intState.pinBlink[physPin].active = false;
+                    return 0;
+                }
+            }
+
+            // ── servo ────────────────────────────────────────────
+            // servo.write(pin, angulo)  → mueve el servo conectado al pin
+            // servo.read(pin)           → devuelve el ángulo actual del servo
+            if (lib === 'servo') {
+                const pinName = rawArgs ? rawArgs.split(',')[0].trim() : 'D4';
+                const physPin = resolvePin(pinName) || pinName;
+                if (fn === 'write') {
+                    const targetAngle = Math.min(180, Math.max(0, parseFloat(args[1]) || 0));
+                    // Activar el pin de señal para que haya corriente
+                    c.memory.d4 = true;
+                    // Buscar el servo conectado al pin físico
+                    const pinNode = physPin === 'D4' ? c.nodes[6] : null;
+                    if (pinNode) {
+                        // Rastrear el servo conectado a ese nodo
+                        connections.forEach(conn => {
+                            let other = null;
+                            if (conn.a.n === pinNode) other = conn.b;
+                            if (conn.b.n === pinNode) other = conn.a;
+                            if (other && other.c.type === 'SERVO') {
+                                other.c.targetAngle = targetAngle;
+                                other.c.active = true;
+                            }
+                        });
+                    }
+                    return 0;
+                }
+                if (fn === 'read') {
+                    const pinNode = physPin === 'D4' ? c.nodes[6] : null;
+                    if (pinNode) {
+                        let angle = 90;
+                        connections.forEach(conn => {
+                            let other = null;
+                            if (conn.a.n === pinNode) other = conn.b;
+                            if (conn.b.n === pinNode) other = conn.a;
+                            if (other && other.c.type === 'SERVO') angle = other.c.angle;
+                        });
+                        return angle;
+                    }
+                    return 90;
+                }
+            }
+
+            return undefined;
+        }
+
+        // ── Evalúa expresión aritmética / funciones / valores ────
         function evalExpr(expr) {
+            if (!expr) return 0;
             expr = expr.trim();
 
-            // Operadores de baja precedencia: + -
-            const opsLow = ['+', '-'];
+            // Llamada a función de librería
+            if (/^(math|str|timer|pin|servo)\.([\w]+)\(/.test(expr)) {
+                const r = callLibFunc(expr);
+                if (r !== undefined) return r;
+            }
+
+            // Paréntesis
+            if (expr.startsWith('(') && expr.endsWith(')')) {
+                return evalExpr(expr.slice(1, -1));
+            }
+
+            // Operadores de baja precedencia: + - (derecha a izquierda)
             for (let i = expr.length - 1; i >= 0; i--) {
                 const ch = expr[i];
-                if (opsLow.includes(ch)) {
+                if (ch === '+' || ch === '-') {
                     if (i === 0) continue;
                     const prev = expr[i-1];
                     if ('+-*/%(=<>!'.includes(prev)) continue;
@@ -1683,11 +2809,10 @@ end></pre>
                 }
             }
 
-            // Operadores de alta precedencia: * / %
-            const opsHigh = ['*', '/', '%'];
+            // Operadores alta precedencia: * / %
             for (let i = expr.length - 1; i >= 0; i--) {
                 const ch = expr[i];
-                if (opsHigh.includes(ch)) {
+                if (ch === '*' || ch === '/' || ch === '%') {
                     if (i === 0) continue;
                     const prev = expr[i-1];
                     if ('+-*/%(=<>!'.includes(prev)) continue;
@@ -1701,26 +2826,49 @@ end></pre>
                 }
             }
 
-            // Valor atómico
+            // Literales numéricos
             if (!isNaN(parseFloat(expr)) && isFinite(expr)) return parseFloat(expr);
+
+            // Constantes
             if (expr === 'HIGH') return 1;
             if (expr === 'LOW')  return 0;
+            if (expr === 'true') return 1;
+            if (expr === 'false') return 0;
+            if (expr === 'PI')   return Math.PI;
+
+            // String literal
+            if (expr.startsWith('"') && expr.endsWith('"')) return expr.slice(1, -1);
+
+            // Pin directo
+            if (expr === 'D1') return readPin('D1');
+            if (expr === 'D2') return readPin('D2');
+            if (expr === 'D3') return readPin('D3');
 
             // Variable
             const v = c.intState.vars[expr];
             if (v !== undefined) {
-                if (v === 'D1') return c.nodes[3].signal ? 1 : 0;
-                if (v === 'D2') return c.nodes[4].signal ? 1 : 0;
-                if (v === 'D3') return c.nodes[5].signal ? 1 : 0;
+                if (v === 'D1' || v === 'D2' || v === 'D3') return readPin(v);
                 const vn = parseFloat(v);
-                if (!isNaN(vn)) return vn;
-                return v;
+                return !isNaN(vn) ? vn : v;
             }
             return expr;
         }
 
-        // ── Evalúa condición: A op B ─────────────────────────────
+        // ── Evalúa condición booleana ────────────────────────────
         function evalCond(condStr) {
+            condStr = condStr.trim();
+            // NOT
+            if (condStr.startsWith('!')) return !evalCond(condStr.slice(1).trim());
+            // AND
+            if (condStr.includes(' and ')) {
+                const parts = condStr.split(' and ');
+                return parts.every(p => evalCond(p.trim()));
+            }
+            // OR
+            if (condStr.includes(' or ')) {
+                const parts = condStr.split(' or ');
+                return parts.some(p => evalCond(p.trim()));
+            }
             const operators = ['>=', '<=', '!=', '==', '>', '<'];
             for (const op of operators) {
                 const idx = condStr.indexOf(op);
@@ -1736,40 +2884,80 @@ end></pre>
                     if (op === '>=') return ln >= rn;
                     if (op === '<=') return ln <= rn;
                 }
-                // Comparación string (HIGH/LOW)
                 const ls = String(lv), rs = String(rv);
                 if (op === '==') return ls === rs;
                 if (op === '!=') return ls !== rs;
                 return false;
             }
-            // Sin operador: truthy
             const v = evalExpr(condStr);
             return v !== 0 && v !== 'LOW' && v !== '' && v !== false;
         }
 
-        // ── Resuelve token a string para mostrar en OLED ─────────
+        // ── Resuelve token para mostrar en OLED ─────────────────
         function resolveDisplay(token) {
             if (token.startsWith('"') && token.endsWith('"')) return token.slice(1, -1);
             const val = evalExpr(token);
             if (typeof val === 'number') {
-                return Number.isInteger(val) ? String(val) : parseFloat(val.toFixed(4)).toString();
+                return Number.isInteger(val) ? String(val) : parseFloat(val.toFixed(3)).toString();
             }
             return String(val);
         }
 
+        // ── Genera barra visual para OLED ────────────────────────
+        function makeBar(val, lo, hi, width) {
+            width = width || 8;
+            const pct = Math.max(0, Math.min(1, (val - lo) / (hi - lo)));
+            const filled = Math.round(pct * width);
+            return '[' + '█'.repeat(filled) + '░'.repeat(width - filled) + ']';
+        }
+
         // ── Bucle principal del intérprete ───────────────────────
+        try {
         while (ix < max) {
             if (c.intState.pc >= lines.length) break;
             let line = lines[c.intState.pc].trim();
 
-            // Saltar vacíos, comentarios, delimitadores
+            // Vacíos, comentarios, delimitadores
             if (!line || line.startsWith('//') || line === 'start<' || line === 'end>') {
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── if <condicion> { ─────────────────────────────────
+            // ── else { ───────────────────────────────────────────
+            if (line === 'else {' || line === 'else{') {
+                // Si llegamos aquí es que el if anterior fue TRUE → saltar else
+                c.intState.pc = (blocks[c.intState.pc] !== undefined)
+                    ? blocks[c.intState.pc] + 1
+                    : c.intState.pc + 1;
+                ix++; continue;
+            }
+
+            // ── if <cond> { ──────────────────────────────────────
             if (line.startsWith('if ')) {
                 const condMatch = line.match(/^if\s+(.+?)\s*\{$/);
+                let cond = false;
+                if (condMatch) cond = evalCond(condMatch[1].trim());
+                if (cond) {
+                    c.intState.pc++;
+                } else {
+                    const closeIdx = blocks[c.intState.pc];
+                    if (closeIdx !== undefined) {
+                        // Hay else?
+                        const nextLine = lines[closeIdx + 1] ? lines[closeIdx + 1].trim() : '';
+                        if (nextLine === 'else {' || nextLine === 'else{') {
+                            c.intState.pc = closeIdx + 2; // entrar al else
+                        } else {
+                            c.intState.pc = closeIdx + 1;
+                        }
+                    } else {
+                        c.intState.pc++;
+                    }
+                }
+                ix++; continue;
+            }
+
+            // ── while <cond> { ───────────────────────────────────
+            if (line.startsWith('while ')) {
+                const condMatch = line.match(/^while\s+(.+?)\s*\{$/);
                 let cond = false;
                 if (condMatch) cond = evalCond(condMatch[1].trim());
                 if (cond) {
@@ -1782,6 +2970,29 @@ end></pre>
                 ix++; continue;
             }
 
+            // ── for <var>=<ini> to <fin> { ───────────────────────
+            if (line.startsWith('for ')) {
+                const forMatch = line.match(/^for\s+(\w+)=(.+?)\s+to\s+(.+?)\s*\{$/);
+                if (forMatch) {
+                    const varName = forMatch[1];
+                    const ini = evalExpr(forMatch[2].trim());
+                    const fin = evalExpr(forMatch[3].trim());
+                    const cur = c.intState.vars[varName] !== undefined ? parseFloat(c.intState.vars[varName]) : ini;
+                    const step = ini <= fin ? 1 : -1;
+                    const finished = step > 0 ? cur > fin : cur < fin;
+                    if (!finished) {
+                        if (c.intState.vars[varName] === undefined) c.intState.vars[varName] = ini;
+                        c.intState.pc++;
+                    } else {
+                        delete c.intState.vars[varName];
+                        c.intState.pc = (blocks[c.intState.pc] !== undefined)
+                            ? blocks[c.intState.pc] + 1
+                            : c.intState.pc + 1;
+                    }
+                } else { c.intState.pc++; }
+                ix++; continue;
+            }
+
             // ── Bloque abierto { ─────────────────────────────────
             if (line.endsWith('{')) { c.intState.pc++; ix++; continue; }
 
@@ -1789,14 +3000,24 @@ end></pre>
             if (line === '}') {
                 const sl = blocks[c.intState.pc];
                 if (sl !== undefined) {
-                    if (lines[sl].trim().startsWith('loop')) {
-                        c.intState.pc = sl + 1; ix++; continue;
+                    const headerLine = lines[sl].trim();
+                    if (headerLine.startsWith('loop') || headerLine.startsWith('while')) {
+                        c.intState.pc = sl; ix++; continue; // volver al header
+                    } else if (headerLine.startsWith('for ')) {
+                        // incrementar variable del for
+                        const forMatch = headerLine.match(/^for\s+(\w+)=(.+?)\s+to\s+(.+?)\s*\{$/);
+                        if (forMatch) {
+                            const varName = forMatch[1];
+                            const fin = evalExpr(forMatch[3].trim());
+                            const ini = evalExpr(forMatch[2].trim());
+                            const step = ini <= fin ? 1 : -1;
+                            c.intState.vars[varName] = (parseFloat(c.intState.vars[varName]) || 0) + step;
+                        }
+                        c.intState.pc = sl; ix++; continue;
                     } else {
                         c.intState.pc++;
                     }
-                } else {
-                    c.intState.pc++;
-                }
+                } else { c.intState.pc++; }
                 ix++; continue;
             }
 
@@ -1808,30 +3029,129 @@ end></pre>
                 return;
             }
 
+            // ── toggle <pin> ─────────────────────────────────────
+            if (line.startsWith('toggle ')) {
+                const varName = line.slice(7).trim();
+                const pin = resolvePin(varName);
+                if (pin === 'D1') c.memory.d1 = !c.memory.d1;
+                else if (pin === 'D2') c.memory.d2 = !c.memory.d2;
+                else if (pin === 'D3') c.memory.d3 = !c.memory.d3;
+                c.intState.pc++; ix++; continue;
+            }
+
+            // ── print <expr> (alias corto) ───────────────────────
+            if (line.startsWith('print ') && !line.startsWith('println')) {
+                const oled = getI2C_OLED(c);
+                if (oled && oled.active && oled.initialized) {
+                    const text = resolveDisplay(line.slice(6).trim());
+                    if (!oled.textLines.length) oled.textLines.push('');
+                    oled.textLines[oled.textLines.length - 1] += text;
+                }
+                c.intState.pc++; ix++; continue;
+            }
+            if (line.startsWith('println ')) {
+                const oled = getI2C_OLED(c);
+                if (oled && oled.active && oled.initialized) {
+                    const text = resolveDisplay(line.slice(8).trim());
+                    if (!oled.textLines.length) oled.textLines.push('');
+                    oled.textLines[oled.textLines.length - 1] += text;
+                    if (oled.textLines.length >= 4) oled.textLines.shift();
+                    oled.textLines.push('');
+                }
+                c.intState.pc++; ix++; continue;
+            }
+
             // ── oled.* ───────────────────────────────────────────
             if (line.startsWith('oled.')) {
                 const oled = getI2C_OLED(c);
                 if (oled && oled.active && !oled.burned) {
                     if (line === 'oled.init') {
-                        oled.textLines = [""]; oled.initialized = true;
+                        oled.textLines = ['']; oled.initialized = true; oled.cursor = {row:0, col:0};
+
+                    } else if (line === 'oled.clear') {
+                        if (oled.initialized) { oled.textLines = ['']; oled.cursor = {row:0,col:0}; }
 
                     } else if (line.startsWith('oled.print ') || line.startsWith('oled.println ')) {
                         const isPrintln = line.startsWith('oled.println ');
                         const raw = line.slice(isPrintln ? 13 : 11).trim();
                         const text = resolveDisplay(raw);
                         if (oled.initialized) {
-                            if (!oled.textLines.length) oled.textLines.push("");
+                            if (!oled.textLines.length) oled.textLines.push('');
                             oled.textLines[oled.textLines.length - 1] += text;
                             if (isPrintln) {
                                 if (oled.textLines.length >= 4) oled.textLines.shift();
-                                oled.textLines.push("");
+                                oled.textLines.push('');
                             }
                         }
 
-                    } else if (line === 'oled.clear') {
-                        if (oled.initialized) oled.textLines = [""];
+                    } else if (line.startsWith('oled.draw.bar(')) {
+                        // oled.draw.bar(val, lo, hi)
+                        const m = line.match(/oled\.draw\.bar\((.+),(.+),(.+)\)/);
+                        if (m && oled.initialized) {
+                            const bar = makeBar(evalExpr(m[1].trim()), evalExpr(m[2].trim()), evalExpr(m[3].trim()));
+                            if (!oled.textLines.length) oled.textLines.push('');
+                            oled.textLines[oled.textLines.length - 1] += bar;
+                        }
+
+                    } else if (line.startsWith('oled.setCursor(')) {
+                        // oled.setCursor(col, row)
+                        const m = line.match(/oled\.setCursor\((.+),(.+)\)/);
+                        if (m && oled.initialized) {
+                            const col = parseInt(evalExpr(m[1].trim())) || 0;
+                            const row = parseInt(evalExpr(m[2].trim())) || 0;
+                            while (oled.textLines.length <= row) oled.textLines.push('');
+                            oled.cursor = { row, col };
+                        }
+
+                    } else if (line.startsWith('oled.printAt(')) {
+                        // oled.printAt(col, row, "texto")
+                        const m = line.match(/oled\.printAt\((.+),(.+),(.+)\)/);
+                        if (m && oled.initialized) {
+                            const col = parseInt(evalExpr(m[1].trim())) || 0;
+                            const row = parseInt(evalExpr(m[2].trim())) || 0;
+                            const text = resolveDisplay(m[3].trim());
+                            while (oled.textLines.length <= row) oled.textLines.push('');
+                            const line_ = oled.textLines[row].padEnd(col, ' ');
+                            oled.textLines[row] = line_.slice(0, col) + text + line_.slice(col + text.length);
+                        }
+
+                    } else if (line === 'oled.scroll.up') {
+                        if (oled.initialized && oled.textLines.length > 1) oled.textLines.shift();
+
+                    } else if (line === 'oled.invert') {
+                        oled.inverted = !oled.inverted;
                     }
                 }
+                c.intState.pc++; ix++; continue;
+            }
+
+            // ── console.* → salida a la consola LOG ──────────────
+            if (line.startsWith('console.')) {
+                const isConsoleOnly = c === consoleOwner;
+                if (line.startsWith('console.print ') || line.startsWith('console.println ')) {
+                    const isPln = line.startsWith('console.println ');
+                    const raw = line.slice(isPln ? 16 : 14).trim();
+                    const text = resolveDisplay(raw);
+                    if (isConsoleOnly) logConsole(text, 'print');
+                } else if (line.startsWith('console.warn ')) {
+                    const text = resolveDisplay(line.slice(13).trim());
+                    if (isConsoleOnly) logConsole('⚠ ' + text, 'warn');
+                } else if (line.startsWith('console.error ')) {
+                    const text = resolveDisplay(line.slice(14).trim());
+                    if (isConsoleOnly) logConsole('✖ ' + text, 'error');
+                } else if (line.startsWith('console.info ')) {
+                    const text = resolveDisplay(line.slice(13).trim());
+                    if (isConsoleOnly) logConsole('ℹ ' + text, 'info');
+                } else if (line === 'console.clear') {
+                    if (isConsoleOnly) clearConsole();
+                }
+                c.intState.pc++; ix++; continue;
+            }
+
+            // ── Llamadas a funciones de librería como sentencia ──
+            // ej: timer.set(t1,1000) | pin.blink(D1,200) | math.random(...)
+            if (/^(math|str|timer|pin|servo)\.([\w]+)\(/.test(line)) {
+                callLibFunc(line);
                 c.intState.pc++; ix++; continue;
             }
 
@@ -1840,8 +3160,6 @@ end></pre>
                 const parts = line.split(';');
                 const varName = parts[0].trim();
                 const rest = parts[1].trim();
-
-                // ¿Tiene "HIGH if <cond>" o "LOW if <cond>"?
                 const inlineIf = rest.match(/^(HIGH|LOW)\s+if\s+(.+)$/);
                 let state;
                 if (inlineIf) {
@@ -1851,21 +3169,16 @@ end></pre>
                 } else {
                     state = rest === 'HIGH';
                 }
-
-                const pinVar = c.intState.vars[varName];
-                if (pinVar === 'D1' || varName === 'D1') c.memory.d1 = state;
-                if (pinVar === 'D2' || varName === 'D2') c.memory.d2 = state;
-                if (pinVar === 'D3' || varName === 'D3') c.memory.d3 = state;
+                const pin = resolvePin(varName);
+                if (pin) writePin(pin, state);
                 c.intState.pc++; ix++; continue;
             }
 
-            // ── var = expr (asignación numérica o de pin) ─────────
-            if (line.includes('=') && !line.startsWith('if ')) {
+            // ── var = expr ────────────────────────────────────────
+            if (line.includes('=') && !line.startsWith('if ') && !line.startsWith('while ') && !line.startsWith('for ')) {
                 const eqIdx = line.indexOf('=');
                 const varName = line.slice(0, eqIdx).trim();
                 const exprStr = line.slice(eqIdx + 1).trim();
-
-                // Pin físico directo
                 if (exprStr === 'D1' || exprStr === 'D2' || exprStr === 'D3') {
                     c.intState.vars[varName] = exprStr;
                 } else {
@@ -1877,6 +3190,13 @@ end></pre>
             // Línea no reconocida → avanzar
             c.intState.pc++; ix++;
         }
+        } catch(err) {
+            const lineNum = c.intState.pc + 1;
+            if (c === consoleOwner) {
+                logConsole(`✖ Runtime error en línea ${lineNum}: ${err.message}`, 'error');
+            }
+            c.intState.pc++;
+        }
     }
 
     function updatePhysics(){
@@ -1884,12 +3204,12 @@ end></pre>
         connections.forEach(conn=>{conn.active=false;conn.flowDir=1;});
         components.filter(c=>c.type==='CAPACITOR').forEach(cap=>{if(cap.charge>0)cap.isSource=true;else{cap.isSource=false;cap.active=false;}});
         components.forEach(c=>c.nodes.forEach(n=>n.signal=false));
-        const sources=components.filter(c=>(c.type==='BATTERY'||(c.type==='CAPACITOR'&&c.isSource)||(c.type==='RSK90'&&c.clockState)||(c.type==='RADION'&&(c.memory.d1||c.memory.d2||c.memory.d3)))&&!c.burned);
+        const sources=components.filter(c=>(c.type==='BATTERY'||(c.type==='CAPACITOR'&&c.isSource)||(c.type==='RSK90'&&c.clockState)||(c.type==='RADION'&&(c.memory.d1||c.memory.d2||c.memory.d3||c.memory.d4)))&&!c.burned);
         sources.forEach(src=>{
             let startNodes=[];
             if(src.type==='BATTERY'||src.type==='CAPACITOR')startNodes.push(src.nodes[0]);
             else if(src.type==='RSK90')startNodes.push(src.nodes[2]);
-            else if(src.type==='RADION'){if(src.memory.d1)startNodes.push(src.nodes[3]);if(src.memory.d2)startNodes.push(src.nodes[4]);if(src.memory.d3)startNodes.push(src.nodes[5]);}
+            else if(src.type==='RADION'){if(src.memory.d1)startNodes.push(src.nodes[3]);if(src.memory.d2)startNodes.push(src.nodes[4]);if(src.memory.d3)startNodes.push(src.nodes[5]);if(src.memory.d4)startNodes.push(src.nodes[6]);}
             startNodes.forEach(sn=>{
                 let q=[sn];sn.signal=true;
                 while(q.length>0){
@@ -1905,6 +3225,7 @@ end></pre>
                         if(comp.type==='TRANSISTOR')continue;
                         if(['AND','OR','NOT','XOR','RSK90','RADION','OLED_I2C'].includes(comp.type))continue;
                         if(comp.type==='L298N')continue;
+                        if(comp.type==='SERVO')continue;
                         comp.nodes.forEach(n=>{if(!n.signal){n.signal=true;q.push(n);}});
                     }
                 }
@@ -1933,6 +3254,7 @@ end></pre>
                         if(comp.memory.d1){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[3]);if(currentNode===comp.nodes[3])outNodes.push(comp.nodes[0]);}
                         if(comp.memory.d2){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[4]);if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[0]);}
                         if(comp.memory.d3){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[5]);if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[0]);}
+                        if(comp.memory.d4){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[6]);if(currentNode===comp.nodes[6])outNodes.push(comp.nodes[0]);}
                     }
                     else if(comp.type==='OLED_I2C'){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);}
                     else if(comp.type==='L298N'){
@@ -1971,7 +3293,8 @@ end></pre>
                             if(comp.type==='XOR'&&((comp.nodes[0].signal&&!comp.nodes[1].signal)||(!comp.nodes[0].signal&&comp.nodes[1].signal)))canCross=true;
                             if(comp.type==='NOT'&&currentNode===comp.nodes[0]&&!comp.nodes[1].signal)canCross=true;
                             if(comp.type==='RSK90'){if((currentNode===comp.nodes[0]&&otherNode===comp.nodes[1])||(currentNode===comp.nodes[1]&&otherNode===comp.nodes[0]))canCross=true;if(comp.clockState&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[2])||(currentNode===comp.nodes[2]&&otherNode===comp.nodes[0])))canCross=true;}
-                            if(comp.type==='RADION'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1]||n===comp.nodes[2];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;if(comp.memory.d1&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[3])||(currentNode===comp.nodes[3]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d2&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[4])||(currentNode===comp.nodes[4]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d3&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[5])||(currentNode===comp.nodes[5]&&otherNode===comp.nodes[0])))canCross=true;}
+                            if(comp.type==='RADION'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1]||n===comp.nodes[2];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;if(comp.memory.d1&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[3])||(currentNode===comp.nodes[3]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d2&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[4])||(currentNode===comp.nodes[4]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d3&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[5])||(currentNode===comp.nodes[5]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d4&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[6])||(currentNode===comp.nodes[6]&&otherNode===comp.nodes[0])))canCross=true;}
+                            if(comp.type==='SERVO'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;}
                             if(comp.type==='OLED_I2C'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;}
                             if(comp.type==='L298N'){
                                 const in1=comp.nodes[2].signal, in2=comp.nodes[3].signal;
@@ -2009,6 +3332,7 @@ end></pre>
                             if(step.comp.type==='RADION')rSum+=1200;
                             if(step.comp.type==='OLED_I2C')rSum+=1000;
                             if(step.comp.type==='L298N')rSum+=800;
+                            if(step.comp.type==='SERVO')rSum+=600;
                             if(step.comp.type==='LED')ledCount++;
                             if(['AND','OR','NOT','XOR','MUX'].includes(step.comp.type))rSum+=10;
                             if(step.comp.type==='CAPACITOR'&&bat.type==='BATTERY'){let cr=50/(step.comp.val||10);step.comp.charge=Math.min(100,step.comp.charge+cr);step.comp.active=true;}
@@ -2043,6 +3367,13 @@ end></pre>
             if(in1&&!in2) d.motorDir=1;
             else if(!in1&&in2) d.motorDir=-1;
             else d.motorDir=0;
+        });
+        // SERVO: mover ángulo suavemente hacia targetAngle
+        components.filter(c=>c.type==='SERVO').forEach(s=>{
+            if(!s.active||s.burned){s.angle=90;s.targetAngle=90;return;}
+            const diff=s.targetAngle-s.angle;
+            if(Math.abs(diff)>0.5) s.angle+=diff*0.12;
+            else s.angle=s.targetAngle;
         });
         components.filter(c=>c.type==='RSK90').forEach(c=>{
             if(c.active&&!c.burned){const now=Date.now();if(!c.lastTick)c.lastTick=now;if(now-c.lastTick>=1000){c.clockState=!c.clockState;c.lastTick=now;}}
@@ -2252,20 +3583,106 @@ end></pre>
                 label('VCC',c.x+18,c.y+17); label('GND',c.x+18,c.y+45); label('OUT',c.x+60,c.y+35);
             }
             else if(c.type==='RADION'){
-                ctx.fillStyle='rgba(14,30,22,0.88)'; ctx.strokeStyle=c.active?'rgba(0,230,118,0.45)':'rgba(0,230,118,0.15)'; ctx.lineWidth=1;
-                ctx.fillRect(c.x+30,c.y+5,50,100); ctx.strokeRect(c.x+30,c.y+5,50,100);
-                ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(c.x+36,c.y+22,38,56);
-                ctx.strokeStyle='rgba(0,230,118,0.15)'; ctx.strokeRect(c.x+36,c.y+22,38,56);
-                ctx.save(); ctx.translate(c.x+47,c.y+76); ctx.rotate(-Math.PI/2);
-                label('RADION 1.1',0,0,'rgba(0,230,118,0.5)',7); ctx.restore();
-                if(c.active&&!c.burned){ctx.fillStyle=C_GREEN;ctx.shadowBlur=5;ctx.shadowColor=C_GREEN;ctx.beginPath();ctx.arc(c.x+67,c.y+27,2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
-                label('VCC',c.x+2,c.y+18); label('GND',c.x+2,c.y+38); label('GND',c.x+2,c.y+58);
-                label('D1',c.x+82,c.y+18,C_GREEN); label('D2',c.x+82,c.y+38,C_GREEN); label('D3',c.x+82,c.y+58,C_GREEN);
-                label('SCL',c.x+82,c.y+78,C_AMBER); label('SDA',c.x+82,c.y+98,C_AMBER);
-                [['d1',c.x+40,c.y+28],['d2',c.x+40,c.y+40],['d3',c.x+40,c.y+52]].forEach(([k,px,py])=>{
-                    ctx.fillStyle=c.memory&&c.memory[k]?C_GREEN:'rgba(255,255,255,0.06)';
-                    ctx.beginPath(); ctx.arc(px,py,2,0,Math.PI*2); ctx.fill();
+                const cW=c.w, cH=c.h;
+                // Cuerpo principal
+                ctx.fillStyle='rgba(14,30,22,0.88)';
+                ctx.strokeStyle=c.active?'rgba(0,230,118,0.45)':'rgba(0,230,118,0.15)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x+28,c.y+4,54,cH-8);
+                ctx.strokeRect(c.x+28,c.y+4,54,cH-8);
+                // Chip interior
+                ctx.fillStyle='rgba(0,0,0,0.3)';
+                ctx.fillRect(c.x+34,c.y+20,40,cH-40);
+                ctx.strokeStyle='rgba(0,230,118,0.12)';
+                ctx.strokeRect(c.x+34,c.y+20,40,cH-40);
+                // Label rotado
+                ctx.save(); ctx.translate(c.x+46,c.y+cH*0.62); ctx.rotate(-Math.PI/2);
+                label('RADION 1.1',0,0,'rgba(0,230,118,0.45)',7); ctx.restore();
+                // LED activo
+                if(c.active&&!c.burned){
+                    ctx.fillStyle=C_GREEN; ctx.shadowBlur=6; ctx.shadowColor=C_GREEN;
+                    ctx.beginPath(); ctx.arc(c.x+66,c.y+25,2.5,0,Math.PI*2); ctx.fill();
+                    ctx.shadowBlur=0;
+                }
+                // Etiquetas pines izquierda (VCC/GND/GND/A1)
+                label('VCC',c.x+1,c.y+18,'rgba(0,230,118,0.6)',8);
+                label('GND',c.x+1,c.y+38,'rgba(255,71,87,0.6)',8);
+                label('GND',c.x+1,c.y+58,'rgba(255,71,87,0.5)',8);
+                label('A1', c.x+3,c.y+78,'rgba(255,183,0,0.75)',8);
+                // Etiquetas pines derecha (D1/D2/D3/D4/SCL/SDA)
+                label('D1',c.x+83,c.y+18,C_GREEN,8);
+                label('D2',c.x+83,c.y+38,C_GREEN,8);
+                label('D3',c.x+83,c.y+58,C_GREEN,8);
+                label('D4',c.x+83,c.y+78,'rgba(0,212,255,0.85)',8);
+                label('SCL',c.x+81,c.y+98,C_AMBER,8);
+                label('SDA',c.x+81,c.y+118,C_AMBER,8);
+                // Indicadores LED internos de pines digitales
+                const pinDots=[['d1',c.x+38,c.y+30],['d2',c.x+38,c.y+42],['d3',c.x+38,c.y+54],['d4',c.x+38,c.y+66]];
+                pinDots.forEach(([k,px,py])=>{
+                    const on=c.memory&&c.memory[k];
+                    ctx.fillStyle=k==='d4'?(on?'rgba(0,212,255,0.9)':'rgba(255,255,255,0.06)'):(on?C_GREEN:'rgba(255,255,255,0.06)');
+                    if(on){ctx.shadowBlur=5;ctx.shadowColor=k==='d4'?'rgba(0,212,255,0.7)':C_GREEN;}
+                    ctx.beginPath(); ctx.arc(px,py,2.5,0,Math.PI*2); ctx.fill();
+                    ctx.shadowBlur=0;
                 });
+                // Indicador A1 (amarillo)
+                ctx.fillStyle='rgba(255,183,0,0.25)';
+                ctx.fillRect(c.x+38,c.y+75,12,7);
+                ctx.fillStyle='rgba(255,183,0,0.6)'; ctx.font="6px 'DM Mono',monospace";
+                ctx.fillText('A1',c.x+39,c.y+82);
+            }
+            else if(c.type==='SERVO'){
+                const powered = c.active && !c.burned;
+                const ang = ((c.angle||90) * Math.PI) / 180; // 0..π
+                // Cuerpo principal
+                ctx.fillStyle='rgba(28,28,44,0.92)';
+                ctx.strokeStyle=powered?'rgba(0,212,255,0.5)':'rgba(0,212,255,0.15)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x+5,c.y+18,60,45);
+                ctx.strokeRect(c.x+5,c.y+18,60,45);
+                // Tornillos esquinas
+                [[c.x+11,c.y+24],[c.x+59,c.y+24],[c.x+11,c.y+57],[c.x+59,c.y+57]].forEach(([sx,sy])=>{
+                    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=0.7;
+                    ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(sx-2,sy); ctx.lineTo(sx+2,sy); ctx.moveTo(sx,sy-2); ctx.lineTo(sx,sy+2); ctx.stroke();
+                });
+                // Hub del eje
+                const hubX=c.x+35, hubY=c.y+18;
+                ctx.fillStyle=powered?'rgba(0,212,255,0.15)':'rgba(255,255,255,0.07)';
+                ctx.strokeStyle=powered?'rgba(0,212,255,0.6)':'rgba(255,255,255,0.2)';
+                ctx.lineWidth=1;
+                ctx.beginPath(); ctx.arc(hubX,hubY,10,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                // Brazo del servo (pivota desde hubX,hubY)
+                const armLen=22;
+                const armX=hubX+Math.cos(ang - Math.PI/2)*armLen;
+                const armY=hubY+Math.sin(ang - Math.PI/2)*armLen;
+                ctx.strokeStyle=powered?'rgba(0,212,255,0.9)':'rgba(255,255,255,0.3)';
+                ctx.lineWidth=3; ctx.lineCap='round';
+                if(powered){ctx.shadowBlur=6;ctx.shadowColor='rgba(0,212,255,0.6)';}
+                ctx.beginPath(); ctx.moveTo(hubX,hubY); ctx.lineTo(armX,armY); ctx.stroke();
+                ctx.shadowBlur=0; ctx.lineCap='butt';
+                // Círculo punta del brazo
+                ctx.fillStyle=powered?C_CYAN:'rgba(255,255,255,0.2)';
+                ctx.beginPath(); ctx.arc(armX,armY,3,0,Math.PI*2); ctx.fill();
+                // Eje central
+                ctx.fillStyle=powered?'rgba(0,212,255,0.9)':'rgba(255,255,255,0.4)';
+                ctx.beginPath(); ctx.arc(hubX,hubY,3,0,Math.PI*2); ctx.fill();
+                // Label + ángulo
+                label('SG90',c.x+22,c.y+36,'rgba(0,212,255,0.5)',8);
+                const degText=Math.round(c.angle||90)+'°';
+                label(degText,c.x+22,c.y+50,powered?'rgba(0,212,255,0.85)':'rgba(255,255,255,0.3)',9);
+                // Etiquetas de pines
+                label('VCC',c.x+8,c.y+12,'rgba(0,230,118,0.6)',7);
+                label('GND',c.x+30,c.y+12,'rgba(255,71,87,0.6)',7);
+                label('SIG',c.x+57,c.y+12,'rgba(0,212,255,0.7)',7);
+                // Arco de rango 0-180° (decorativo)
+                ctx.strokeStyle='rgba(0,212,255,0.08)'; ctx.lineWidth=1;
+                ctx.beginPath(); ctx.arc(hubX,hubY,15,Math.PI,0); ctx.stroke();
+                // Arco recorrido actual
+                if(powered){
+                    ctx.strokeStyle='rgba(0,212,255,0.3)'; ctx.lineWidth=2;
+                    ctx.beginPath(); ctx.arc(hubX,hubY,15,Math.PI,Math.PI+ang); ctx.stroke();
+                }
             }
             else if(c.type==='L298N'){
                 // Cuerpo principal
@@ -2422,7 +3839,7 @@ end></pre>
         ctx.fillStyle='rgba(255,255,255,0.08)';
         ctx.font="9px 'DM Mono',monospace";
         ctx.textAlign='right';
-        ctx.fillText('Simulic Pro v1.8',canvas.width-14,canvas.height-12);
+        ctx.fillText('Simulic Pro v1.9',canvas.width-14,canvas.height-12);
         ctx.textAlign='left';
 
         requestAnimationFrame(draw);
