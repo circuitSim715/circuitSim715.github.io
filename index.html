@@ -53,7 +53,6 @@
         overflow: hidden;
     }
 
-    /* Subtle background gradient mesh */
     body::before {
         content: '';
         position: fixed;
@@ -485,7 +484,6 @@
         width: 520px;
     }
 
-    /* ── CODE EDITOR ── */
     .code-editor-wrap {
         display: none;
         flex-direction: column;
@@ -860,6 +858,22 @@
     /* Desktop mode */
     .desktop-mode #virtual-controls { display: none !important; }
     .desktop-mode #zoom-controls { top: auto; bottom: 16px; right: 16px; }
+
+    #about-screen {
+        display: none;
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60%; max-width: 540px;
+        height: auto; max-height: 80%;
+        background: rgba(11,14,23,0.96);
+        border: 1px solid var(--glass-border-light);
+        border-radius: var(--radius-lg);
+        backdrop-filter: blur(40px);
+        box-shadow: 0 32px 100px rgba(0,0,0,0.8);
+        z-index: 300;
+        overflow: hidden;
+    }
 </style>
 ```
 
@@ -894,10 +908,12 @@
         <button class="cat-btn" onclick="selectCategory('digital', this)">Digitales</button>
         <button class="cat-btn" onclick="selectCategory('boards', this)">Placas</button>
         <button class="cat-btn" onclick="selectCategory('output_plus', this)">Output+</button>
+        <button class="cat-btn" onclick="selectCategory('dev_plus', this)" style="color:rgba(167,139,250,0.6);">Dev+</button>
     </div>
     <div class="cat-group">
         <button class="cat-btn cat-btn-demo" onclick="selectCategory('demos', this)">★ Demos</button>
         <button class="cat-btn cat-btn-manual" onclick="toggleManual()">Manual</button>
+        <button class="cat-btn cat-btn-manual" onclick="toggleAbout()">About</button>
     </div>
 </div>
 
@@ -1001,14 +1017,79 @@
             <li><code>if var==HIGH { ... }</code> — Condicional de entrada.</li>
         </ul>
 
+        <h4>Variables Numéricas y Aritmética</h4>
+        <p>Puedes declarar variables numéricas, operar con ellas y usarlas en condiciones:</p>
+        <ul>
+            <li><code>contador=0</code> — Variable numérica.</li>
+            <li><code>contador=contador+1</code> — Suma, resta, multiplicación, división, módulo.</li>
+            <li><code>if contador &gt; 5 { ... }</code> — Comparaciones: <code>&gt;</code> <code>&lt;</code> <code>&gt;=</code> <code>&lt;=</code> <code>==</code> <code>!=</code></li>
+            <li><code>oled.print contador</code> — Muestra el valor de una variable en pantalla.</li>
+            <li><code>pin1;HIGH if contador &gt; 0</code> — Activar pin con condición inline.</li>
+            <li><code>delay velocidad</code> — Usar variable numérica como tiempo de delay.</li>
+        </ul>
+        <pre>start&lt;
+```
+
+pin1=D1
+pinBtn=D2
+contador=0
+velocidad=300
+oled.init
+oled.println “RADION 1.1”
+loop{
+pinBtn=D2
+if pinBtn==HIGH {
+contador=contador+1
+pin1;HIGH
+delay 100
+pin1;LOW
+}
+if contador > 9 {
+contador=0
+oled.clear
+oled.println “RESET!”
+}
+oled.clear
+oled.print “COUNT: “
+oled.print contador
+delay velocidad
+}
+end></pre>
+
+```
         <h4>Pantallas OLED (I2C)</h4>
         <p>Conecta SCL→SCL y SDA→SDA entre Radion y OLED (+ alimentación). Luego:</p>
         <ul>
             <li><code>oled.init</code> — Inicializa la pantalla.</li>
             <li><code>oled.print "Texto"</code> — Escribe en línea actual.</li>
-            <li><code>oled.println "Texto"</code> — Escribe en nueva línea.</li>
+            <li><code>oled.print variable</code> — Muestra valor de variable (numérica o string).</li>
+            <li><code>oled.println "Texto"</code> — Escribe y salta a nueva línea.</li>
             <li><code>oled.clear</code> — Limpia la pantalla.</li>
         </ul>
+    </div>
+</div>
+
+<!-- ABOUT -->
+<div id="about-screen">
+    <div class="manual-header">
+        <div class="manual-title-wrap">
+            <span class="manual-title">ABOUT</span>
+            <span class="manual-badge">SIMULIC PRO</span>
+        </div>
+        <button class="close-manual" onclick="toggleAbout()">Cerrar ✕</button>
+    </div>
+    <div class="manual-inner">
+        <h4>What is Simulic Pro?</h4>
+        <p>Simulic Pro is a browser-based electronics circuit simulator built for learning, prototyping, and experimentation. No installations, no dependencies — just open it and start building.</p>
+        <p>It features a real physics engine that simulates voltage, current, and component limits, meaning components actually burn if you wire them wrong. This is intentional — it's how you learn.</p>
+
+        <h4>What can it do?</h4>
+        <p>Beyond basic circuits, Simulic Pro includes the <strong>Radion 1.1</strong>, a programmable microcontroller board with its own scripting language called <strong>LOG</strong>. With it you can control digital pins, run loops and conditionals, work with numeric variables, perform arithmetic, and drive I2C OLED displays — all inside the simulator.</p>
+
+        <h4>From the developer</h4>
+        <p>Hi! Simulic Pro is a solo project, built and maintained by a single developer. Every feature, fix, and improvement comes from genuine passion for making electronics more accessible and fun to learn.</p>
+        <p>If you enjoy using it and would like to contribute — whether that's ideas, feedback, bug reports, or collaboration — you're more than welcome to reach out. The official contact email is listed on the <strong>GitHub repository</strong>.</p>
+        <p style="margin-top: 16px; color: var(--cyan); font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 1px;">Thank you for your support! 💙</p>
     </div>
 </div>
 
@@ -1068,6 +1149,11 @@
         m.style.display = (m.style.display === 'block') ? 'none' : 'block';
     }
 
+    function toggleAbout() {
+        const m = document.getElementById('about-screen');
+        m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    }
+
     const componentLists = {
         'active': [
             { id: 'BATTERY', label: 'Batería' }, { id: 'LED', label: 'LED' },
@@ -1082,7 +1168,8 @@
             { id: 'XOR', label: 'XOR' }, { id: 'NOT', label: 'NOT' }, { id: 'MUX', label: 'MUX' }
         ],
         'boards': [{ id: 'RADION', label: 'Radion 1.1' }],
-        'output_plus': [{ id: 'OLED_I2C', label: 'OLED Display' }]
+        'output_plus': [{ id: 'OLED_I2C', label: 'OLED Display' }],
+        'dev_plus': [{ id: 'L298N', label: 'L298N Motor Driver' }]
     };
 
     const demos = {
@@ -1092,7 +1179,8 @@
         'MOTOR':  { label: 'Control Motor', func: () => loadMotorDemo() },
         'RADION': { label: 'Radion Blink', func: () => loadRadionDemo() },
         'INPUT':  { label: 'Radion Input', func: () => loadInputDemo() },
-        'OLED':   { label: 'Radion OLED', func: () => loadOledDemo() }
+        'OLED':   { label: 'Radion OLED', func: () => loadOledDemo() },
+        'MDRIVER':{ label: 'Radion + L298N', func: () => loadMotorDriverDemo() }
     };
 
     function selectCategory(cat, btnElement) {
@@ -1121,6 +1209,7 @@
                 if (cat === 'digital') btn.style.color = 'var(--cyan)';
                 if (comp.id === 'RADION') { btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(0,230,118,0.3)'; }
                 if (comp.id === 'OLED_I2C') { btn.style.color = 'var(--amber)'; btn.style.borderColor = 'rgba(255,183,0,0.3)'; }
+                if (comp.id === 'L298N') { btn.style.color = 'var(--purple)'; btn.style.borderColor = 'rgba(167,139,250,0.3)'; }
                 sub.appendChild(btn);
             });
         }
@@ -1181,6 +1270,28 @@
         connect(bat,0,radion,0); connect(bat,1,radion,1); connect(bat,0,oled,0); connect(bat,1,oled,1);
         connect(radion,6,oled,2); connect(radion,7,oled,3);
         radion.code = `start<\noled.init\noled.println "HELLO WORLD!"\ndelay 1000\noled.println "RADION 1.1 I2C"\ndelay 1000\noled.println "STATUS: OK"\nloop{\n  delay 500\n  oled.print "."\n}\nend>`;
+        radion.intState = { pc:0, wait:0, vars:{}, parsed:null };
+    }
+
+    function loadMotorDriverDemo() {
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
+        const bat    = spawn('BATTERY',   -260,  20);
+        const radion = spawn('RADION',     -80, -60);
+        const btn    = spawn('PUSH_BTN',  -260, -80);
+        const driver = spawn('L298N',       80,  -20);
+        const motor  = spawn('MOTOR',      290,  20);
+        // Alimentación Radion desde batería
+        connect(bat,0,radion,0); connect(bat,1,radion,1);
+        // Botón → D3 (entrada digital)
+        connect(bat,0,btn,0); connect(btn,1,radion,5);
+        // Radion D1 → IN1, D2 → IN2 (señales de control)
+        connect(radion,3,driver,2); connect(radion,4,driver,3);
+        // Alimentación driver desde batería
+        connect(bat,0,driver,0); connect(bat,1,driver,1);
+        // Tierra común: GND driver ya comparte bat- con GND Radion
+        // Motor entre OUT1 y OUT2 del driver (puente H)
+        connect(driver,4,motor,0); connect(driver,5,motor,1);
+        radion.code = `start<\npinBtn=D3\npin1=D1\npin2=D2\nloop{\n  pinBtn=D3\n  if pinBtn==HIGH {\n    pin1;HIGH\n    pin2;LOW\n  }\n  if pinBtn==LOW {\n    pin1;LOW\n    pin2;HIGH\n  }\n}\nend>`;
         radion.intState = { pc:0, wait:0, vars:{}, parsed:null };
     }
 
@@ -1280,11 +1391,9 @@
     };
     bind('vUp','up'); bind('vDown','down'); bind('vLeft','left'); bind('vRight','right');
 
-    // Reset all movement if focus lost or touch leaves virtual controls area
     const clearAllMovement = () => { vMouse.moving = {}; };
     document.addEventListener('visibilitychange', clearAllMovement);
     document.getElementById('virtual-controls').addEventListener('touchend', (e)=>{
-        // If no touches remain on the dpad buttons, clear all movement
         if(e.touches.length === 0) clearAllMovement();
     });
     document.getElementById('virtual-controls').addEventListener('touchcancel', clearAllMovement);
@@ -1384,13 +1493,15 @@
         const ta = document.getElementById('m-code-area');
         document.getElementById('m-line-nums').scrollTop = ta.scrollTop;
     }
+
+    // ── SNIPPET INSERTER (actualizado con ejemplos numéricos) ──
     function insertSnippet(type) {
         const ta = document.getElementById('m-code-area');
         const snippets = {
             'loop':  '\nloop{\n  \n}',
             'delay': '\ndelay 500',
-            'if':    '\nif pin==HIGH {\n  \n}',
-            'oled':  '\noled.init\noled.println "Hola"'
+            'if':    '\nif contador > 0 {\n  \n}',
+            'oled':  '\noled.init\noled.println "Hola"\noled.print contador'
         };
         const s = snippets[type] || '';
         const pos = ta.selectionStart;
@@ -1484,6 +1595,18 @@
             comp.textLines=[];comp.initialized=false;
         }
         else if(type==='WAYPOINT'){comp.x=tx-5;comp.y=ty-5;comp.w=10;comp.h=10;comp.nodes=[{id:'W',x:5,y:5}];}
+        else if(type==='L298N'){
+            comp.w=130; comp.h=100;
+            comp.nodes=[
+                {id:'VCC', x:0,  y:20}, // 0 — alimentación +
+                {id:'GND', x:0,  y:50}, // 1 — alimentación GND
+                {id:'IN1', x:0,  y:75}, // 2 — control D1 Radion
+                {id:'IN2', x:30, y:100},// 3 — control D2 Radion
+                {id:'OUT1',x:130,y:30}, // 4 — motor terminal A
+                {id:'OUT2',x:130,y:70}, // 5 — motor terminal B
+            ];
+            comp.motorDir = 0; // -1 izq, 0 stop, 1 der
+        }
         components.push(comp); return comp;
     }
 
@@ -1521,56 +1644,238 @@
         return oled;
     }
 
-    function runRadionLogic(c){
-        if(!c.active||c.burned){c.memory.d1=false;c.memory.d2=false;c.memory.d3=false;c.intState={pc:0,wait:0,vars:{},parsed:null};return;}
-        if(!c.intState)c.intState={pc:0,wait:0,vars:{},parsed:null};
-        if(!c.intState.parsed)c.intState.parsed=preprocessCode(c.code);
-        const now=Date.now();
-        if(c.intState.wait>now)return;
-        const{lines,blocks}=c.intState.parsed;
-        let ix=0;const max=30;
-        while(ix<max){
-            if(c.intState.pc>=lines.length)break;
-            let line=lines[c.intState.pc].trim();
-            if(!line||line.startsWith('//')||line==='start<'||line==='end>'){c.intState.pc++;ix++;continue;}
-            if(line.startsWith('if ')){
-                let match=line.match(/if\s+(.+)==(HIGH|LOW)\s*\{/);let cond=false;
-                if(match){
-                    let vn=match[1].trim(),st=match[2],pp=c.intState.vars[vn],pv=false;
-                    if(pp==='D1')pv=c.nodes[3].signal; if(pp==='D2')pv=c.nodes[4].signal; if(pp==='D3')pv=c.nodes[5].signal;
-                    cond=(st==='HIGH')?pv:!pv;
+    // ═══════════════════════════════════════════════════════════════
+    // RADION LOG v1.1 — Intérprete mejorado con variables numéricas
+    // ═══════════════════════════════════════════════════════════════
+    function runRadionLogic(c) {
+        if (!c.active || c.burned) {
+            c.memory.d1 = false; c.memory.d2 = false; c.memory.d3 = false;
+            c.intState = { pc:0, wait:0, vars:{}, parsed:null };
+            return;
+        }
+        if (!c.intState) c.intState = { pc:0, wait:0, vars:{}, parsed:null };
+        if (!c.intState.parsed) c.intState.parsed = preprocessCode(c.code);
+
+        const now = Date.now();
+        if (c.intState.wait > now) return;
+
+        const { lines, blocks } = c.intState.parsed;
+        let ix = 0;
+        const max = 50;
+
+        // ── Evalúa expresión aritmética / valor atómico ──────────
+        function evalExpr(expr) {
+            expr = expr.trim();
+
+            // Operadores de baja precedencia: + -
+            const opsLow = ['+', '-'];
+            for (let i = expr.length - 1; i >= 0; i--) {
+                const ch = expr[i];
+                if (opsLow.includes(ch)) {
+                    if (i === 0) continue;
+                    const prev = expr[i-1];
+                    if ('+-*/%(=<>!'.includes(prev)) continue;
+                    const left = evalExpr(expr.slice(0, i));
+                    const right = evalExpr(expr.slice(i + 1));
+                    const nl = parseFloat(left), nr = parseFloat(right);
+                    if (isNaN(nl) || isNaN(nr)) return String(left) + String(right);
+                    return ch === '+' ? nl + nr : nl - nr;
                 }
-                if(cond)c.intState.pc++; else c.intState.pc=(blocks[c.intState.pc]!==undefined)?blocks[c.intState.pc]+1:c.intState.pc+1;
             }
-            else if(line.endsWith('{'))c.intState.pc++;
-            else if(line==='}'){
-                let sl=blocks[c.intState.pc];
-                if(sl!==undefined){if(lines[sl].trim().startsWith('loop')){c.intState.pc=sl+1;ix++;continue;}else c.intState.pc++;}
-                else c.intState.pc++;
-            }
-            else if(line.startsWith('delay')){
-                c.intState.wait=now+(parseInt(line.split(' ')[1])||100);c.intState.pc++;return;
-            }
-            else if(line.startsWith('oled.')){
-                let oled=getI2C_OLED(c);
-                if(oled&&oled.active&&!oled.burned){
-                    if(line==='oled.init'){oled.textLines=[""];oled.initialized=true;}
-                    else if(line.startsWith('oled.print ')){
-                        if(oled.initialized){let t=line.substring(11).replace(/"/g,'');if(!oled.textLines.length)oled.textLines.push("");oled.textLines[oled.textLines.length-1]+=t;}
-                    }else if(line.startsWith('oled.println ')){
-                        if(oled.initialized){let t=line.substring(13).replace(/"/g,'');if(!oled.textLines.length)oled.textLines.push("");oled.textLines[oled.textLines.length-1]+=t;if(oled.textLines.length>=4)oled.textLines.shift();oled.textLines.push("");}
-                    }else if(line==='oled.clear'){if(oled.initialized)oled.textLines=[""];}
+
+            // Operadores de alta precedencia: * / %
+            const opsHigh = ['*', '/', '%'];
+            for (let i = expr.length - 1; i >= 0; i--) {
+                const ch = expr[i];
+                if (opsHigh.includes(ch)) {
+                    if (i === 0) continue;
+                    const prev = expr[i-1];
+                    if ('+-*/%(=<>!'.includes(prev)) continue;
+                    const left = evalExpr(expr.slice(0, i));
+                    const right = evalExpr(expr.slice(i + 1));
+                    const nl = parseFloat(left), nr = parseFloat(right);
+                    if (isNaN(nl) || isNaN(nr)) return 0;
+                    if (ch === '*') return nl * nr;
+                    if (ch === '/') return nr !== 0 ? nl / nr : 0;
+                    if (ch === '%') return nr !== 0 ? nl % nr : 0;
                 }
-                c.intState.pc++;
             }
-            else if(line.includes('=')){const p=line.split('=');if(p.length===2)c.intState.vars[p[0].trim()]=p[1].trim();c.intState.pc++;}
-            else if(line.includes(';')){
-                const p=line.split(';');const vn=p[0].trim(),st=p[1].trim(),pp=c.intState.vars[vn];
-                if(pp==='D1')c.memory.d1=(st==='HIGH'); if(pp==='D2')c.memory.d2=(st==='HIGH'); if(pp==='D3')c.memory.d3=(st==='HIGH');
-                c.intState.pc++;
+
+            // Valor atómico
+            if (!isNaN(parseFloat(expr)) && isFinite(expr)) return parseFloat(expr);
+            if (expr === 'HIGH') return 1;
+            if (expr === 'LOW')  return 0;
+
+            // Variable
+            const v = c.intState.vars[expr];
+            if (v !== undefined) {
+                if (v === 'D1') return c.nodes[3].signal ? 1 : 0;
+                if (v === 'D2') return c.nodes[4].signal ? 1 : 0;
+                if (v === 'D3') return c.nodes[5].signal ? 1 : 0;
+                const vn = parseFloat(v);
+                if (!isNaN(vn)) return vn;
+                return v;
             }
-            else c.intState.pc++;
-            ix++;
+            return expr;
+        }
+
+        // ── Evalúa condición: A op B ─────────────────────────────
+        function evalCond(condStr) {
+            const operators = ['>=', '<=', '!=', '==', '>', '<'];
+            for (const op of operators) {
+                const idx = condStr.indexOf(op);
+                if (idx === -1) continue;
+                const lv = evalExpr(condStr.slice(0, idx).trim());
+                const rv = evalExpr(condStr.slice(idx + op.length).trim());
+                const ln = parseFloat(lv), rn = parseFloat(rv);
+                if (!isNaN(ln) && !isNaN(rn)) {
+                    if (op === '==') return ln === rn;
+                    if (op === '!=') return ln !== rn;
+                    if (op === '>')  return ln > rn;
+                    if (op === '<')  return ln < rn;
+                    if (op === '>=') return ln >= rn;
+                    if (op === '<=') return ln <= rn;
+                }
+                // Comparación string (HIGH/LOW)
+                const ls = String(lv), rs = String(rv);
+                if (op === '==') return ls === rs;
+                if (op === '!=') return ls !== rs;
+                return false;
+            }
+            // Sin operador: truthy
+            const v = evalExpr(condStr);
+            return v !== 0 && v !== 'LOW' && v !== '' && v !== false;
+        }
+
+        // ── Resuelve token a string para mostrar en OLED ─────────
+        function resolveDisplay(token) {
+            if (token.startsWith('"') && token.endsWith('"')) return token.slice(1, -1);
+            const val = evalExpr(token);
+            if (typeof val === 'number') {
+                return Number.isInteger(val) ? String(val) : parseFloat(val.toFixed(4)).toString();
+            }
+            return String(val);
+        }
+
+        // ── Bucle principal del intérprete ───────────────────────
+        while (ix < max) {
+            if (c.intState.pc >= lines.length) break;
+            let line = lines[c.intState.pc].trim();
+
+            // Saltar vacíos, comentarios, delimitadores
+            if (!line || line.startsWith('//') || line === 'start<' || line === 'end>') {
+                c.intState.pc++; ix++; continue;
+            }
+
+            // ── if <condicion> { ─────────────────────────────────
+            if (line.startsWith('if ')) {
+                const condMatch = line.match(/^if\s+(.+?)\s*\{$/);
+                let cond = false;
+                if (condMatch) cond = evalCond(condMatch[1].trim());
+                if (cond) {
+                    c.intState.pc++;
+                } else {
+                    c.intState.pc = (blocks[c.intState.pc] !== undefined)
+                        ? blocks[c.intState.pc] + 1
+                        : c.intState.pc + 1;
+                }
+                ix++; continue;
+            }
+
+            // ── Bloque abierto { ─────────────────────────────────
+            if (line.endsWith('{')) { c.intState.pc++; ix++; continue; }
+
+            // ── Cierre de bloque } ───────────────────────────────
+            if (line === '}') {
+                const sl = blocks[c.intState.pc];
+                if (sl !== undefined) {
+                    if (lines[sl].trim().startsWith('loop')) {
+                        c.intState.pc = sl + 1; ix++; continue;
+                    } else {
+                        c.intState.pc++;
+                    }
+                } else {
+                    c.intState.pc++;
+                }
+                ix++; continue;
+            }
+
+            // ── delay <expr_ms> ──────────────────────────────────
+            if (line.startsWith('delay ')) {
+                const ms = parseFloat(evalExpr(line.slice(6).trim())) || 100;
+                c.intState.wait = now + ms;
+                c.intState.pc++;
+                return;
+            }
+
+            // ── oled.* ───────────────────────────────────────────
+            if (line.startsWith('oled.')) {
+                const oled = getI2C_OLED(c);
+                if (oled && oled.active && !oled.burned) {
+                    if (line === 'oled.init') {
+                        oled.textLines = [""]; oled.initialized = true;
+
+                    } else if (line.startsWith('oled.print ') || line.startsWith('oled.println ')) {
+                        const isPrintln = line.startsWith('oled.println ');
+                        const raw = line.slice(isPrintln ? 13 : 11).trim();
+                        const text = resolveDisplay(raw);
+                        if (oled.initialized) {
+                            if (!oled.textLines.length) oled.textLines.push("");
+                            oled.textLines[oled.textLines.length - 1] += text;
+                            if (isPrintln) {
+                                if (oled.textLines.length >= 4) oled.textLines.shift();
+                                oled.textLines.push("");
+                            }
+                        }
+
+                    } else if (line === 'oled.clear') {
+                        if (oled.initialized) oled.textLines = [""];
+                    }
+                }
+                c.intState.pc++; ix++; continue;
+            }
+
+            // ── var;HIGH / var;LOW (con condición inline opcional) ─
+            if (line.includes(';')) {
+                const parts = line.split(';');
+                const varName = parts[0].trim();
+                const rest = parts[1].trim();
+
+                // ¿Tiene "HIGH if <cond>" o "LOW if <cond>"?
+                const inlineIf = rest.match(/^(HIGH|LOW)\s+if\s+(.+)$/);
+                let state;
+                if (inlineIf) {
+                    const cond = evalCond(inlineIf[2].trim());
+                    if (!cond) { c.intState.pc++; ix++; continue; }
+                    state = inlineIf[1] === 'HIGH';
+                } else {
+                    state = rest === 'HIGH';
+                }
+
+                const pinVar = c.intState.vars[varName];
+                if (pinVar === 'D1' || varName === 'D1') c.memory.d1 = state;
+                if (pinVar === 'D2' || varName === 'D2') c.memory.d2 = state;
+                if (pinVar === 'D3' || varName === 'D3') c.memory.d3 = state;
+                c.intState.pc++; ix++; continue;
+            }
+
+            // ── var = expr (asignación numérica o de pin) ─────────
+            if (line.includes('=') && !line.startsWith('if ')) {
+                const eqIdx = line.indexOf('=');
+                const varName = line.slice(0, eqIdx).trim();
+                const exprStr = line.slice(eqIdx + 1).trim();
+
+                // Pin físico directo
+                if (exprStr === 'D1' || exprStr === 'D2' || exprStr === 'D3') {
+                    c.intState.vars[varName] = exprStr;
+                } else {
+                    c.intState.vars[varName] = evalExpr(exprStr);
+                }
+                c.intState.pc++; ix++; continue;
+            }
+
+            // Línea no reconocida → avanzar
+            c.intState.pc++; ix++;
         }
     }
 
@@ -1599,6 +1904,7 @@
                         if(comp.type==='CAPACITOR'&&curr!==comp.nodes[0])continue;
                         if(comp.type==='TRANSISTOR')continue;
                         if(['AND','OR','NOT','XOR','RSK90','RADION','OLED_I2C'].includes(comp.type))continue;
+                        if(comp.type==='L298N')continue;
                         comp.nodes.forEach(n=>{if(!n.signal){n.signal=true;q.push(n);}});
                     }
                 }
@@ -1629,6 +1935,27 @@
                         if(comp.memory.d3){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[5]);if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[0]);}
                     }
                     else if(comp.type==='OLED_I2C'){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);}
+                    else if(comp.type==='L298N'){
+                        // nodos: 0=VCC, 1=GND, 2=IN1, 3=IN2, 4=OUT1, 5=OUT2
+                        // Alimentación interna VCC↔GND
+                        if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);
+                        if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);
+                        const in1=comp.nodes[2].signal, in2=comp.nodes[3].signal;
+                        // FWD (IN1=H, IN2=L): VCC→OUT1, OUT2→GND (puente H)
+                        if(in1&&!in2){
+                            if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[4]); // VCC → OUT1
+                            if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[0]); // OUT1 ← VCC
+                            if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[1]); // OUT2 → GND
+                            if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[5]); // GND → OUT2
+                        }
+                        // REV (IN1=L, IN2=H): VCC→OUT2, OUT1→GND (puente H invertido)
+                        if(!in1&&in2){
+                            if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[5]); // VCC → OUT2
+                            if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[0]); // OUT2 ← VCC
+                            if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[1]); // OUT1 → GND
+                            if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[4]); // GND → OUT1
+                        }
+                    }
                     else{outNodes.push(comp.nodes.find(n=>n!==currentNode));}
                     outNodes.forEach(otherNode=>{
                         if(otherNode&&!visitedNodes.includes(otherNode)){
@@ -1646,6 +1973,22 @@
                             if(comp.type==='RSK90'){if((currentNode===comp.nodes[0]&&otherNode===comp.nodes[1])||(currentNode===comp.nodes[1]&&otherNode===comp.nodes[0]))canCross=true;if(comp.clockState&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[2])||(currentNode===comp.nodes[2]&&otherNode===comp.nodes[0])))canCross=true;}
                             if(comp.type==='RADION'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1]||n===comp.nodes[2];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;if(comp.memory.d1&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[3])||(currentNode===comp.nodes[3]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d2&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[4])||(currentNode===comp.nodes[4]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d3&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[5])||(currentNode===comp.nodes[5]&&otherNode===comp.nodes[0])))canCross=true;}
                             if(comp.type==='OLED_I2C'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;}
+                            if(comp.type==='L298N'){
+                                const in1=comp.nodes[2].signal, in2=comp.nodes[3].signal;
+                                const vcc=comp.nodes[0], gnd=comp.nodes[1], o1=comp.nodes[4], o2=comp.nodes[5];
+                                // Siempre: VCC↔GND para alimentación interna
+                                if((currentNode===vcc&&otherNode===gnd)||(currentNode===gnd&&otherNode===vcc))canCross=true;
+                                // FWD: VCC→OUT1 y OUT2→GND
+                                if(in1&&!in2){
+                                    if((currentNode===vcc&&otherNode===o1)||(currentNode===o1&&otherNode===vcc))canCross=true;
+                                    if((currentNode===o2&&otherNode===gnd)||(currentNode===gnd&&otherNode===o2))canCross=true;
+                                }
+                                // REV: VCC→OUT2 y OUT1→GND
+                                if(!in1&&in2){
+                                    if((currentNode===vcc&&otherNode===o2)||(currentNode===o2&&otherNode===vcc))canCross=true;
+                                    if((currentNode===o1&&otherNode===gnd)||(currentNode===gnd&&otherNode===o1))canCross=true;
+                                }
+                            }
                             if(comp.type==='TRANSISTOR'){const bs=comp.nodes[1].signal;if(comp.mode==='NPN'){if(bs)canCross=true;}else{if(!bs)canCross=true;}}
                             if(canCross)dfs(otherNode,[...currentPath,{t:'comp',comp,dir:direction}],[...visitedNodes,otherNode]);
                         }
@@ -1665,6 +2008,7 @@
                             if(step.comp.type==='RSK90')rSum+=1000;
                             if(step.comp.type==='RADION')rSum+=1200;
                             if(step.comp.type==='OLED_I2C')rSum+=1000;
+                            if(step.comp.type==='L298N')rSum+=800;
                             if(step.comp.type==='LED')ledCount++;
                             if(['AND','OR','NOT','XOR','MUX'].includes(step.comp.type))rSum+=10;
                             if(step.comp.type==='CAPACITOR'&&bat.type==='BATTERY'){let cr=50/(step.comp.val||10);step.comp.charge=Math.min(100,step.comp.charge+cr);step.comp.active=true;}
@@ -1693,6 +2037,13 @@
         });
         components.filter(c=>c.type==='RELAY').forEach(r=>r.coilState=r.coilActiveThisFrame);
         components.filter(c=>c.type==='MUX').forEach(m=>{m.selState=m.nodes[2].signal;});
+        // L298N: calcular dirección según IN1/IN2
+        components.filter(c=>c.type==='L298N').forEach(d=>{
+            const in1=d.nodes[2].signal, in2=d.nodes[3].signal;
+            if(in1&&!in2) d.motorDir=1;
+            else if(!in1&&in2) d.motorDir=-1;
+            else d.motorDir=0;
+        });
         components.filter(c=>c.type==='RSK90').forEach(c=>{
             if(c.active&&!c.burned){const now=Date.now();if(!c.lastTick)c.lastTick=now;if(now-c.lastTick>=1000){c.clockState=!c.clockState;c.lastTick=now;}}
             else{c.clockState=false;c.lastTick=0;}
@@ -1707,7 +2058,6 @@
         const sx=Math.floor((camX-halfW)/size)*size-size,ex=camX+halfW+size;
         const sy=Math.floor((camY-halfH)/size)*size-size,ey=camY+halfH+size;
 
-        // Grid lines
         ctx.strokeStyle='rgba(255,255,255,0.06)';
         ctx.lineWidth=1/zoom;
         ctx.beginPath();
@@ -1715,7 +2065,6 @@
         for(let y=sy;y<ey;y+=size){ ctx.moveTo(sx,y); ctx.lineTo(ex,y); }
         ctx.stroke();
 
-        // Accent lines every 5 cells
         ctx.strokeStyle='rgba(0,212,255,0.07)';
         ctx.lineWidth=1/zoom;
         ctx.beginPath();
@@ -1723,12 +2072,10 @@
         for(let y=sy;y<ey;y+=size*5){ ctx.moveTo(sx,y); ctx.lineTo(ex,y); }
         ctx.stroke();
 
-        // Dot at each intersection for cleanliness
         ctx.fillStyle='rgba(255,255,255,0.18)';
         for(let x=sx;x<ex;x+=size)for(let y=sy;y<ey;y+=size)ctx.fillRect(x-0.8/zoom,y-0.8/zoom,1.6/zoom,1.6/zoom);
     }
 
-    // Component color helpers
     const C_BODY  = 'rgba(18,26,46,0.85)';
     const C_BORD  = 'rgba(255,255,255,0.13)';
     const C_BORD_ACTIVE = 'rgba(0,212,255,0.5)';
@@ -1788,7 +2135,6 @@
         vMouse.lastDown=vMouse.isDown;
         updatePhysics(); rotAnim+=0.2; time+=0.5;
 
-        // HUD
         document.getElementById('cx').textContent=Math.round(vMouse.x);
         document.getElementById('cy').textContent=Math.round(vMouse.y);
         document.getElementById('cz').textContent=camera.zoom.toFixed(1);
@@ -1801,15 +2147,12 @@
 
         drawGrid(camera.x,camera.y,camera.zoom);
 
-        // Connections
         connections.forEach(conn=>{
             const ax=conn.a.c.x+conn.a.n.x,ay=conn.a.c.y+conn.a.n.y;
             const bx=conn.b.c.x+conn.b.n.x,by=conn.b.c.y+conn.b.n.y;
             if(conn.active){
-                // Soft glow
                 ctx.strokeStyle='rgba(0,212,255,0.08)'; ctx.lineWidth=7; ctx.setLineDash([]);
                 ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
-                // Flow line
                 ctx.strokeStyle='rgba(0,212,255,0.7)'; ctx.lineWidth=1.5;
                 ctx.setLineDash([5,5]); ctx.lineDashOffset=-time*conn.flowDir;
                 ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
@@ -1825,7 +2168,6 @@
             ctx.beginPath(); ctx.moveTo(drawingCable.c.x+drawingCable.n.x,drawingCable.c.y+drawingCable.n.y); ctx.lineTo(vMouse.x,vMouse.y); ctx.stroke(); ctx.setLineDash([]);
         }
 
-        // Components
         components.forEach(c=>{
             if(c.type==='WAYPOINT'){
                 ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.beginPath(); ctx.arc(c.x+5,c.y+5,3,0,Math.PI*2); ctx.fill(); return;
@@ -1833,7 +2175,6 @@
             ctx.save();
             ctx.translate(c.x+c.w/2,c.y+c.h/2); ctx.rotate(c.rotation*Math.PI/2); ctx.translate(-(c.x+c.w/2),-(c.y+c.h/2));
 
-            // Selection highlight
             if(c.selected||selectedItems.includes(c)){
                 let dW=(c.rotation%2===0)?c.w:c.h,dH=(c.rotation%2===0)?c.h:c.w;
                 ctx.strokeStyle='rgba(0,212,255,0.5)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
@@ -1845,7 +2186,6 @@
             if(c.type==='LED'){
                 baseRect(c,dW,dH);
                 if(c.state&&!c.burned){
-                    // Warm glow fill
                     ctx.fillStyle='rgba(255,220,80,0.06)'; ctx.fillRect(c.x,c.y,dW,dH);
                     ctx.shadowBlur=14; ctx.shadowColor='rgba(255,220,80,0.5)';
                 }
@@ -1912,37 +2252,68 @@
                 label('VCC',c.x+18,c.y+17); label('GND',c.x+18,c.y+45); label('OUT',c.x+60,c.y+35);
             }
             else if(c.type==='RADION'){
-                // Glass board
                 ctx.fillStyle='rgba(14,30,22,0.88)'; ctx.strokeStyle=c.active?'rgba(0,230,118,0.45)':'rgba(0,230,118,0.15)'; ctx.lineWidth=1;
                 ctx.fillRect(c.x+30,c.y+5,50,100); ctx.strokeRect(c.x+30,c.y+5,50,100);
-                // Inner chip
                 ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(c.x+36,c.y+22,38,56);
                 ctx.strokeStyle='rgba(0,230,118,0.15)'; ctx.strokeRect(c.x+36,c.y+22,38,56);
-                // Label
                 ctx.save(); ctx.translate(c.x+47,c.y+76); ctx.rotate(-Math.PI/2);
                 label('RADION 1.1',0,0,'rgba(0,230,118,0.5)',7); ctx.restore();
-                // Status LED
                 if(c.active&&!c.burned){ctx.fillStyle=C_GREEN;ctx.shadowBlur=5;ctx.shadowColor=C_GREEN;ctx.beginPath();ctx.arc(c.x+67,c.y+27,2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
-                // Pin labels
                 label('VCC',c.x+2,c.y+18); label('GND',c.x+2,c.y+38); label('GND',c.x+2,c.y+58);
                 label('D1',c.x+82,c.y+18,C_GREEN); label('D2',c.x+82,c.y+38,C_GREEN); label('D3',c.x+82,c.y+58,C_GREEN);
                 label('SCL',c.x+82,c.y+78,C_AMBER); label('SDA',c.x+82,c.y+98,C_AMBER);
-                // Memory dots
                 [['d1',c.x+40,c.y+28],['d2',c.x+40,c.y+40],['d3',c.x+40,c.y+52]].forEach(([k,px,py])=>{
                     ctx.fillStyle=c.memory&&c.memory[k]?C_GREEN:'rgba(255,255,255,0.06)';
                     ctx.beginPath(); ctx.arc(px,py,2,0,Math.PI*2); ctx.fill();
                 });
             }
+            else if(c.type==='L298N'){
+                // Cuerpo principal
+                ctx.fillStyle='rgba(20,14,36,0.9)';
+                ctx.strokeStyle=c.active&&!c.burned?'rgba(167,139,250,0.55)':'rgba(167,139,250,0.2)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
+                // Chip interior
+                ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fillRect(c.x+20,c.y+18,90,54);
+                ctx.strokeStyle='rgba(167,139,250,0.2)'; ctx.strokeRect(c.x+20,c.y+18,90,54);
+                // Label chip
+                ctx.fillStyle='rgba(167,139,250,0.7)'; ctx.font="bold 10px 'DM Mono',monospace";
+                ctx.fillText('L298N',c.x+42,c.y+40);
+                ctx.fillStyle='rgba(167,139,250,0.35)'; ctx.font="7px 'DM Mono',monospace";
+                ctx.fillText('MOTOR DRIVER',c.x+30,c.y+54);
+                // Indicadores IN1/IN2
+                const in1=c.nodes[2].signal, in2=c.nodes[3].signal;
+                ctx.fillStyle=in1?'rgba(0,230,118,0.8)':'rgba(255,255,255,0.1)';
+                ctx.beginPath(); ctx.arc(c.x+35,c.y+65,4,0,Math.PI*2); ctx.fill();
+                ctx.fillStyle=in2?'rgba(0,230,118,0.8)':'rgba(255,255,255,0.1)';
+                ctx.beginPath(); ctx.arc(c.x+55,c.y+65,4,0,Math.PI*2); ctx.fill();
+                ctx.fillStyle='rgba(167,139,250,0.4)'; ctx.font="7px 'DM Mono',monospace";
+                ctx.fillText('IN1',c.x+28,c.y+78); ctx.fillText('IN2',c.x+48,c.y+78);
+                // Dirección del motor
+                const dir=c.motorDir;
+                if(dir!==0&&!c.burned){
+                    ctx.fillStyle='rgba(167,139,250,0.7)';
+                    ctx.font="9px 'DM Mono',monospace";
+                    ctx.fillText(dir===1?'→ FWD':'← REV',c.x+70,c.y+68);
+                    ctx.shadowBlur=6; ctx.shadowColor='rgba(167,139,250,0.5)';
+                    ctx.strokeStyle='rgba(167,139,250,0.6)'; ctx.lineWidth=1.5;
+                    ctx.beginPath(); ctx.arc(c.x+95,c.y+44,8,0,Math.PI*0.75*dir+Math.PI*(dir===-1?1:0)); ctx.stroke();
+                    ctx.shadowBlur=0;
+                }
+                // Pin labels
+                label('VCC',c.x-22,c.y+23,'rgba(0,230,118,0.6)');
+                label('GND',c.x-22,c.y+53,'rgba(255,71,87,0.5)');
+                label('IN1',c.x-22,c.y+78,'rgba(167,139,250,0.6)');
+                label('IN2',c.x+8, c.y+103,'rgba(167,139,250,0.6)');
+                label('OUT1',c.x+133,c.y+33,'rgba(0,230,118,0.6)');
+                label('OUT2',c.x+133,c.y+73,'rgba(0,230,118,0.6)');
+            }
             else if(c.type==='OLED_I2C'){
-                // Housing
                 ctx.fillStyle='rgba(18,26,46,0.85)'; ctx.strokeStyle=c.burned?C_RED:C_BORD; ctx.lineWidth=1;
                 ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
-                // Screen
                 ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(c.x+4,c.y+14,c.w-8,c.h-18);
                 ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.strokeRect(c.x+4,c.y+14,c.w-8,c.h-18);
-                // Pin labels
                 label('VCC',c.x+10,c.y+11); label('GND',c.x+37,c.y+11); label('SCL',c.x+62,c.y+11,C_AMBER); label('SDA',c.x+88,c.y+11,C_AMBER);
-                // Content
                 if(c.active&&!c.burned&&c.initialized&&c.textLines){
                     ctx.fillStyle='rgba(0,230,118,0.85)'; ctx.font="9.5px 'DM Mono',monospace";
                     ctx.shadowBlur=3; ctx.shadowColor='rgba(0,230,118,0.4)';
@@ -2002,7 +2373,6 @@
                 label(c.type,c.x+(c.type==='NOT'?37:30),c.y+33,ac?C_CYAN:'rgba(255,255,255,0.2)',9);
             }
 
-            // Burned overlay
             if(c.burned){
                 ctx.fillStyle='rgba(255,71,87,0.07)'; ctx.fillRect(c.x,c.y,dW,dH);
                 ctx.fillStyle=C_RED; ctx.font="8px 'DM Mono'"; ctx.fillText('BURNED',c.x+dW/2-20,c.y-4);
@@ -2010,7 +2380,6 @@
 
             ctx.restore();
 
-            // Nodes
             c.nodes.forEach(n=>{
                 let nc='rgba(255,255,255,0.15)';
                 if(n.id==='+'||n.id==='A'||n.id==='M1'||n.id==='R1'||n.id==='I1'||n.id==='I2'||n.id==='PWR'||n.id==='IN'||n.id==='C+'||n.id==='VCC')nc='rgba(0,230,118,0.6)';
@@ -2019,6 +2388,8 @@
                 if(c.type==='RADION'&&(n.id==='D1'||n.id==='D2'||n.id==='D3'))nc='rgba(0,230,118,0.7)';
                 if((c.type==='RADION'||c.type==='OLED_I2C')&&(n.id==='SCL'||n.id==='SDA'))nc='rgba(255,183,0,0.6)';
                 if(c.type==='RELAY'&&n.id==='NO')nc='rgba(255,71,87,0.5)';
+                if(c.type==='L298N'&&(n.id==='IN1'||n.id==='IN2'))nc='rgba(167,139,250,0.6)';
+                if(c.type==='L298N'&&(n.id==='OUT1'||n.id==='OUT2'))nc='rgba(0,230,118,0.6)';
 
                 ctx.fillStyle=nc;
                 ctx.beginPath(); ctx.arc(c.x+n.x,c.y+n.y,4,0,Math.PI*2); ctx.fill();
@@ -2031,7 +2402,6 @@
             });
         });
 
-        // Selection box
         if(selectionBox){
             ctx.strokeStyle='rgba(0,212,255,0.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
             ctx.strokeRect(selectionBox.x,selectionBox.y,selectionBox.w,selectionBox.h);
@@ -2039,7 +2409,6 @@
             ctx.setLineDash([]);
         }
 
-        // Crosshair — minimal, professional
         ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1;
         ctx.beginPath(); ctx.arc(vMouse.x,vMouse.y,5,0,Math.PI*2); ctx.stroke();
         ctx.strokeStyle='rgba(255,255,255,0.1)';
@@ -2050,7 +2419,6 @@
 
         ctx.restore();
 
-        // Watermark
         ctx.fillStyle='rgba(255,255,255,0.08)';
         ctx.font="9px 'DM Mono',monospace";
         ctx.textAlign='right';
