@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulic Pro — I2C OLED Update</title>
+    <title>Simulic Pro v2.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
@@ -543,6 +543,191 @@
     }
 
     /* ═══════════════════════════════════
+       OSCILLOSCOPE
+    ═══════════════════════════════════ */
+    #oscilloscope {
+        display: none;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 200px;
+        background: rgba(7,9,15,0.97);
+        border-top: 1px solid rgba(0,212,255,0.2);
+        backdrop-filter: blur(20px);
+        z-index: 200;
+        flex-direction: column;
+    }
+    #oscilloscope.visible { display: flex; }
+    #osc-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 14px;
+        border-bottom: 1px solid rgba(0,212,255,0.1);
+        flex-shrink: 0;
+    }
+    #osc-title {
+        font-family: 'DM Mono', monospace;
+        font-size: 10px;
+        color: var(--cyan);
+        letter-spacing: 2px;
+    }
+    #osc-controls { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+    .osc-btn {
+        height: 22px; padding: 0 10px;
+        background: rgba(0,212,255,0.06);
+        border: 1px solid rgba(0,212,255,0.2);
+        border-radius: 3px;
+        color: var(--text-mid);
+        cursor: pointer;
+        font-family: 'DM Mono', monospace;
+        font-size: 9px;
+        transition: all 0.12s;
+    }
+    .osc-btn:hover { background: rgba(0,212,255,0.12); color: var(--cyan); }
+    .osc-btn.active { background: rgba(0,212,255,0.15); color: var(--cyan); border-color: rgba(0,212,255,0.5); }
+    #osc-body { flex: 1; display: flex; overflow: hidden; }
+    #osc-canvas { flex: 1; display: block; }
+    #osc-sidebar {
+        width: 120px;
+        border-left: 1px solid rgba(0,212,255,0.1);
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow-y: auto;
+        flex-shrink: 0;
+    }
+    .osc-probe-item {
+        display: flex; align-items: center; gap: 6px;
+        padding: 4px 6px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: 'DM Mono', monospace;
+        font-size: 8px;
+        color: var(--text-mid);
+    }
+    .osc-probe-item:hover { background: rgba(0,212,255,0.06); }
+    .osc-probe-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .osc-probe-item.active { border-color: rgba(0,212,255,0.3); }
+    #osc-hint { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text-dim); padding: 4px; }
+
+    /* ═══════════════════════════════════
+       SAVE/LOAD PANEL
+    ═══════════════════════════════════ */
+    #save-panel {
+        display: none;
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%,-50%);
+        width: 380px;
+        max-width: 95vw;
+        background: rgba(11,14,23,0.98);
+        border: 1px solid var(--glass-border-light);
+        border-radius: var(--radius-lg);
+        backdrop-filter: blur(40px);
+        z-index: 300;
+        box-shadow: 0 32px 80px rgba(0,0,0,0.8);
+    }
+    #save-panel.visible { display: block; }
+    .sp-header {
+        display: flex; align-items: center; padding: 14px 16px;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    .sp-title { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--cyan); letter-spacing: 2px; }
+    .sp-close { margin-left: auto; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; }
+    .sp-close:hover { color: var(--red); }
+    .sp-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .sp-section-title { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 4px; }
+    .sp-save-row { display: flex; gap: 8px; }
+    .sp-input {
+        flex: 1; height: 30px; padding: 0 10px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-sm);
+        color: var(--text-bright);
+        font-family: 'DM Mono', monospace;
+        font-size: 11px;
+        touch-action: auto;
+    }
+    .sp-input:focus { outline: none; border-color: rgba(0,212,255,0.4); }
+    .sp-btn {
+        height: 30px; padding: 0 14px;
+        background: rgba(0,212,255,0.08);
+        border: 1px solid rgba(0,212,255,0.3);
+        border-radius: var(--radius-sm);
+        color: var(--cyan);
+        cursor: pointer;
+        font-family: 'DM Mono', monospace;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    .sp-btn:hover { background: rgba(0,212,255,0.15); }
+    .sp-btn-red { background: var(--red-dim); border-color: rgba(255,71,87,0.3); color: var(--red); }
+    .sp-btn-red:hover { background: rgba(255,71,87,0.18); }
+    #sp-slots { display: flex; flex-direction: column; gap: 5px; max-height: 220px; overflow-y: auto; }
+    .sp-slot {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 10px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-sm);
+    }
+    .sp-slot-name { flex: 1; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-bright); }
+    .sp-slot-date { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text-dim); }
+    .sp-slot-load { background: none; border: 1px solid rgba(0,212,255,0.25); border-radius: 3px; padding: 2px 8px; color: var(--cyan); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 9px; }
+    .sp-slot-load:hover { background: rgba(0,212,255,0.1); }
+    .sp-slot-del { background: none; border: none; color: rgba(255,71,87,0.4); cursor: pointer; font-size: 13px; padding: 0 4px; }
+    .sp-slot-del:hover { color: var(--red); }
+    .sp-empty { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text-dim); text-align: center; padding: 16px; }
+    #sp-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 299; }
+    #sp-overlay.visible { display: block; }
+
+    /* ═══════════════════════════════════
+       UNDO TOAST
+    ═══════════════════════════════════ */
+    #undo-toast {
+        display: none;
+        position: fixed;
+        bottom: 20px; left: 50%;
+        transform: translateX(-50%);
+        background: rgba(11,14,23,0.95);
+        border: 1px solid rgba(0,212,255,0.3);
+        border-radius: 20px;
+        padding: 6px 18px;
+        font-family: 'DM Mono', monospace;
+        font-size: 10px;
+        color: var(--cyan);
+        z-index: 500;
+        pointer-events: none;
+        letter-spacing: 1px;
+        animation: toast-in 0.2s ease;
+    }
+    @keyframes toast-in {
+        from { opacity:0; transform: translateX(-50%) translateY(8px); }
+        to   { opacity:1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ═══════════════════════════════════
+       CABLE LABELS
+    ═══════════════════════════════════ */
+    .cable-label-input {
+        position: fixed;
+        background: rgba(11,14,23,0.95);
+        border: 1px solid rgba(0,212,255,0.4);
+        border-radius: 4px;
+        color: var(--cyan);
+        font-family: 'DM Mono', monospace;
+        font-size: 10px;
+        padding: 3px 8px;
+        width: 100px;
+        z-index: 400;
+        touch-action: auto;
+    }
+    .cable-label-input:focus { outline: none; }
+
+    /* ═══════════════════════════════════
        MODAL
     ═══════════════════════════════════ */
     #modal {
@@ -1034,6 +1219,8 @@
         <span class="status-label">SIMULATION ACTIVE</span>
     </div>
     <div class="header-right">
+        <button class="hdr-btn" onclick="openSavePanel()" title="Guardar / Cargar circuitos">💾 Guardar</button>
+        <button class="hdr-btn" onclick="toggleOscilloscope()" title="Oscilloscope" id="btnOsc" style="color:var(--cyan);border-color:rgba(0,212,255,0.25);">⚡ Osciloscópio</button>
         <button class="hdr-btn hdr-btn-mode" onclick="toggleMode()" id="btnMode">📱 Mobile</button>
         <button class="hdr-btn hdr-btn-danger" onclick="clearAll()">Clear All</button>
     </div>
@@ -1274,8 +1461,456 @@ end></pre>
 
 <div id="virtual-controls"></div>
 
+<!-- OSCILLOSCOPE -->
+
+<div id="oscilloscope">
+    <div id="osc-header">
+        <span id="osc-title">▸ OSCILLOSCOPE</span>
+        <div id="osc-controls">
+            <button class="osc-btn" id="osc-btn-d1" onclick="oscToggleProbe('D1')">D1</button>
+            <button class="osc-btn" id="osc-btn-d2" onclick="oscToggleProbe('D2')">D2</button>
+            <button class="osc-btn" id="osc-btn-d3" onclick="oscToggleProbe('D3')">D3</button>
+            <button class="osc-btn" id="osc-btn-d4" onclick="oscToggleProbe('D4')">D4</button>
+            <button class="osc-btn" id="osc-btn-a1" onclick="oscToggleProbe('A1')">A1</button>
+            <button class="osc-btn" onclick="oscClear()" style="margin-left:8px;">Clear</button>
+            <button class="osc-btn" onclick="toggleOscilloscope()" style="color:var(--red);border-color:rgba(255,71,87,0.3);">✕</button>
+        </div>
+    </div>
+    <div id="osc-body">
+        <canvas id="osc-canvas"></canvas>
+    </div>
+</div>
+
+<!-- SAVE/LOAD PANEL -->
+
+<div id="sp-overlay" onclick="closeSavePanel()"></div>
+<div id="save-panel">
+    <div class="sp-header">
+        <span class="sp-title">CIRCUITOS GUARDADOS</span>
+        <button class="sp-close" onclick="closeSavePanel()">✕</button>
+    </div>
+    <div class="sp-body">
+        <div>
+            <div class="sp-section-title">GUARDAR CIRCUITO ACTUAL</div>
+            <div class="sp-save-row">
+                <input type="text" id="sp-name-input" class="sp-input" placeholder="Nombre del circuito..." maxlength="30">
+                <button class="sp-btn" onclick="saveCircuit()">Guardar</button>
+            </div>
+        </div>
+        <div>
+            <div class="sp-section-title">CIRCUITOS GUARDADOS</div>
+            <div id="sp-slots"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="sp-btn" onclick="exportCircuit()" style="flex:1;background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.3);color:var(--green);">Exportar JSON</button>
+            <label class="sp-btn" style="flex:1;text-align:center;cursor:pointer;background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3);color:var(--purple);">
+                Importar JSON
+                <input type="file" accept=".json" style="display:none;" onchange="importCircuit(event)">
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- UNDO TOAST -->
+
+<div id="undo-toast"></div>
+
 <script>
     let isDesktopMode = false;
+
+    // ═══════════════════════════════════════════════════════════════
+    // UNDO / REDO SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+    const undoStack = [];
+    const redoStack = [];
+    const MAX_UNDO = 50;
+
+    function snapshotState() {
+        try {
+            return JSON.stringify({ components: serializeComponents(), connections: serializeConnections() });
+        } catch(e) { return null; }
+    }
+
+    function serializeComponents() {
+        return components.map(c => {
+            const o = { type:c.type, x:c.x, y:c.y, w:c.w, h:c.h, id:c._id };
+            if (c.val !== undefined) o.val = c.val;
+            if (c.label !== undefined) o.label = c.label;
+            if (c.closed !== undefined) o.closed = c.closed;
+            if (c.mode !== undefined) o.mode = c.mode;
+            if (c.burned !== undefined) o.burned = c.burned;
+            if (c.angle !== undefined && c.type !== 'SERVO') o.angle = c.angle;
+            if (c.type === 'SERVO') { o.servoAngle = c.angle; o.targetAngle = c.targetAngle; }
+            if (c.type === 'RADION') o.code = c.code;
+            if (c.type === 'POT') { o.value = c.value; o.potAngle = c.angle; }
+            if (c.type === 'HC_SR04') o.simDist = c.simDist;
+            if (c.type === 'DHT11') { o.temperature = c.temperature; o.humidity = c.humidity; }
+            if (c.type === 'SEG7') { o.digit = c.digit; o.showDot = c.showDot; }
+            if (c.type === 'BUZZER') o.freq = c.freq;
+            return o;
+        });
+    }
+
+    function serializeConnections() {
+        return connections.map(conn => {
+            const ai = components.indexOf(conn.a.c);
+            const bi = components.indexOf(conn.b.c);
+            const ani = conn.a.c.nodes.indexOf(conn.a.n);
+            const bni = conn.b.c.nodes.indexOf(conn.b.n);
+            return { ai, ani, bi, bni, label: conn.label || '' };
+        }).filter(c => c.ai !== -1 && c.bi !== -1);
+    }
+
+    function pushUndo() {
+        const snap = snapshotState();
+        if (!snap) return;
+        if (undoStack.length && undoStack[undoStack.length-1] === snap) return;
+        undoStack.push(snap);
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+        redoStack.length = 0;
+    }
+
+    function restoreState(snap) {
+        if (!snap) return;
+        try {
+            const data = JSON.parse(snap);
+            components = [];
+            connections = [];
+            // Restore components
+            data.components.forEach(o => {
+                const c = spawn(o.type, o.x, o.y);
+                if (!c) return;
+                if (o.val !== undefined) c.val = o.val;
+                if (o.label !== undefined) c.label = o.label;
+                if (o.closed !== undefined) c.closed = o.closed;
+                if (o.mode !== undefined) c.mode = o.mode;
+                if (o.burned !== undefined) c.burned = o.burned;
+                if (o.angle !== undefined && c.type !== 'SERVO') c.angle = o.angle;
+                if (c.type === 'SERVO') { c.angle = o.servoAngle || 90; c.targetAngle = o.targetAngle || 90; }
+                if (c.type === 'RADION' && o.code) c.code = o.code;
+                if (c.type === 'POT') { c.value = o.value || 512; c.angle = o.potAngle || 135; }
+                if (c.type === 'HC_SR04') c.simDist = o.simDist || 25;
+                if (c.type === 'DHT11') { c.temperature = o.temperature || 24; c.humidity = o.humidity || 60; }
+                if (c.type === 'SEG7') { c.digit = o.digit || 0; c.showDot = !!o.showDot; }
+                if (c.type === 'BUZZER') c.freq = o.freq || 440;
+            });
+            // Restore connections (after all components exist)
+            data.connections.forEach(o => {
+                const ca = components[o.ai], cb = components[o.bi];
+                if (!ca || !cb) return;
+                const na = ca.nodes[o.ani], nb = cb.nodes[o.bni];
+                if (!na || !nb) return;
+                const conn = { a:{c:ca,n:na}, b:{c:cb,n:nb}, label: o.label || '' };
+                connections.push(conn);
+            });
+        } catch(e) { console.error('Restore error', e); }
+    }
+
+    function undo() {
+        if (!undoStack.length) return;
+        const current = snapshotState();
+        redoStack.push(current);
+        const snap = undoStack.pop();
+        restoreState(snap);
+        showToast('↩ Deshacer');
+    }
+
+    function redo() {
+        if (!redoStack.length) return;
+        const current = snapshotState();
+        undoStack.push(current);
+        const snap = redoStack.pop();
+        restoreState(snap);
+        showToast('↪ Rehacer');
+    }
+
+    function showToast(msg, duration) {
+        const t = document.getElementById('undo-toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => { t.style.display = 'none'; }, duration || 1200);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (!isDesktopMode) return;
+        const ctrl = e.ctrlKey || e.metaKey;
+        if (ctrl && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+        if (ctrl && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+        if (ctrl && e.key === 's') { e.preventDefault(); openSavePanel(); }
+        if (e.key === 'Delete' && selectedItems.length) {
+            pushUndo();
+            selectedItems.forEach(c => {
+                components = components.filter(x => x !== c);
+                connections = connections.filter(conn => conn.a.c !== c && conn.b.c !== c);
+            });
+            selectedItems = [];
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // SAVE / LOAD SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+    const SAVE_KEY = 'simulic_circuits';
+
+    function getSavedCircuits() {
+        try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '[]'); }
+        catch(e) { return []; }
+    }
+
+    function openSavePanel() {
+        document.getElementById('sp-overlay').classList.add('visible');
+        document.getElementById('save-panel').classList.add('visible');
+        renderSaveSlots();
+    }
+
+    function closeSavePanel() {
+        document.getElementById('sp-overlay').classList.remove('visible');
+        document.getElementById('save-panel').classList.remove('visible');
+    }
+
+    function renderSaveSlots() {
+        const slots = getSavedCircuits();
+        const container = document.getElementById('sp-slots');
+        if (!slots.length) {
+            container.innerHTML = '<div class="sp-empty">No hay circuitos guardados.</div>';
+            return;
+        }
+        container.innerHTML = '';
+        slots.forEach((s, i) => {
+            const row = document.createElement('div');
+            row.className = 'sp-slot';
+            row.innerHTML = `
+                <span class="sp-slot-name">${s.name}</span>
+                <span class="sp-slot-date">${s.date || ''}</span>
+                <button class="sp-slot-load" onclick="loadCircuit(${i})">Cargar</button>
+                <button class="sp-slot-del" onclick="deleteCircuit(${i})" title="Borrar">✕</button>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function saveCircuit() {
+        const nameInput = document.getElementById('sp-name-input');
+        const name = nameInput.value.trim() || 'Circuito ' + new Date().toLocaleTimeString();
+        const slots = getSavedCircuits();
+        const data = {
+            name,
+            date: new Date().toLocaleDateString(),
+            state: snapshotState()
+        };
+        // Check if name exists, replace
+        const existing = slots.findIndex(s => s.name === name);
+        if (existing >= 0) slots[existing] = data;
+        else slots.unshift(data);
+        if (slots.length > 20) slots.pop();
+        localStorage.setItem(SAVE_KEY, JSON.stringify(slots));
+        nameInput.value = '';
+        renderSaveSlots();
+        showToast('💾 Guardado: ' + name);
+    }
+
+    function loadCircuit(i) {
+        const slots = getSavedCircuits();
+        if (!slots[i]) return;
+        pushUndo();
+        restoreState(slots[i].state);
+        closeSavePanel();
+        showToast('📂 Cargado: ' + slots[i].name);
+    }
+
+    function deleteCircuit(i) {
+        const slots = getSavedCircuits();
+        slots.splice(i, 1);
+        localStorage.setItem(SAVE_KEY, JSON.stringify(slots));
+        renderSaveSlots();
+    }
+
+    function exportCircuit() {
+        const data = { name: 'Simulic Export', date: new Date().toISOString(), state: snapshotState() };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'simulic_circuit.json';
+        a.click();
+    }
+
+    function importCircuit(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                pushUndo();
+                restoreState(data.state);
+                closeSavePanel();
+                showToast('📂 Importado: ' + (data.name || 'circuito'));
+            } catch(err) { showToast('⚠ Error al importar JSON'); }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // OSCILLOSCOPE SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+    const OSC_SAMPLES = 400;
+    const OSC_COLORS = { D1:'#00d4ff', D2:'#00e676', D3:'#ffb700', D4:'#a78bfa', A1:'#ff6b8a' };
+    let oscActive = false;
+    let oscProbes = { D1:false, D2:false, D3:false, D4:false, A1:false };
+    let oscData = { D1:[], D2:[], D3:[], D4:[], A1:[] };
+    let oscCanvas, oscCtx;
+
+    function toggleOscilloscope() {
+        const osc = document.getElementById('oscilloscope');
+        oscActive = !osc.classList.contains('visible');
+        osc.classList.toggle('visible');
+        if (oscActive) {
+            oscCanvas = document.getElementById('osc-canvas');
+            oscCtx = oscCanvas.getContext('2d');
+            resizeOscCanvas();
+        }
+    }
+
+    function resizeOscCanvas() {
+        if (!oscCanvas) return;
+        oscCanvas.width = oscCanvas.offsetWidth;
+        oscCanvas.height = oscCanvas.offsetHeight;
+    }
+
+    function oscToggleProbe(pin) {
+        oscProbes[pin] = !oscProbes[pin];
+        const btn = document.getElementById('osc-btn-' + pin.toLowerCase());
+        if (btn) btn.classList.toggle('active', oscProbes[pin]);
+        if (oscProbes[pin]) oscData[pin] = [];
+    }
+
+    function oscClear() {
+        Object.keys(oscData).forEach(k => oscData[k] = []);
+    }
+
+    function oscSample() {
+        if (!oscActive) return;
+        // Find radion to sample from
+        const radion = components.find(c => c.type === 'RADION' && !c.burned);
+        if (!radion) return;
+        const d1 = radion.memory.d1 ? 1 : 0;
+        const d2 = radion.memory.d2 ? 1 : 0;
+        const d3 = radion.memory.d3 ? 1 : 0;
+        const d4 = radion.memory.d4 ? 1 : 0;
+        // A1 - read from POT if connected
+        const pot = components.find(c => c.type === 'POT' && c.active);
+        const a1 = pot ? (pot.value / 1023) : (radion.analog ? radion.analog.a1 / 1023 : 0);
+
+        if (oscProbes.D1) { oscData.D1.push(d1); if(oscData.D1.length > OSC_SAMPLES) oscData.D1.shift(); }
+        if (oscProbes.D2) { oscData.D2.push(d2); if(oscData.D2.length > OSC_SAMPLES) oscData.D2.shift(); }
+        if (oscProbes.D3) { oscData.D3.push(d3); if(oscData.D3.length > OSC_SAMPLES) oscData.D3.shift(); }
+        if (oscProbes.D4) { oscData.D4.push(d4); if(oscData.D4.length > OSC_SAMPLES) oscData.D4.shift(); }
+        if (oscProbes.A1) { oscData.A1.push(a1); if(oscData.A1.length > OSC_SAMPLES) oscData.A1.shift(); }
+    }
+
+    function drawOscilloscope() {
+        if (!oscActive || !oscCtx) return;
+        const W = oscCanvas.width, H = oscCanvas.height;
+        oscCtx.clearRect(0, 0, W, H);
+
+        // Background grid
+        oscCtx.strokeStyle = 'rgba(0,212,255,0.05)';
+        oscCtx.lineWidth = 1;
+        for (let x = 0; x < W; x += W/8) { oscCtx.beginPath(); oscCtx.moveTo(x,0); oscCtx.lineTo(x,H); oscCtx.stroke(); }
+        for (let y = 0; y < H; y += H/4) { oscCtx.beginPath(); oscCtx.moveTo(0,y); oscCtx.lineTo(W,y); oscCtx.stroke(); }
+
+        const activeProbes = Object.entries(oscProbes).filter(([,v]) => v);
+        if (!activeProbes.length) {
+            oscCtx.fillStyle = 'rgba(0,212,255,0.2)';
+            oscCtx.font = "11px 'DM Mono', monospace";
+            oscCtx.textAlign = 'center';
+            oscCtx.fillText('Selecciona un pin (D1-D4, A1) para ver la señal', W/2, H/2);
+            oscCtx.textAlign = 'left';
+            return;
+        }
+
+        const trackH = H / activeProbes.length;
+        activeProbes.forEach(([pin,], idx) => {
+            const data = oscData[pin];
+            if (!data.length) return;
+            const color = OSC_COLORS[pin];
+            const yBase = idx * trackH;
+            const isAnalog = pin === 'A1';
+            const margin = 8;
+            const drawH = trackH - margin * 2;
+
+            // Lane label
+            oscCtx.fillStyle = color;
+            oscCtx.font = "9px 'DM Mono', monospace";
+            oscCtx.fillText(pin, 6, yBase + 14);
+
+            // Signal line
+            oscCtx.strokeStyle = color;
+            oscCtx.lineWidth = 1.5;
+            oscCtx.shadowBlur = 4;
+            oscCtx.shadowColor = color;
+            oscCtx.beginPath();
+            data.forEach((v, i) => {
+                const x = (i / (OSC_SAMPLES - 1)) * W;
+                const y = yBase + margin + (isAnalog ? (1 - v) * drawH : (v === 0 ? drawH * 0.8 : drawH * 0.1));
+                i === 0 ? oscCtx.moveTo(x, y) : oscCtx.lineTo(x, y);
+            });
+            oscCtx.stroke();
+            oscCtx.shadowBlur = 0;
+
+            // Divider
+            if (idx > 0) {
+                oscCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+                oscCtx.lineWidth = 1;
+                oscCtx.beginPath(); oscCtx.moveTo(0, yBase); oscCtx.lineTo(W, yBase); oscCtx.stroke();
+            }
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // BUZZER AUDIO SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+    let _audioCtx = null;
+    const _buzzerOscillators = {};
+
+    function getAudioCtx() {
+        if (!_audioCtx) {
+            try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+        }
+        return _audioCtx;
+    }
+
+    function playBuzzerTone(pin, freq) {
+        const ctx2 = getAudioCtx();
+        if (!ctx2) return;
+        stopBuzzerPin(pin);
+        try {
+            const osc = ctx2.createOscillator();
+            const gain = ctx2.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(Math.max(20, Math.min(20000, freq)), ctx2.currentTime);
+            gain.gain.setValueAtTime(0.12, ctx2.currentTime);
+            osc.connect(gain);
+            gain.connect(ctx2.destination);
+            osc.start();
+            _buzzerOscillators[pin] = { osc, gain };
+        } catch(e) {}
+    }
+
+    function stopBuzzerPin(pin) {
+        if (_buzzerOscillators[pin]) {
+            try { _buzzerOscillators[pin].osc.stop(); } catch(e) {}
+            delete _buzzerOscillators[pin];
+        }
+    }
+
+    function stopAllBuzzers() {
+        Object.keys(_buzzerOscillators).forEach(stopBuzzerPin);
+        // Also stop any component-level buzzers
+        components.filter(c=>c.type==='BUZZER').forEach(b=>{ b.playing=false; });
+    }
 
     function toggleMode() {
         isDesktopMode = !isDesktopMode;
@@ -1310,17 +1945,24 @@ end></pre>
         ],
         'passive': [
             { id: 'SWITCH', label: 'Interruptor' }, { id: 'PUSH_BTN', label: 'Botón' },
-            { id: 'RESISTOR', label: 'Resistencia' }, { id: 'CAPACITOR', label: 'Condensador' }
+            { id: 'RESISTOR', label: 'Resistencia' }, { id: 'CAPACITOR', label: 'Condensador' },
+            { id: 'POT', label: 'Potenciómetro' }
         ],
         'digital': [
             { id: 'RSK90', label: 'Chip RSK90' }, { id: 'AND', label: 'AND' }, { id: 'OR', label: 'OR' },
             { id: 'XOR', label: 'XOR' }, { id: 'NOT', label: 'NOT' }, { id: 'MUX', label: 'MUX' }
         ],
         'boards': [{ id: 'RADION', label: 'Radion 1.1' }],
-        'output_plus': [{ id: 'OLED_I2C', label: 'OLED Display' }],
+        'output_plus': [
+            { id: 'OLED_I2C', label: 'OLED Display' },
+            { id: 'SEG7', label: 'Display 7 Seg' },
+            { id: 'BUZZER', label: 'Buzzer' }
+        ],
         'dev_plus': [
             { id: 'L298N', label: 'L298N Motor Driver' },
-            { id: 'SERVO', label: 'Servomotor SG90' }
+            { id: 'SERVO', label: 'Servomotor SG90' },
+            { id: 'HC_SR04', label: 'Sensor HC-SR04' },
+            { id: 'DHT11', label: 'Sensor DHT11' }
         ]
     };
 
@@ -1333,7 +1975,10 @@ end></pre>
         'INPUT':  { label: 'Radion Input', func: () => loadInputDemo() },
         'OLED':   { label: 'Radion OLED', func: () => loadOledDemo() },
         'MDRIVER':{ label: 'Radion + L298N', func: () => loadMotorDriverDemo() },
-        'SERVO':  { label: 'Radion + Servo',  func: () => loadServoDemo() }
+        'SERVO':  { label: 'Radion + Servo',  func: () => loadServoDemo() },
+        'POT':    { label: 'Potenciómetro + OLED', func: () => loadPotDemo() },
+        'DIST':   { label: 'HC-SR04 Distancia', func: () => loadDistDemo() },
+        'BUZZER': { label: 'Buzzer Melodía', func: () => loadBuzzerDemo() }
     };
 
     function selectCategory(cat, btnElement) {
@@ -1358,7 +2003,7 @@ end></pre>
                 const btn = document.createElement('button');
                 btn.className = 'spawn-btn';
                 btn.innerText = comp.label;
-                btn.onclick = () => spawn(comp.id);
+                btn.onclick = () => { pushUndo(); spawn(comp.id); };
                 if (cat === 'digital') btn.style.color = 'var(--cyan)';
                 if (comp.id === 'RADION') { btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(0,230,118,0.3)'; }
                 if (comp.id === 'OLED_I2C') { btn.style.color = 'var(--amber)'; btn.style.borderColor = 'rgba(255,183,0,0.3)'; }
@@ -1508,6 +2153,68 @@ end>`;
         radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
     }
 
+    function loadPotDemo() {
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
+        const bat    = spawn('BATTERY',  -280,  0);
+        const radion = spawn('RADION',    -80, -60);
+        const oled   = spawn('OLED_I2C',  80, -140);
+        const pot    = spawn('POT',       -280, -100);
+        const servo  = spawn('SERVO',     140,  30);
+        connect(bat,0,radion,0); connect(bat,1,radion,1);
+        connect(bat,0,oled,0);   connect(bat,1,oled,1);
+        connect(bat,0,servo,0);  connect(bat,1,servo,1);
+        // POT VCC/GND/OUT
+        connect(bat,0,pot,0); connect(bat,1,pot,1);
+        const potOut = pot.nodes.findIndex(n=>n.id==='OUT');
+        const a1idx  = radion.nodes.findIndex(n=>n.id==='A1');
+        connect(pot, potOut, radion, a1idx);
+        const d4idx  = radion.nodes.findIndex(n=>n.id==='D4');
+        const sigIdx = servo.nodes.findIndex(n=>n.id==='SIG');
+        connect(radion,d4idx,servo,sigIdx);
+        const radSCL=radion.nodes.findIndex(n=>n.id==='SCL'), radSDA=radion.nodes.findIndex(n=>n.id==='SDA');
+        const oledSCL=oled.nodes.findIndex(n=>n.id==='SCL'), oledSDA=oled.nodes.findIndex(n=>n.id==='SDA');
+        connect(radion,radSCL,oled,oledSCL); connect(radion,radSDA,oled,oledSDA);
+        radion.code = `start<\n// Potenciómetro controla servo y OLED\noled.init\noled.println "POT → SERVO"\nloop{\n  val=pin.analog(A1)\n  ang=math.map(val,0,1023,0,180)\n  servo.write(D4,ang)\n  oled.clear\n  oled.println "POT CTRL"\n  oled.print "Val: "\n  oled.println val\n  oled.print "Ang: "\n  oled.println ang\n  oled.draw.bar(val,0,1023)\n  delay 30\n}\nend>`;
+        radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
+    }
+
+    function loadDistDemo() {
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
+        const bat    = spawn('BATTERY',  -280,  0);
+        const radion = spawn('RADION',    -80, -60);
+        const oled   = spawn('OLED_I2C',  80, -140);
+        const hcsr   = spawn('HC_SR04',  -200, 120);
+        connect(bat,0,radion,0); connect(bat,1,radion,1);
+        connect(bat,0,oled,0);   connect(bat,1,oled,1);
+        connect(bat,0,hcsr,0);   connect(bat,1,hcsr,1);
+        const trigIdx = radion.nodes.findIndex(n=>n.id==='D3');
+        const echoIdx = radion.nodes.findIndex(n=>n.id==='D4');
+        const trigS = hcsr.nodes.findIndex(n=>n.id==='TRIG');
+        const echoS = hcsr.nodes.findIndex(n=>n.id==='ECHO');
+        connect(radion,trigIdx,hcsr,trigS); connect(radion,echoIdx,hcsr,echoS);
+        const radSCL=radion.nodes.findIndex(n=>n.id==='SCL'), radSDA=radion.nodes.findIndex(n=>n.id==='SDA');
+        const oledSCL=oled.nodes.findIndex(n=>n.id==='SCL'), oledSDA=oled.nodes.findIndex(n=>n.id==='SDA');
+        connect(radion,radSCL,oled,oledSCL); connect(radion,radSDA,oled,oledSDA);
+        radion.code = `start<\n// HC-SR04 mide distancia\noled.init\noled.println "HC-SR04"\nloop{\n  dist=sensor.distance(D3,D4)\n  oled.clear\n  oled.println "DISTANCIA"\n  oled.print dist\n  oled.println " cm"\n  if dist < 10 {\n    oled.println "!CERCA!"\n  }\n  delay 200\n}\nend>`;
+        radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
+    }
+
+    function loadBuzzerDemo() {
+        clearAll(true); camera.x = 0; camera.y = 0; camera.zoom = 1.0;
+        const bat    = spawn('BATTERY',  -280,  0);
+        const radion = spawn('RADION',    -80, -60);
+        const buzz   = spawn('BUZZER',    120,  -20);
+        const btn    = spawn('PUSH_BTN', -280, -100);
+        connect(bat,0,radion,0); connect(bat,1,radion,1);
+        connect(bat,0,buzz,0);   connect(bat,1,buzz,1);
+        connect(bat,0,btn,0); connect(btn,1,radion,4);
+        const d1idx = radion.nodes.findIndex(n=>n.id==='D1');
+        const bpIdx = buzz.nodes.findIndex(n=>n.id==='+');
+        connect(radion,d1idx,buzz,bpIdx);
+        radion.code = `start<\n// Buzzer: melodía al presionar botón\nbtnPin=D2\nloop{\n  if btnPin==HIGH {\n    buzzer.tone(D1,262)\n    delay 200\n    buzzer.tone(D1,330)\n    delay 200\n    buzzer.tone(D1,392)\n    delay 200\n    buzzer.tone(D1,523)\n    delay 400\n    buzzer.off(D1)\n  }\n  delay 50\n}\nend>`;
+        radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
+    }
+
     selectCategory('active', document.querySelector('.cat-btn'));
 
     // ─── ENGINE ───
@@ -1527,7 +2234,7 @@ end>`;
         canvas.width = w;
         canvas.height = h;
     }
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', () => { resize(); resizeOscCanvas(); });
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', resize);
     }
@@ -1536,6 +2243,12 @@ end>`;
     canvas.addEventListener('wheel', (e) => {
         if (!isDesktopMode) return;
         e.preventDefault();
+        // If hovering over a POT, adjust its value
+        const hoveredPot = components.find(c => c.type==='POT' && vMouse.x>c.x && vMouse.x<c.x+c.w && vMouse.y>c.y && vMouse.y<c.y+c.h);
+        if (hoveredPot) {
+            hoveredPot.value = Math.max(0, Math.min(1023, hoveredPot.value - Math.sign(e.deltaY)*30));
+            return;
+        }
         camera.zoom = Math.min(3.0, Math.max(0.4, camera.zoom + Math.sign(e.deltaY)*-0.1));
     });
 
@@ -1546,6 +2259,30 @@ end>`;
         vMouse.x = ((e.clientX - rect.left)/camera.zoom) + camera.x - (canvas.width/2)/camera.zoom;
         vMouse.y = ((e.clientY - rect.top)/camera.zoom) + camera.y - (canvas.height/2)/camera.zoom;
         if (selectionBox) { selectionBox.w = vMouse.x - selectionBox.x; selectionBox.h = vMouse.y - selectionBox.y; }
+    });
+
+    canvas.addEventListener('dblclick', (e) => {
+        if (!isDesktopMode) return;
+        const rect = canvas.getBoundingClientRect();
+        const sx = (e.clientX - rect.left) / camera.zoom;
+        const sy = (e.clientY - rect.top) / camera.zoom;
+        const wx = sx + camera.x - (canvas.width/2)/camera.zoom;
+        const wy = sy + camera.y - (canvas.height/2)/camera.zoom;
+        // Find cable near click
+        const HIT = 10;
+        const clickedConn = connections.find(conn => {
+            const ax=conn.a.c.x+conn.a.n.x, ay=conn.a.c.y+conn.a.n.y;
+            const bx=conn.b.c.x+conn.b.n.x, by=conn.b.c.y+conn.b.n.y;
+            // Point-to-line distance
+            const dx=bx-ax, dy=by-ay, len=Math.hypot(dx,dy);
+            if(len===0) return false;
+            const t=Math.max(0,Math.min(1,((wx-ax)*dx+(wy-ay)*dy)/(len*len)));
+            const px=ax+t*dx-wx, py=ay+t*dy-wy;
+            return Math.hypot(px,py)<HIT;
+        });
+        if (!clickedConn) return;
+        const label = prompt('Etiqueta del cable (vacío para quitar):', clickedConn.label || '');
+        if (label !== null) { clickedConn.label = label.trim(); }
     });
 
     canvas.addEventListener('mousedown', (e) => {
@@ -1593,12 +2330,17 @@ end>`;
         document.getElementById('context-menu').style.display = 'none';
         if (!contextTarget) return;
         if (action==='del') {
+            pushUndo();
             components = components.filter(c=>c!==contextTarget);
             connections = connections.filter(conn=>components.includes(conn.a.c)&&components.includes(conn.b.c));
             if (selectedItems.includes(contextTarget)) selectedItems=[];
+            stopAllBuzzers();
         } else if (action==='rot') rotateComponent(contextTarget);
         else if (action==='cfg') openCfg(contextTarget);
         else if (action==='use' && (contextTarget.type==='SWITCH'||contextTarget.type==='PUSH_BTN')) contextTarget.closed = !contextTarget.closed;
+        else if (action==='use' && contextTarget.type==='POT') {
+            contextTarget.value = contextTarget.value < 512 ? 1023 : 0; // Toggle max/min
+        }
         contextTarget = null;
     }
 
@@ -1723,6 +2465,7 @@ end>`;
             if (!touchCtxTarget) return hideTCM();
             if (touchCtxTarget.type === 'SWITCH') touchCtxTarget.closed = !touchCtxTarget.closed;
             if (touchCtxTarget.type === 'PUSH_BTN') touchCtxTarget.closed = !touchCtxTarget.closed;
+            if (touchCtxTarget.type === 'POT') touchCtxTarget.value = touchCtxTarget.value < 512 ? 1023 : 0;
             hideTCM();
         });
         document.getElementById('tcm-cable').addEventListener('click', () => {
@@ -1964,7 +2707,11 @@ end>`;
     window.addEventListener('blur', clearAllMovement);
 
     function clearAll(force=false) {
-        if(force||confirm("¿Borrar todo?")) { components=[]; connections=[]; selectedItems=[]; drawingCable=null; }
+        if(force||confirm("¿Borrar todo?")) {
+            pushUndo();
+            components=[]; connections=[]; selectedItems=[]; drawingCable=null;
+            stopAllBuzzers();
+        }
     }
 
     function applySelection() {
@@ -2152,6 +2899,36 @@ end>`;
                 { label:'servo.write(D4,180)', code:'\nservo.write(D4,180)' },
                 { label:'servo.read(D4)',      code:'\nang=servo.read(D4)' },
                 { label:'servo sweep',         code:'\nfor ang=0 to 180 {\n  servo.write(D4,ang)\n  delay 15\n}' },
+            ]
+        },
+        'sensor': {
+            desc: 'Sensores HC-SR04, DHT11, Potenciómetro',
+            color: 'rgba(255,183,0,0.8)',
+            snippets: [
+                { label:'sensor.distance()',   code:'\\ndist=sensor.distance(D3,D4)' },
+                { label:'sensor.temp()',        code:'\\ntemp=sensor.temp(D3)' },
+                { label:'sensor.humidity()',    code:'\\nhum=sensor.humidity(D3)' },
+                { label:'pin.analog(A1)',       code:'\\nval=pin.analog(A1)' },
+                { label:'pot → servo',          code:'\\nval=pin.analog(A1)\\nang=math.map(val,0,1023,0,180)\\nservo.write(D4,ang)' },
+            ]
+        },
+        'buzzer': {
+            desc: 'Control de buzzer con tonos reales',
+            color: 'rgba(255,107,138,0.8)',
+            snippets: [
+                { label:'buzzer.tone(D1,440)',  code:'\\nbuzzer.tone(D1,440)' },
+                { label:'buzzer.off(D1)',        code:'\\nbuzzer.off(D1)' },
+                { label:'buzzer.beep(D1,200)',   code:'\\nbuzzer.beep(D1,200)' },
+                { label:'Do Re Mi',              code:'\\nbuzzer.tone(D1,262)\\ndelay 300\\nbuzzer.tone(D1,294)\\ndelay 300\\nbuzzer.tone(D1,330)\\ndelay 300\\nbuzzer.off(D1)' },
+            ]
+        },
+        'seg7': {
+            desc: 'Display de 7 segmentos',
+            color: 'rgba(255,71,87,0.8)',
+            snippets: [
+                { label:'seg7.show(D1,5)',    code:'\\nseg7.show(D1,5)' },
+                { label:'seg7.count 0-9',    code:'\\nfor n=0 to 9 {\\n  seg7.show(D1,n)\\n  delay 500\\n}' },
+                { label:'seg7.dot(D1,true)', code:'\\nseg7.dot(D1,true)' },
             ]
         },
     };
@@ -2575,9 +3352,10 @@ end>`
         modal.style.display='block';
         document.getElementById('m-title').innerText=c.type;
         const isBRC=c.type==='BATTERY'||c.type==='RESISTOR'||c.type==='CAPACITOR';
-        document.getElementById('m-val-row').style.display=isBRC?'flex':'none';
-        document.getElementById('m-val').style.display=isBRC?'block':'none';
-        if(isBRC)document.getElementById('m-val').value=c.val||0;
+        const isSensor = c.type==='POT'||c.type==='HC_SR04'||c.type==='DHT11'||c.type==='BUZZER'||c.type==='SEG7';
+        document.getElementById('m-val-row').style.display=(isBRC&&!isSensor)?'flex':'none';
+        document.getElementById('m-val').style.display=(isBRC&&!isSensor)?'block':'none';
+        if(isBRC&&!isSensor)document.getElementById('m-val').value=c.val||0;
         let unit=''; if(c.type==='BATTERY')unit='V'; else if(c.type==='RESISTOR')unit='Ω'; else if(c.type==='CAPACITOR')unit='µF';
         document.getElementById('m-unit').innerText=unit;
         document.getElementById('m-repair').style.display=c.burned?'inline-flex':'none';
@@ -2585,6 +3363,45 @@ end>`
         if(c.type==='TRANSISTOR'){tog.style.display='inline-flex';tog.innerText='TYPE: '+c.mode;}else tog.style.display='none';
         const editor=document.getElementById('m-code-editor');
         const badge=document.getElementById('m-lang-badge');
+
+        // Sensor-specific controls injected into modal
+        const extraRow = document.getElementById('m-extra-row');
+        if(extraRow) extraRow.remove();
+        if(isSensor){
+            const row=document.createElement('div');
+            row.id='m-extra-row';
+            row.style.cssText='display:flex;flex-direction:column;gap:8px;padding:10px 0;';
+            if(c.type==='POT'){
+                row.innerHTML=`<label style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">VALOR (0-1023)</label>
+                <input type="range" min="0" max="1023" value="${c.value||512}" oninput="targetCfg.value=+this.value;this.nextElementSibling.textContent=this.value" style="width:100%;accent-color:var(--cyan)">
+                <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--cyan)">${c.value||512}</span>`;
+            } else if(c.type==='HC_SR04'){
+                row.innerHTML=`<label style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">DISTANCIA SIMULADA (2-400 cm)</label>
+                <input type="range" min="2" max="400" value="${c.simDist||25}" oninput="targetCfg.simDist=+this.value;this.nextElementSibling.textContent=this.value+'cm'" style="width:100%;accent-color:var(--cyan)">
+                <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--cyan)">${c.simDist||25}cm</span>`;
+            } else if(c.type==='DHT11'){
+                row.innerHTML=`<label style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">TEMPERATURA (°C)</label>
+                <input type="range" min="-10" max="50" value="${c.temperature||24}" oninput="targetCfg.temperature=+this.value;document.getElementById('dht-t-val').textContent=this.value+'°C'" style="width:100%;accent-color:var(--green)">
+                <span id="dht-t-val" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--green)">${c.temperature||24}°C</span>
+                <label style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">HUMEDAD (%)</label>
+                <input type="range" min="0" max="100" value="${c.humidity||60}" oninput="targetCfg.humidity=+this.value;document.getElementById('dht-h-val').textContent=this.value+'%'" style="width:100%;accent-color:var(--cyan)">
+                <span id="dht-h-val" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--cyan)">${c.humidity||60}%</span>`;
+            } else if(c.type==='BUZZER'){
+                row.innerHTML=`<label style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">FRECUENCIA BASE (Hz)</label>
+                <input type="range" min="50" max="5000" value="${c.freq||440}" oninput="targetCfg.freq=+this.value;this.nextElementSibling.textContent=this.value+'Hz'" style="width:100%;accent-color:var(--red)">
+                <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--red)">${c.freq||440}Hz</span>`;
+            } else if(c.type==='SEG7'){
+                row.innerHTML=`<label style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">DÍGITO (0-9)</label>
+                <input type="range" min="0" max="9" step="1" value="${c.digit||0}" oninput="targetCfg.digit=+this.value;this.nextElementSibling.textContent=this.value" style="width:100%;accent-color:var(--red)">
+                <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--red)">${c.digit||0}</span>
+                <label style="display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">
+                  <input type="checkbox" ${c.showDot?'checked':''} onchange="targetCfg.showDot=this.checked"> PUNTO DECIMAL
+                </label>`;
+            }
+            const valRow=document.getElementById('m-val-row');
+            valRow.parentNode.insertBefore(row, valRow.nextSibling);
+        }
+
         if(c.type==='RADION'){
             editor.style.display='flex';
             badge.style.display='block';
@@ -2615,6 +3432,8 @@ end>`
     function closeCfg(){
         document.getElementById('modal').style.display='none';
         document.getElementById('modal').classList.remove('code-mode');
+        const extraRow = document.getElementById('m-extra-row');
+        if(extraRow) extraRow.remove();
         targetCfg=null;
     }
 
@@ -2626,7 +3445,7 @@ end>`
         const warnings = [];
         const lines    = code.split('\n');
 
-        const KNOWN_LIBS   = ['math','str','timer','pin','oled','console','servo'];
+        const KNOWN_LIBS   = ['math','str','timer','pin','oled','console','servo','buzzer','sensor','seg7'];
         const KNOWN_MATH   = ['abs','max','min','pow','sqrt','floor','ceil','round','clamp','map','random','sin','cos','pi'];
         const KNOWN_STR    = ['concat','len','upper','lower','repeat','substr','indexOf','replace','trim','num'];
         const KNOWN_TIMER  = ['set','check','reset','elapsed','remaining'];
@@ -2838,9 +3657,10 @@ end>`
     }
     function repairCfg(){if(targetCfg)targetCfg.burned=false;closeCfg();}
 
+    let _spawnId = 0;
     function spawn(type,xOpt,yOpt){
         const tx=(xOpt!==undefined)?xOpt:vMouse.x, ty=(yOpt!==undefined)?yOpt:vMouse.y;
-        const comp={type,x:tx-50,y:ty-30,w:100,h:60,nodes:[],state:0,active:false,burned:false,rotation:0,selected:false};
+        const comp={type,x:tx-50,y:ty-30,w:100,h:60,nodes:[],state:0,active:false,burned:false,rotation:0,selected:false,_id:_spawnId++};
         if(type==='BATTERY'){comp.nodes=[{id:'+',x:0,y:30},{id:'-',x:100,y:30}];comp.val=9;}
         else if(type==='LED')comp.nodes=[{id:'A',x:0,y:30},{id:'C',x:100,y:30}];
         else if(type==='MOTOR')comp.nodes=[{id:'M1',x:0,y:30},{id:'M2',x:100,y:30}];
@@ -2895,6 +3715,64 @@ end>`
                 {id:'OUT2',x:130,y:70},
             ];
             comp.motorDir = 0;
+        }
+        else if(type==='POT'){
+            comp.w=70; comp.h=60;
+            comp.nodes=[
+                {id:'VCC', x:10, y:0},
+                {id:'GND', x:60, y:0},
+                {id:'OUT', x:35, y:60},
+            ];
+            comp.value = 512; // 0-1023 ADC range
+            comp.angle = 135; // visual knob angle
+        }
+        else if(type==='BUZZER'){
+            comp.w=60; comp.h=60;
+            comp.nodes=[
+                {id:'+', x:15, y:0},
+                {id:'-', x:45, y:0},
+            ];
+            comp.freq = 440;
+            comp.playing = false;
+            comp.audioCtx = null;
+            comp.oscillator = null;
+        }
+        else if(type==='HC_SR04'){
+            comp.w=90; comp.h=60;
+            comp.nodes=[
+                {id:'VCC',  x:10, y:0},
+                {id:'GND',  x:30, y:0},
+                {id:'TRIG', x:55, y:0},
+                {id:'ECHO', x:78, y:0},
+            ];
+            comp.distance = 25; // cm, simulated
+            comp.simDist = 25;
+        }
+        else if(type==='DHT11'){
+            comp.w=60; comp.h=70;
+            comp.nodes=[
+                {id:'VCC',  x:10, y:0},
+                {id:'GND',  x:50, y:0},
+                {id:'DATA', x:30, y:70},
+            ];
+            comp.temperature = 24;
+            comp.humidity = 60;
+        }
+        else if(type==='SEG7'){
+            comp.w=80; comp.h=100;
+            comp.nodes=[
+                {id:'VCC', x:0,  y:10},
+                {id:'GND', x:0,  y:30},
+                {id:'A',   x:0,  y:50},
+                {id:'B',   x:0,  y:65},
+                {id:'C',   x:0,  y:80},
+                {id:'D',   x:80, y:50},
+                {id:'E',   x:80, y:65},
+                {id:'F',   x:80, y:80},
+                {id:'G',   x:40, y:100},
+            ];
+            comp.digit = 0;
+            comp.showDot = false;
         }
         components.push(comp); return comp;
     }
@@ -2990,7 +3868,7 @@ end>`
         }
 
         function callLibFunc(expr) {
-            const m = expr.match(/^(math|str|timer|pin|oled)\.([\w]+)\((.*)?\)$/);
+            const m = expr.match(/^(math|str|timer|pin|oled|servo|console|buzzer|sensor|seg7)\.([\w]+)\((.*)?\)$/);
             if (!m) return undefined;
             const [, lib, fn, rawArgs] = m;
             const args = rawArgs ? rawArgs.split(',').map(a => evalExpr(a.trim())) : [];
@@ -3120,6 +3998,116 @@ end>`
                 }
             }
 
+            if (lib === 'buzzer') {
+                const pinName = rawArgs ? rawArgs.split(',')[0].trim() : 'D1';
+                const physPin = resolvePin(pinName) || pinName;
+                if (fn === 'tone') {
+                    const freq = parseFloat(args[1]) || 440;
+                    // Find buzzer connected to this pin
+                    const pinNode = physPin === 'D1' ? c.nodes[3] : physPin === 'D2' ? c.nodes[4] : physPin === 'D3' ? c.nodes[5] : physPin === 'D4' ? c.nodes[6] : null;
+                    if (pinNode) {
+                        connections.forEach(conn => {
+                            let other = null;
+                            if (conn.a.n === pinNode) other = conn.b;
+                            if (conn.b.n === pinNode) other = conn.a;
+                            if (other && other.c.type === 'BUZZER') {
+                                other.c.targetFreq = freq;
+                                other.c.active = true;
+                            }
+                        });
+                    }
+                    // Also play audio
+                    playBuzzerTone(physPin, freq);
+                    return 0;
+                }
+                if (fn === 'off') {
+                    stopBuzzerPin(physPin);
+                    return 0;
+                }
+                if (fn === 'beep') {
+                    const ms = parseFloat(args[1]) || 200;
+                    const freq2 = parseFloat(args[2]) || 440;
+                    playBuzzerTone(physPin, freq2);
+                    setTimeout(() => stopBuzzerPin(physPin), ms);
+                    return 0;
+                }
+            }
+
+            if (lib === 'sensor') {
+                if (fn === 'distance') {
+                    // sensor.distance(TRIG_pin, ECHO_pin)
+                    // Find HC_SR04 connected to the pins
+                    let dist = 25;
+                    components.forEach(comp => {
+                        if (comp.type === 'HC_SR04' && comp.active) dist = comp.simDist;
+                    });
+                    return Math.round(dist);
+                }
+                if (fn === 'temp') {
+                    let temp = 24;
+                    components.forEach(comp => {
+                        if (comp.type === 'DHT11' && comp.active) temp = comp.temperature;
+                    });
+                    return Math.round(temp * 10) / 10;
+                }
+                if (fn === 'humidity') {
+                    let hum = 60;
+                    components.forEach(comp => {
+                        if (comp.type === 'DHT11' && comp.active) hum = comp.humidity;
+                    });
+                    return Math.round(hum);
+                }
+            }
+
+            if (lib === 'seg7') {
+                const pinName2 = rawArgs ? rawArgs.split(',')[0].trim() : 'D1';
+                const physPin2 = resolvePin(pinName2) || pinName2;
+                if (fn === 'show') {
+                    const digit = Math.min(9, Math.max(0, parseInt(args[1]) || 0));
+                    const pinNode2 = physPin2 === 'D1' ? c.nodes[3] : physPin2 === 'D2' ? c.nodes[4] : physPin2 === 'D3' ? c.nodes[5] : null;
+                    if (pinNode2) {
+                        connections.forEach(conn => {
+                            let other = null;
+                            if (conn.a.n === pinNode2) other = conn.b;
+                            if (conn.b.n === pinNode2) other = conn.a;
+                            if (other && other.c.type === 'SEG7') { other.c.digit = digit; other.c.active = true; }
+                        });
+                    }
+                    return 0;
+                }
+                if (fn === 'dot') {
+                    const on = evalExpr(rawArgs ? rawArgs.split(',')[1] : 'false');
+                    components.filter(x=>x.type==='SEG7').forEach(s=>{s.showDot = (on === 1 || on === 'true' || on === true);});
+                    return 0;
+                }
+            }
+
+            if (lib === 'pin' && fn === 'analog') {
+                const pinName3 = rawArgs ? rawArgs.trim() : 'A1';
+                if (pinName3 === 'A1') {
+                    // Find POT connected to A1
+                    const a1node = c.nodes[7]; // A1 is nodes[7] on RADION
+                    let val = 0;
+                    if (a1node) {
+                        connections.forEach(conn => {
+                            let other = null;
+                            if (conn.a.n === a1node) other = conn.b;
+                            if (conn.b.n === a1node) other = conn.a;
+                            if (other && other.c.type === 'POT') val = other.c.value;
+                        });
+                    }
+                    return Math.round(val);
+                }
+                return 0;
+            }
+
+            if (lib === 'math' && fn === 'map') {
+                // math.map(val, inMin, inMax, outMin, outMax)
+                const [v, i0, i1, o0, o1] = args.map(x => parseFloat(x) || 0);
+                if (i1 === i0) return o0;
+                return o0 + (v - i0) * (o1 - o0) / (i1 - i0);
+            }
+
             return undefined;
         }
 
@@ -3127,7 +4115,7 @@ end>`
             if (!expr) return 0;
             expr = expr.trim();
 
-            if (/^(math|str|timer|pin|servo)\.([\w]+)\(/.test(expr)) {
+            if (/^(math|str|timer|pin|servo|buzzer|sensor|seg7)\.([\w]+)\(/.test(expr)) {
                 const r = callLibFunc(expr);
                 if (r !== undefined) return r;
             }
@@ -3458,7 +4446,7 @@ end>`
                 c.intState.pc++; ix++; continue;
             }
 
-            if (/^(math|str|timer|pin|servo)\.([\w]+)\(/.test(line)) {
+            if (/^(math|str|timer|pin|servo|buzzer|sensor|seg7)\.([\w]+)\(/.test(line)) {
                 callLibFunc(line);
                 c.intState.pc++; ix++; continue;
             }
@@ -3681,6 +4669,21 @@ end>`
             if(c.active&&!c.burned){const now=Date.now();if(!c.lastTick)c.lastTick=now;if(now-c.lastTick>=1000){c.clockState=!c.clockState;c.lastTick=now;}}
             else{c.clockState=false;c.lastTick=0;}
         });
+        // POT: update analog value to connected RADION A1
+        components.filter(c=>c.type==='POT'&&c.active&&!c.burned).forEach(pot=>{
+            connections.forEach(conn=>{
+                let other=null;
+                const outNode=pot.nodes[2];
+                if(conn.a.n===outNode)other=conn.b; if(conn.b.n===outNode)other=conn.a;
+                if(other&&other.c.type==='RADION'){other.c.analog.a1=pot.value;}
+            });
+        });
+        // BUZZER: manage audio state
+        components.filter(c=>c.type==='BUZZER').forEach(b=>{
+            if(!b.active||b.burned){
+                if(b.playing){ stopBuzzerPin('BZ_'+b._id); b.playing=false; }
+            }
+        });
         components.filter(c=>c.type==='RADION').forEach(c=>runRadionLogic(c));
     }
 
@@ -3741,6 +4744,8 @@ end>`
         }
         vMouse.lastDown=vMouse.isDown;
         updatePhysics(); rotAnim+=0.2; time+=0.5;
+        oscSample();
+        drawOscilloscope();
 
         document.getElementById('cx').textContent=Math.round(vMouse.x);
         document.getElementById('cy').textContent=Math.round(vMouse.y);
@@ -3767,6 +4772,21 @@ end>`
             }else{
                 ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1.5; ctx.setLineDash([]);
                 ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+            }
+            // Draw cable label if present
+            if(conn.label){
+                const mx=(ax+bx)/2, my=(ay+by)/2;
+                ctx.save();
+                ctx.font="9px 'DM Mono',monospace";
+                const tw=ctx.measureText(conn.label).width;
+                ctx.fillStyle='rgba(11,14,23,0.85)';
+                ctx.fillRect(mx-tw/2-4,my-8,tw+8,13);
+                ctx.strokeStyle='rgba(0,212,255,0.3)'; ctx.lineWidth=0.5;
+                ctx.strokeRect(mx-tw/2-4,my-8,tw+8,13);
+                ctx.fillStyle=conn.active?'rgba(0,212,255,0.9)':'rgba(255,255,255,0.4)';
+                ctx.textAlign='center'; ctx.fillText(conn.label,mx,my+2);
+                ctx.textAlign='left';
+                ctx.restore();
             }
         });
 
@@ -3972,6 +4992,170 @@ end>`
                 label('GND', c.x+35, c.y+12, 'rgba(255,71,87,0.6)',  7);
                 label('SIG', c.x+62, c.y+12, 'rgba(0,212,255,0.7)',  7);
             }
+            else if(c.type==='POT'){
+                const powered=c.active&&!c.burned;
+                ctx.fillStyle=powered?'rgba(20,26,46,0.95)':'rgba(16,20,36,0.9)';
+                ctx.strokeStyle=powered?'rgba(0,212,255,0.5)':'rgba(0,212,255,0.15)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
+                // Knob
+                const kx=c.x+35,ky=c.y+30;
+                ctx.fillStyle=powered?'rgba(0,212,255,0.2)':'rgba(255,255,255,0.08)';
+                ctx.beginPath(); ctx.arc(kx,ky,18,0,Math.PI*2); ctx.fill();
+                ctx.strokeStyle=powered?'rgba(0,212,255,0.6)':'rgba(255,255,255,0.2)';
+                ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(kx,ky,18,0,Math.PI*2); ctx.stroke();
+                // Knob tick
+                const potDeg = (c.value/1023)*270 - 135;
+                const potRad = (potDeg-90) * Math.PI/180;
+                ctx.strokeStyle=powered?'rgba(0,212,255,0.9)':'rgba(255,255,255,0.4)';
+                ctx.lineWidth=2.5; ctx.lineCap='round';
+                ctx.beginPath();
+                ctx.moveTo(kx+Math.cos(potRad)*6, ky+Math.sin(potRad)*6);
+                ctx.lineTo(kx+Math.cos(potRad)*15, ky+Math.sin(potRad)*15);
+                ctx.stroke(); ctx.lineCap='butt';
+                // Value
+                ctx.fillStyle=powered?'rgba(0,212,255,0.85)':'rgba(255,255,255,0.3)';
+                ctx.font="bold 8px 'DM Mono',monospace";
+                ctx.fillText(Math.round(c.value), c.x+46, c.y+18);
+                ctx.fillStyle='rgba(0,212,255,0.4)'; ctx.font="7px 'DM Mono',monospace";
+                ctx.fillText('POT', c.x+48, c.y+33);
+                label('VCC',c.x+4,c.y+12,'rgba(0,230,118,0.6)',7);
+                label('GND',c.x+50,c.y+12,'rgba(255,71,87,0.6)',7);
+                label('OUT',c.x+25,c.y+58,'rgba(0,212,255,0.6)',7);
+            }
+            else if(c.type==='BUZZER'){
+                const powered=c.active&&!c.burned;
+                const isPlaying=powered&&(Object.keys(_buzzerOscillators).length>0);
+                ctx.fillStyle=powered?'rgba(30,14,20,0.95)':'rgba(18,12,16,0.9)';
+                ctx.strokeStyle=powered?'rgba(255,107,138,0.55)':'rgba(255,107,138,0.2)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
+                const bx=c.x+30,by=c.y+30;
+                if(isPlaying){ctx.shadowBlur=12;ctx.shadowColor='rgba(255,107,138,0.6)';}
+                ctx.fillStyle=powered?'rgba(255,107,138,0.3)':'rgba(255,255,255,0.05)';
+                ctx.beginPath(); ctx.arc(bx,by,16,0,Math.PI*2); ctx.fill();
+                ctx.strokeStyle=powered?'rgba(255,107,138,0.7)':'rgba(255,255,255,0.2)';
+                ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(bx,by,16,0,Math.PI*2); ctx.stroke();
+                for(let r=1;r<=3;r++){
+                    const ri=r*5;
+                    ctx.strokeStyle=`rgba(255,107,138,${isPlaying?(0.3-r*0.08):0.08})`;
+                    ctx.lineWidth=1;
+                    ctx.beginPath(); ctx.arc(bx,by,ri+16,Math.PI*1.2,Math.PI*1.8); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(bx,by,ri+16,Math.PI*0.2,Math.PI*0.8); ctx.stroke();
+                }
+                ctx.shadowBlur=0;
+                ctx.fillStyle=powered?'rgba(255,107,138,0.8)':'rgba(255,255,255,0.2)';
+                ctx.font="8px 'DM Mono',monospace"; ctx.fillText('BUZ',c.x+46,c.y+22);
+                if(isPlaying){
+                    ctx.fillStyle='rgba(255,107,138,0.6)'; ctx.font="7px 'DM Mono',monospace";
+                    ctx.fillText('♪', c.x+46, c.y+36);
+                }
+                label('+',c.x+8,c.y+12,'rgba(0,230,118,0.6)',7);
+                label('-',c.x+38,c.y+12,'rgba(255,71,87,0.6)',7);
+            }
+            else if(c.type==='HC_SR04'){
+                const powered=c.active&&!c.burned;
+                ctx.fillStyle=powered?'rgba(14,24,36,0.95)':'rgba(12,18,28,0.9)';
+                ctx.strokeStyle=powered?'rgba(0,183,255,0.5)':'rgba(0,183,255,0.15)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
+                // Two "eyes"
+                [c.x+18,c.x+62].forEach(ex=>{
+                    ctx.fillStyle=powered?'rgba(0,183,255,0.15)':'rgba(255,255,255,0.05)';
+                    ctx.beginPath(); ctx.arc(ex,c.y+35,14,0,Math.PI*2); ctx.fill();
+                    ctx.strokeStyle=powered?'rgba(0,183,255,0.5)':'rgba(255,255,255,0.1)';
+                    ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(ex,c.y+35,14,0,Math.PI*2); ctx.stroke();
+                    if(powered){
+                        ctx.strokeStyle='rgba(0,183,255,0.3)';
+                        ctx.lineWidth=1;
+                        for(let r=1;r<=2;r++){
+                            ctx.beginPath(); ctx.arc(ex,c.y+35,14+r*6,Math.PI,Math.PI*2); ctx.stroke();
+                        }
+                    }
+                });
+                ctx.fillStyle=powered?'rgba(0,183,255,0.7)':'rgba(255,255,255,0.3)';
+                ctx.font="7px 'DM Mono',monospace"; ctx.fillText('HC-SR04',c.x+22,c.y+14);
+                if(powered){
+                    ctx.fillStyle='rgba(0,183,255,0.85)'; ctx.font="bold 8px 'DM Mono',monospace";
+                    ctx.fillText(Math.round(c.simDist)+'cm',c.x+28,c.y+58);
+                }
+                label('VCC',c.x+4,c.y+12,'rgba(0,230,118,0.6)',6);
+                label('GND',c.x+22,c.y+12,'rgba(255,71,87,0.6)',6);
+                label('TRIG',c.x+44,c.y+12,'rgba(0,212,255,0.6)',6);
+                label('ECHO',c.x+66,c.y+12,'rgba(0,212,255,0.6)',6);
+            }
+            else if(c.type==='DHT11'){
+                const powered=c.active&&!c.burned;
+                ctx.fillStyle=powered?'rgba(14,30,22,0.95)':'rgba(12,18,16,0.9)';
+                ctx.strokeStyle=powered?'rgba(0,230,118,0.45)':'rgba(0,230,118,0.15)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
+                ctx.fillStyle=powered?'rgba(0,230,118,0.12)':'rgba(255,255,255,0.04)';
+                ctx.fillRect(c.x+6,c.y+16,c.w-12,c.h-24);
+                ctx.strokeStyle=powered?'rgba(0,230,118,0.3)':'rgba(255,255,255,0.08)';
+                ctx.strokeRect(c.x+6,c.y+16,c.w-12,c.h-24);
+                ctx.fillStyle=powered?'rgba(0,230,118,0.7)':'rgba(255,255,255,0.3)';
+                ctx.font="7px 'DM Mono',monospace"; ctx.fillText('DHT11',c.x+14,c.y+14);
+                if(powered){
+                    ctx.fillStyle='rgba(0,230,118,0.9)'; ctx.font="bold 8px 'DM Mono',monospace";
+                    ctx.fillText(c.temperature+'°C',c.x+8,c.y+35);
+                    ctx.fillStyle='rgba(0,183,255,0.9)';
+                    ctx.fillText(c.humidity+'%',c.x+8,c.y+50);
+                    ctx.fillStyle='rgba(0,230,118,0.3)'; ctx.font="6px 'DM Mono',monospace";
+                    ctx.fillText('TEMP',c.x+38,c.y+35); ctx.fillText('HUM',c.x+38,c.y+50);
+                }
+                label('VCC',c.x+4,c.y+10,'rgba(0,230,118,0.6)',6);
+                label('GND',c.x+38,c.y+10,'rgba(255,71,87,0.6)',6);
+                label('DATA',c.x+16,c.y+68,'rgba(0,212,255,0.6)',6);
+            }
+            else if(c.type==='SEG7'){
+                const powered=c.active&&!c.burned;
+                // 7-segment display draw
+                const SEG_DIGITS=[
+                    [1,1,1,1,1,1,0], // 0
+                    [0,1,1,0,0,0,0], // 1
+                    [1,1,0,1,1,0,1], // 2
+                    [1,1,1,1,0,0,1], // 3
+                    [0,1,1,0,0,1,1], // 4
+                    [1,0,1,1,0,1,1], // 5
+                    [1,0,1,1,1,1,1], // 6
+                    [1,1,1,0,0,0,0], // 7
+                    [1,1,1,1,1,1,1], // 8
+                    [1,1,1,1,0,1,1], // 9
+                ];
+                const digit=Math.min(9,Math.max(0,c.digit||0));
+                const segs=SEG_DIGITS[digit];
+                ctx.fillStyle='rgba(12,8,8,0.95)';
+                ctx.strokeStyle=powered?'rgba(255,71,87,0.4)':'rgba(255,71,87,0.12)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x,c.y,c.w,c.h); ctx.strokeRect(c.x,c.y,c.w,c.h);
+                const dx=c.x+15,dy=c.y+10,sw=30,sh=6,sg=3;
+                const segColor=powered?'rgba(255,60,60,0.95)':'rgba(255,60,60,0.12)';
+                const offColor='rgba(80,20,20,0.4)';
+                function drawSeg(x,y,w,h,on){
+                    ctx.fillStyle=on?segColor:offColor;
+                    if(on&&powered){ctx.shadowBlur=6;ctx.shadowColor='rgba(255,50,50,0.8)';}
+                    ctx.fillRect(x,y,w,h);
+                    ctx.shadowBlur=0;
+                }
+                // A-top, B-top-right, C-bot-right, D-bot, E-bot-left, F-top-left, G-mid
+                drawSeg(dx+sg,dy,sw,sh,segs[0]);           // A top
+                drawSeg(dx+sw+sg*2,dy+sg,sh,sw,segs[1]);   // B top-right
+                drawSeg(dx+sw+sg*2,dy+sw+sg*3,sh,sw,segs[2]); // C bot-right
+                drawSeg(dx+sg,dy+sw*2+sg*2,sw,sh,segs[3]); // D bot
+                drawSeg(dx,dy+sw+sg*3,sh,sw,segs[4]);       // E bot-left
+                drawSeg(dx,dy+sg,sh,sw,segs[5]);             // F top-left
+                drawSeg(dx+sg,dy+sw+sg,sw,sh,segs[6]);      // G mid
+                // Dot
+                if(c.showDot&&powered){
+                    ctx.fillStyle='rgba(255,60,60,0.95)';
+                    ctx.shadowBlur=4; ctx.shadowColor='rgba(255,50,50,0.8)';
+                    ctx.beginPath(); ctx.arc(dx+sw+sg*3+6,dy+sw*2+sg*2+sh/2,3,0,Math.PI*2); ctx.fill();
+                    ctx.shadowBlur=0;
+                }
+                ctx.fillStyle='rgba(255,71,87,0.3)'; ctx.font="6px 'DM Mono',monospace";
+                ctx.fillText('7-SEG',c.x+18,c.y+97);
+            }
             else if(c.type==='L298N'){
                 ctx.fillStyle='rgba(20,14,36,0.9)';
                 ctx.strokeStyle=c.active&&!c.burned?'rgba(167,139,250,0.55)':'rgba(167,139,250,0.2)';
@@ -4089,6 +5273,11 @@ end>`
                 if(c.type==='RELAY'&&n.id==='NO')nc='rgba(255,71,87,0.5)';
                 if(c.type==='L298N'&&(n.id==='IN1'||n.id==='IN2'))nc='rgba(167,139,250,0.6)';
                 if(c.type==='L298N'&&(n.id==='OUT1'||n.id==='OUT2'))nc='rgba(0,230,118,0.6)';
+                if(c.type==='HC_SR04'&&(n.id==='TRIG'||n.id==='ECHO'))nc='rgba(0,183,255,0.6)';
+                if(c.type==='DHT11'&&n.id==='DATA')nc='rgba(0,212,255,0.6)';
+                if(c.type==='POT'&&n.id==='OUT')nc='rgba(0,212,255,0.6)';
+                if(c.type==='BUZZER'&&n.id==='+')nc='rgba(255,107,138,0.7)';
+                if(c.type==='SEG7'&&['A','B','C','D','E','F','G'].includes(n.id))nc='rgba(255,71,87,0.5)';
 
                 ctx.fillStyle=nc;
                 ctx.beginPath(); ctx.arc(c.x+n.x,c.y+n.y,4,0,Math.PI*2); ctx.fill();
@@ -4123,7 +5312,7 @@ end>`
         ctx.fillStyle='rgba(255,255,255,0.08)';
         ctx.font="9px 'DM Mono',monospace";
         ctx.textAlign='right';
-        ctx.fillText('Simulic Pro v1.8',canvas.width-14,canvas.height-12);
+        ctx.fillText('Simulic Pro v2.0',canvas.width-14,canvas.height-12);
         ctx.textAlign='left';
 
         requestAnimationFrame(draw);
