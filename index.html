@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -7,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        /* (Tu CSS completo, sin cambios) */
         :root {
             --bg-deep:    #0f1520;
             --bg-base:    #141c2e;
@@ -35,1118 +37,1136 @@
             --radius-lg: 10px;
         }
 
-    * {
-        user-select: none;
-        box-sizing: border-box;
-        touch-action: none;
-        margin: 0;
-        padding: 0;
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-    }
-
-    body {
-        background:
-            radial-gradient(ellipse 60% 40% at 15% 0%, rgba(0,212,255,0.04) 0%, transparent 70%),
-            radial-gradient(ellipse 40% 30% at 85% 100%, rgba(0,230,118,0.03) 0%, transparent 70%),
-            var(--bg-deep);
-        color: var(--text-bright);
-        font-family: 'Inter', sans-serif;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
-    }
-
-    #header {
-        position: relative;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        padding: 0 18px;
-        height: 46px;
-        background: rgba(11,14,23,0.9);
-        border-bottom: 1px solid var(--glass-border);
-        backdrop-filter: blur(20px);
-        flex-shrink: 0;
-        gap: 16px;
-    }
-
-    .logo-wrap {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .logo-icon {
-        width: 28px; height: 28px;
-        background: linear-gradient(135deg, var(--cyan) 0%, #0088aa 100%);
-        border-radius: var(--radius-sm);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 13px; font-weight: 800;
-        color: #07090f;
-        font-family: 'Syne', sans-serif;
-        letter-spacing: -1px;
-        flex-shrink: 0;
-    }
-
-    .logo-text {
-        font-family: 'Syne', sans-serif;
-        font-weight: 800;
-        font-size: 14px;
-        letter-spacing: 2px;
-        color: var(--text-bright);
-    }
-
-    .logo-version {
-        font-family: 'DM Mono', monospace;
-        font-size: 9px;
-        color: var(--text-dim);
-        letter-spacing: 1px;
-        padding: 2px 6px;
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-sm);
-        background: var(--bg-surface);
-        font-weight: 300;
-    }
-
-    .header-divider {
-        width: 1px; height: 20px;
-        background: var(--glass-border);
-    }
-
-    .status-pill {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 10px;
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        background: var(--bg-surface);
-    }
-
-    .status-dot {
-        width: 5px; height: 5px;
-        border-radius: 50%;
-        background: var(--green);
-        box-shadow: 0 0 6px var(--green);
-        animation: blink 3s ease-in-out infinite;
-    }
-
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
-    }
-
-    .status-label {
-        font-family: 'DM Mono', monospace;
-        font-size: 9px;
-        color: var(--text-mid);
-        letter-spacing: 1px;
-        font-weight: 300;
-    }
-
-    .header-right {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .hdr-btn {
-        height: 28px;
-        padding: 0 12px;
-        background: var(--bg-surface);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-sm);
-        color: var(--text-mid);
-        cursor: pointer;
-        font-family: 'DM Mono', monospace;
-        font-size: 10px;
-        font-weight: 400;
-        letter-spacing: 0.5px;
-        transition: all 0.15s;
-        white-space: nowrap;
-    }
-
-    .hdr-btn:hover { background: var(--bg-hover); border-color: var(--glass-border-light); color: var(--text-bright); }
-
-    .hdr-btn-mode { color: var(--cyan-dim); border-color: rgba(0,136,170,0.3); }
-    .hdr-btn-mode:hover { color: var(--cyan); border-color: var(--glass-border-cyan); background: var(--bg-active); }
-
-    .hdr-btn-danger { color: var(--red); border-color: rgba(255,71,87,0.2); background: var(--red-dim); }
-    .hdr-btn-danger:hover { background: rgba(255,71,87,0.18); border-color: rgba(255,71,87,0.4); }
-
-    #ui-top {
-        position: relative;
-        z-index: 9;
-        display: flex;
-        align-items: stretch;
-        height: 38px;
-        background: rgba(11,14,23,0.7);
-        border-bottom: 1px solid var(--glass-border);
-        backdrop-filter: blur(12px);
-        overflow-x: auto;
-        flex-shrink: 0;
-    }
-
-    #ui-top::-webkit-scrollbar { height: 0; }
-
-    .cat-group {
-        display: flex;
-        align-items: stretch;
-        padding: 0 6px;
-        gap: 2px;
-        border-right: 1px solid var(--glass-border);
-    }
-
-    .cat-group:last-child { border-right: none; margin-left: auto; }
-
-    .cat-btn {
-        padding: 0 14px;
-        background: transparent;
-        border: none;
-        color: var(--text-dim);
-        cursor: pointer;
-        font-family: 'Inter', sans-serif;
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: 0.3px;
-        white-space: nowrap;
-        border-radius: var(--radius-sm);
-        position: relative;
-        transition: color 0.15s, background 0.15s;
-    }
-
-    .cat-btn:hover { color: var(--text-mid); background: var(--bg-surface); }
-
-    .cat-btn.active {
-        color: var(--cyan);
-        background: var(--bg-active);
-    }
-
-    .cat-btn.active::after {
-        content: '';
-        position: absolute;
-        bottom: 0; left: 12px; right: 12px;
-        height: 1.5px;
-        background: var(--cyan);
-        border-radius: 1px;
-    }
-
-    .cat-btn-demo { color: rgba(167,139,250,0.5); }
-    .cat-btn-demo:hover { color: var(--purple); }
-    .cat-btn-demo.active { color: var(--purple); background: rgba(167,139,250,0.08); }
-    .cat-btn-demo.active::after { background: var(--purple); }
-
-    .cat-btn-manual { color: rgba(255,183,0,0.5); }
-    .cat-btn-manual:hover { color: var(--amber); }
-
-    #ui-sub {
-        position: relative;
-        z-index: 8;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        padding: 0 14px;
-        height: 38px;
-        background: rgba(7,9,15,0.6);
-        border-bottom: 1px solid var(--glass-border);
-        backdrop-filter: blur(8px);
-        overflow-x: auto;
-        flex-shrink: 0;
-    }
-
-    #ui-sub::-webkit-scrollbar { height: 0; }
-
-    .sub-hint {
-        font-family: 'DM Mono', monospace;
-        font-size: 9px;
-        color: var(--text-dim);
-        letter-spacing: 1px;
-        font-weight: 300;
-    }
-
-    .spawn-btn {
-        height: 24px;
-        padding: 0 12px;
-        background: var(--bg-surface);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-sm);
-        color: var(--text-mid);
-        cursor: pointer;
-        font-family: 'Inter', sans-serif;
-        font-size: 10px;
-        font-weight: 500;
-        white-space: nowrap;
-        flex-shrink: 0;
-        transition: all 0.12s;
-    }
-
-    .spawn-btn:hover {
-        background: var(--bg-hover);
-        border-color: var(--glass-border-light);
-        color: var(--text-bright);
-    }
-
-    .spawn-btn:active {
-        background: var(--bg-active);
-        border-color: var(--glass-border-cyan);
-        color: var(--cyan);
-        transform: scale(0.97);
-    }
-
-    #canvas-container {
-        flex: 1;
-        position: relative;
-        overflow: hidden;
-        background: var(--bg-deep);
-        cursor: crosshair;
-        z-index: 1;
-    }
-
-    canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
-        background: var(--bg-deep);
-    }
-
-    #zoom-controls {
-        position: absolute;
-        right: 14px;
-        top: 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        z-index: 20;
-        background: rgba(11,14,23,0.75);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-md);
-        backdrop-filter: blur(20px);
-        padding: 4px;
-    }
-
-    .zoom-btn {
-        width: 30px; height: 30px;
-        display: flex; align-items: center; justify-content: center;
-        background: transparent;
-        border: none;
-        border-radius: var(--radius-sm);
-        color: var(--text-mid);
-        cursor: pointer;
-        font-family: 'DM Mono', monospace;
-        font-size: 14px;
-        transition: all 0.12s;
-    }
-
-    .zoom-btn:hover { background: var(--bg-hover); color: var(--cyan); }
-    .zoom-btn:active { transform: scale(0.9); }
-
-    .zoom-divider { height: 1px; background: var(--glass-border); margin: 0 4px; }
-
-    #hud-coords {
-        position: absolute;
-        left: 14px;
-        top: 14px;
-        font-family: 'DM Mono', monospace;
-        font-size: 9px;
-        color: var(--text-dim);
-        letter-spacing: 0.5px;
-        background: rgba(11,14,23,0.75);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-md);
-        padding: 7px 12px;
-        line-height: 1.8;
-        backdrop-filter: blur(20px);
-        pointer-events: none;
-        z-index: 20;
-    }
-
-    #hud-coords span { color: var(--text-mid); }
-
-    #virtual-controls { display: none !important; }
-
-    #touch-ctx-menu {
-        display: none;
-        position: fixed;
-        z-index: 200;
-        background: rgba(11,14,23,0.96);
-        backdrop-filter: blur(24px);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 14px;
-        padding: 6px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-        flex-direction: column;
-        gap: 2px;
-        min-width: 160px;
-        animation: tcm-in 0.15s ease;
-    }
-    #touch-ctx-menu.visible { display: flex; }
-
-    @keyframes tcm-in {
-        from { opacity:0; transform: scale(0.88) translateY(6px); }
-        to   { opacity:1; transform: scale(1)    translateY(0); }
-    }
-
-    .tcm-item {
-        display: flex; align-items: center; gap: 10px;
-        padding: 11px 14px;
-        border-radius: 9px;
-        font-family: 'DM Mono', monospace;
-        font-size: 12px;
-        color: rgba(255,255,255,0.75);
-        cursor: pointer;
-        transition: background 0.1s;
-        user-select: none;
-    }
-    .tcm-item:active { background: rgba(255,255,255,0.08); }
-    .tcm-item .tcm-icon { font-size: 15px; width: 20px; text-align: center; }
-    .tcm-item.tcm-danger { color: rgba(255,71,87,0.85); }
-    .tcm-item.tcm-danger:active { background: rgba(255,71,87,0.1); }
-    .tcm-sep { height: 1px; background: rgba(255,255,255,0.06); margin: 3px 0; }
-
-    #fx-overlay {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 100;
-        background: transparent;
-    }
-
-    .touch-ripple {
-        position: fixed;
-        pointer-events: none;
-        border-radius: 50%;
-        border: 1.5px solid rgba(0,212,255,0.5);
-        background: transparent;
-        animation: ripple-anim 0.4s ease-out forwards;
-        z-index: 100;
-        will-change: transform, opacity;
-        transform: translate(-50%, -50%);
-    }
-    @keyframes ripple-anim {
-        from { width:20px; height:20px; opacity:0.5; transform:translate(-50%,-50%); }
-        to   { width:60px; height:60px; opacity:0;   transform:translate(-50%,-50%); }
-    }
-
-    .hold-ring {
-        position: fixed;
-        pointer-events: none;
-        border-radius: 50%;
-        border: 2px solid rgba(0,230,118,0.6);
-        width: 48px; height: 48px;
-        z-index: 100;
-        will-change: transform, opacity;
-        animation: hold-ring-anim 0.45s ease-out forwards;
-    }
-    @keyframes hold-ring-anim {
-        from { transform: translate(-50%,-50%) scale(0.3); opacity:0.9; }
-        to   { transform: translate(-50%,-50%) scale(1);   opacity:0; }
-    }
-
-    .hold-progress {
-        position: fixed;
-        pointer-events: none;
-        width: 52px; height: 52px;
-        z-index: 101;
-        will-change: transform;
-        background: transparent;
-        overflow: visible;
-    }
-    .hold-progress circle {
-        fill: none;
-        stroke: rgba(0,212,255,0.8);
-        stroke-width: 2.5;
-        stroke-linecap: round;
-        stroke-dasharray: 138;
-        stroke-dashoffset: 138;
-        transform-origin: 26px 26px;
-        transform: rotate(-90deg);
-        animation: hold-progress-anim 0.44s linear forwards;
-    }
-    @keyframes hold-progress-anim {
-        from { stroke-dashoffset: 138; }
-        to   { stroke-dashoffset: 0; }
-    }
-
-    #cable-badge {
-        display: none;
-        position: fixed;
-        top: 60px; left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,212,255,0.15);
-        border: 1px solid rgba(0,212,255,0.4);
-        border-radius: 20px;
-        padding: 6px 16px;
-        font-family: 'DM Mono', monospace;
-        font-size: 11px;
-        color: rgba(0,212,255,0.9);
-        z-index: 150;
-        pointer-events: auto;
-        backdrop-filter: blur(8px);
-        animation: badge-in 0.2s ease;
-        display: none;
-        align-items: center;
-        gap: 10px;
-    }
-    #cable-badge.visible { display: flex; }
-    #cable-badge-cancel {
-        background: rgba(255,80,80,0.2);
-        border: 1px solid rgba(255,80,80,0.5);
-        border-radius: 10px;
-        color: rgba(255,100,100,0.95);
-        font-size: 10px;
-        padding: 2px 8px;
-        cursor: pointer;
-        font-family: 'DM Mono', monospace;
-    }
-    @keyframes badge-in {
-        from { opacity:0; transform: translateX(-50%) translateY(-8px); }
-        to   { opacity:1; transform: translateX(-50%) translateY(0); }
-    }
-
-    #oscilloscope {
-        display: none;
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        height: 200px;
-        background: rgba(7,9,15,0.97);
-        border-top: 1px solid rgba(0,212,255,0.2);
-        backdrop-filter: blur(20px);
-        z-index: 200;
-        flex-direction: column;
-    }
-    #oscilloscope.visible { display: flex; }
-    #osc-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 6px 14px;
-        border-bottom: 1px solid rgba(0,212,255,0.1);
-        flex-shrink: 0;
-    }
-    #osc-title {
-        font-family: 'DM Mono', monospace;
-        font-size: 10px;
-        color: var(--cyan);
-        letter-spacing: 2px;
-    }
-    #osc-controls { display: flex; gap: 6px; align-items: center; margin-left: auto; }
-    .osc-btn {
-        height: 22px; padding: 0 10px;
-        background: rgba(0,212,255,0.06);
-        border: 1px solid rgba(0,212,255,0.2);
-        border-radius: 3px;
-        color: var(--text-mid);
-        cursor: pointer;
-        font-family: 'DM Mono', monospace;
-        font-size: 9px;
-        transition: all 0.12s;
-    }
-    .osc-btn:hover { background: rgba(0,212,255,0.12); color: var(--cyan); }
-    .osc-btn.active { background: rgba(0,212,255,0.15); color: var(--cyan); border-color: rgba(0,212,255,0.5); }
-    #osc-body { flex: 1; display: flex; overflow: hidden; }
-    #osc-canvas { flex: 1; display: block; }
-    #osc-sidebar {
-        width: 120px;
-        border-left: 1px solid rgba(0,212,255,0.1);
-        padding: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        overflow-y: auto;
-        flex-shrink: 0;
-    }
-    .osc-probe-item {
-        display: flex; align-items: center; gap: 6px;
-        padding: 4px 6px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 3px;
-        cursor: pointer;
-        font-family: 'DM Mono', monospace;
-        font-size: 8px;
-        color: var(--text-mid);
-    }
-    .osc-probe-item:hover { background: rgba(0,212,255,0.06); }
-    .osc-probe-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .osc-probe-item.active { border-color: rgba(0,212,255,0.3); }
-    #osc-hint { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text-dim); padding: 4px; }
-
-    #save-panel {
-        display: none;
-        position: fixed;
-        top: 50%; left: 50%;
-        transform: translate(-50%,-50%);
-        width: 380px;
-        max-width: 95vw;
-        background: rgba(11,14,23,0.98);
-        border: 1px solid var(--glass-border-light);
-        border-radius: var(--radius-lg);
-        backdrop-filter: blur(40px);
-        z-index: 300;
-        box-shadow: 0 32px 80px rgba(0,0,0,0.8);
-    }
-    #save-panel.visible { display: block; }
-    .sp-header {
-        display: flex; align-items: center; padding: 14px 16px;
-        border-bottom: 1px solid var(--glass-border);
-    }
-    .sp-title { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--cyan); letter-spacing: 2px; }
-    .sp-close { margin-left: auto; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; }
-    .sp-close:hover { color: var(--red); }
-    .sp-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
-    .sp-section-title { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 4px; }
-    .sp-save-row { display: flex; gap: 8px; }
-    .sp-input {
-        flex: 1; height: 30px; padding: 0 10px;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-sm);
-        color: var(--text-bright);
-        font-family: 'DM Mono', monospace;
-        font-size: 11px;
-        touch-action: auto;
-    }
-    .sp-input:focus { outline: none; border-color: rgba(0,212,255,0.4); }
-    .sp-btn {
-        height: 30px; padding: 0 14px;
-        background: rgba(0,212,255,0.08);
-        border: 1px solid rgba(0,212,255,0.3);
-        border-radius: var(--radius-sm);
-        color: var(--cyan);
-        cursor: pointer;
-        font-family: 'DM Mono', monospace;
-        font-size: 10px;
-        white-space: nowrap;
-    }
-    .sp-btn:hover { background: rgba(0,212,255,0.15); }
-    .sp-btn-red { background: var(--red-dim); border-color: rgba(255,71,87,0.3); color: var(--red); }
-    .sp-btn-red:hover { background: rgba(255,71,87,0.18); }
-    #sp-slots { display: flex; flex-direction: column; gap: 5px; max-height: 220px; overflow-y: auto; }
-    .sp-slot {
-        display: flex; align-items: center; gap: 8px;
-        padding: 8px 10px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-sm);
-    }
-    .sp-slot-name { flex: 1; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-bright); }
-    .sp-slot-date { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text-dim); }
-    .sp-slot-load { background: none; border: 1px solid rgba(0,212,255,0.25); border-radius: 3px; padding: 2px 8px; color: var(--cyan); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 9px; }
-    .sp-slot-load:hover { background: rgba(0,212,255,0.1); }
-    .sp-slot-del { background: none; border: none; color: rgba(255,71,87,0.4); cursor: pointer; font-size: 13px; padding: 0 4px; }
-    .sp-slot-del:hover { color: var(--red); }
-    .sp-empty { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text-dim); text-align: center; padding: 16px; }
-    #sp-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 299; }
-    #sp-overlay.visible { display: block; }
-
-    #undo-toast {
-        display: none;
-        position: fixed;
-        bottom: 20px; left: 50%;
-        transform: translateX(-50%);
-        background: rgba(11,14,23,0.95);
-        border: 1px solid rgba(0,212,255,0.3);
-        border-radius: 20px;
-        padding: 6px 18px;
-        font-family: 'DM Mono', monospace;
-        font-size: 10px;
-        color: var(--cyan);
-        z-index: 500;
-        pointer-events: none;
-        letter-spacing: 1px;
-        animation: toast-in 0.2s ease;
-    }
-    @keyframes toast-in {
-        from { opacity:0; transform: translateX(-50%) translateY(8px); }
-        to   { opacity:1; transform: translateX(-50%) translateY(0); }
-    }
-
-    .cable-label-input {
-        position: fixed;
-        background: rgba(11,14,23,0.95);
-        border: 1px solid rgba(0,212,255,0.4);
-        border-radius: 4px;
-        color: var(--cyan);
-        font-family: 'DM Mono', monospace;
-        font-size: 10px;
-        padding: 3px 8px;
-        width: 100px;
-        z-index: 400;
-        touch-action: auto;
-    }
-    .cable-label-input:focus { outline: none; }
-
-    #modal {
-        display: none;
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(11,14,23,0.92);
-        border: 1px solid var(--glass-border-light);
-        border-radius: var(--radius-lg);
-        backdrop-filter: blur(40px);
-        box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px var(--glass-border);
-        z-index: 100;
-        width: 320px;
-        overflow: hidden;
-        transition: width 0.2s ease;
-    }
-
-    #modal.code-mode {
-        width: 520px;
-    }
-
-    .code-editor-wrap {
-        display: none;
-        flex-direction: column;
-        margin-bottom: 12px;
-        border: 1px solid var(--glass-border-light);
-        border-radius: var(--radius-sm);
-        overflow: hidden;
-        background: rgba(0,0,0,0.55);
-    }
-
-    .code-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 5px 8px;
-        background: rgba(255,255,255,0.03);
-        border-bottom: 1px solid var(--glass-border);
-    }
-
-    .code-toolbar-label {
-        font-family: 'DM Mono', monospace;
-        font-size: 9px;
-        color: var(--text-dim);
-        letter-spacing: 1px;
-        margin-right: auto;
-    }
-
-    .code-snippet-btn {
-        padding: 2px 7px;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid var(--glass-border);
-        border-radius: 3px;
-        color: var(--text-dim);
-        font-family: 'DM Mono', monospace;
-        font-size: 8px;
-        cursor: pointer;
-        transition: all 0.1s;
-        white-space: nowrap;
-    }
-    .code-snippet-btn:hover { background: var(--bg-active); border-color: var(--glass-border-cyan); color: var(--cyan); }
-
-    .code-body {
-        display: flex;
-        height: 180px;
-        overflow: hidden;
-    }
-
-    .code-lines {
-        width: 32px;
-        flex-shrink: 0;
-        background: rgba(0,0,0,0.3);
-        border-right: 1px solid var(--glass-border);
-        padding: 10px 0;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        padding-right: 6px;
-    }
-
-    .line-num {
-        font-family: 'DM Mono', monospace;
-        font-size: 10px;
-        color: var(--text-dim);
-        line-height: 1.7em;
-        min-height: 1.7em;
-        font-weight: 300;
-        opacity: 0.5;
-    }
-
-    #m-code-area {
-        flex: 1;
-        height: 100%;
-        background: transparent;
-        color: #a8d8c8;
-        border: none;
-        font-family: 'DM Mono', monospace;
-        font-size: 11px;
-        font-weight: 300;
-        line-height: 1.7;
-        padding: 10px 10px;
-        resize: none;
-        display: block;
-        outline: none;
-        tab-size: 2;
-        caret-color: var(--cyan);
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255,255,255,0.08) transparent;
-    }
-
-    #m-code-area::placeholder { color: var(--text-dim); }
-
-    .code-statusbar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 4px 10px;
-        background: rgba(0,0,0,0.3);
-        border-top: 1px solid var(--glass-border);
-        font-family: 'DM Mono', monospace;
-        font-size: 8px;
-        color: var(--text-dim);
-    }
-
-    .code-status-item { display: flex; align-items: center; gap: 4px; }
-    .code-status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
-
-    #log-console {
-        background: rgba(0,0,0,0.6);
-        border-top: 1px solid var(--glass-border);
-        height: 100px;
-        overflow-y: auto;
-        font-family: 'DM Mono', monospace;
-        font-size: 10px;
-        font-weight: 300;
-        line-height: 1.7;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255,255,255,0.06) transparent;
-    }
-
-    .console-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 3px 10px;
-        background: rgba(0,0,0,0.4);
-        border-top: 1px solid var(--glass-border);
-        border-bottom: 1px solid var(--glass-border);
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-    .console-header-label {
-        font-family: 'DM Mono', monospace;
-        font-size: 8px;
-        color: var(--text-dim);
-        letter-spacing: 1.5px;
-    }
-
-    .console-clear-btn {
-        font-family: 'DM Mono', monospace;
-        font-size: 8px;
-        color: rgba(255,71,87,0.5);
-        background: none;
-        border: 1px solid rgba(255,71,87,0.2);
-        border-radius: 3px;
-        padding: 1px 6px;
-        cursor: pointer;
-        transition: all 0.1s;
-    }
-
-    .console-clear-btn:hover { color: var(--red); border-color: rgba(255,71,87,0.5); background: rgba(255,71,87,0.06); }
-
-    .console-line {
-        padding: 0 10px;
-        white-space: pre-wrap;
-        word-break: break-all;
-    }
-
-    .console-line.log-init   { color: rgba(0,212,255,0.5); }
-    .console-line.log-info   { color: rgba(0,230,118,0.8); }
-    .console-line.log-warn   { color: rgba(255,183,0,0.85); }
-    .console-line.log-error  { color: rgba(255,71,87,0.9); }
-    .console-line.log-print  { color: #c8e6c9; }
-    .console-line.log-dim    { color: var(--text-dim); }
-
-    .modal-titlebar {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--glass-border);
-        gap: 10px;
-    }
-
-    .modal-accent {
-        width: 2px; height: 14px;
-        background: var(--cyan);
-        border-radius: 2px;
-    }
-
-    #m-title {
-        font-family: 'Syne', sans-serif;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        color: var(--text-bright);
-    }
-
-    .modal-body { padding: 16px; }
-
-    .modal-field {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-sm);
-        margin-bottom: 12px;
-    }
-
-    #m-val {
-        flex: 1;
-        background: transparent;
-        border: none;
-        color: var(--cyan);
-        font-family: 'DM Mono', monospace;
-        font-size: 18px;
-        font-weight: 300;
-        text-align: center;
-        outline: none;
-        width: 80px;
-    }
-
-    #m-unit {
-        font-family: 'DM Mono', monospace;
-        font-size: 11px;
-        color: var(--text-dim);
-    }
-
-    .modal-actions {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-
-    .modal-btn {
-        height: 28px;
-        padding: 0 14px;
-        background: var(--bg-surface);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-sm);
-        color: var(--text-mid);
-        cursor: pointer;
-        font-family: 'Inter', sans-serif;
-        font-size: 10px;
-        font-weight: 500;
-        letter-spacing: 0.3px;
-        transition: all 0.12s;
-    }
-
-    .modal-btn:hover { background: var(--bg-hover); color: var(--text-bright); border-color: var(--glass-border-light); }
-
-    .modal-btn-save { color: var(--cyan); border-color: rgba(0,212,255,0.25); background: var(--bg-active); }
-    .modal-btn-save:hover { background: rgba(0,212,255,0.15); border-color: var(--glass-border-cyan); }
-
-    .modal-btn-rep { color: var(--amber); border-color: rgba(255,183,0,0.25); }
-    .modal-btn-rep:hover { background: rgba(255,183,0,0.1); border-color: rgba(255,183,0,0.4); }
-
-    .modal-btn-toggle { color: var(--cyan-dim); border-color: rgba(0,136,170,0.3); }
-
-    #manual-screen {
-        display: none;
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        width: 86%; height: 88%;
-        background: rgba(11,14,23,0.96);
-        border: 1px solid var(--glass-border-light);
-        border-radius: var(--radius-lg);
-        backdrop-filter: blur(40px);
-        box-shadow: 0 32px 100px rgba(0,0,0,0.8);
-        z-index: 300;
-        overflow: hidden;
-    }
-
-    .manual-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 20px;
-        border-bottom: 1px solid var(--glass-border);
-    }
-
-    .manual-title-wrap { display: flex; align-items: center; gap: 10px; }
-
-    .manual-title {
-        font-family: 'Syne', sans-serif;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 2px;
-        color: var(--text-bright);
-    }
-
-    .manual-badge {
-        font-family: 'DM Mono', monospace;
-        font-size: 8px;
-        color: var(--amber);
-        border: 1px solid rgba(255,183,0,0.3);
-        border-radius: 3px;
-        padding: 1px 6px;
-        letter-spacing: 1px;
-    }
-
-    .close-manual {
-        height: 26px;
-        padding: 0 12px;
-        background: var(--red-dim);
-        border: 1px solid rgba(255,71,87,0.25);
-        border-radius: var(--radius-sm);
-        color: var(--red);
-        cursor: pointer;
-        font-family: 'Inter', sans-serif;
-        font-size: 10px;
-        font-weight: 500;
-        transition: all 0.12s;
-    }
-
-    .close-manual:hover { background: rgba(255,71,87,0.2); border-color: rgba(255,71,87,0.45); }
-
-    .manual-inner {
-        height: calc(100% - 56px);
-        overflow-y: auto;
-        padding: 24px 28px;
-    }
-
-    .manual-inner::-webkit-scrollbar { width: 3px; }
-    .manual-inner::-webkit-scrollbar-track { background: transparent; }
-    .manual-inner::-webkit-scrollbar-thumb { background: var(--glass-border-light); border-radius: 2px; }
-
-    #manual-screen h4 {
-        font-family: 'Syne', sans-serif;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 2px;
-        color: var(--cyan);
-        margin: 22px 0 10px;
-        text-transform: uppercase;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    #manual-screen h4::before {
-        content: '';
-        width: 16px; height: 1px;
-        background: var(--cyan);
-        opacity: 0.5;
-    }
-
-    #manual-screen p, #manual-screen li {
-        font-family: 'Inter', sans-serif;
-        font-size: 12px;
-        line-height: 1.9;
-        color: var(--text-mid);
-        font-weight: 300;
-    }
-
-    #manual-screen strong { color: var(--text-bright); font-weight: 500; }
-    #manual-screen ul { padding-left: 16px; }
-
-    #manual-screen pre {
-        background: rgba(0,0,0,0.5);
-        border: 1px solid var(--glass-border);
-        border-left: 2px solid rgba(255,183,0,0.4);
-        border-radius: var(--radius-sm);
-        padding: 12px 14px;
-        color: #a3c4a3;
-        font-family: 'DM Mono', monospace;
-        font-size: 11px;
-        font-weight: 300;
-        overflow-x: auto;
-        margin: 10px 0;
-    }
-
-    #manual-screen code {
-        background: rgba(0,212,255,0.07);
-        border: 1px solid rgba(0,212,255,0.15);
-        border-radius: 3px;
-        padding: 1px 5px;
-        color: var(--cyan);
-        font-family: 'DM Mono', monospace;
-        font-size: 10.5px;
-    }
-
-    #context-menu {
-        display: none;
-        position: absolute;
-        background: rgba(11,14,23,0.95);
-        border: 1px solid var(--glass-border-light);
-        border-radius: var(--radius-md);
-        backdrop-filter: blur(30px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.7);
-        z-index: 200;
-        min-width: 150px;
-        overflow: hidden;
-    }
-
-    .ctx-section {
-        padding: 6px 8px 2px;
-        font-family: 'DM Mono', monospace;
-        font-size: 8px;
-        color: var(--text-dim);
-        letter-spacing: 1.5px;
-    }
-
-    .ctx-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 7px 12px;
-        color: var(--text-mid);
-        cursor: pointer;
-        font-family: 'Inter', sans-serif;
-        font-size: 12px;
-        font-weight: 400;
-        transition: all 0.1s;
-    }
-
-    .ctx-item:hover { background: var(--bg-hover); color: var(--text-bright); }
-
-    .ctx-icon {
-        width: 14px; text-align: center;
-        font-size: 11px;
-        color: var(--text-dim);
-    }
-
-    .ctx-item:hover .ctx-icon { color: var(--cyan); }
-
-    .ctx-item.danger:hover { background: var(--red-dim); color: var(--red); }
-    .ctx-item.danger:hover .ctx-icon { color: var(--red); }
-
-    .ctx-separator { height: 1px; background: var(--glass-border); margin: 3px 0; }
-
-    .desktop-mode #virtual-controls { display: none !important; }
-    .desktop-mode #zoom-controls { top: auto; bottom: 16px; right: 16px; }
-
-    #about-screen {
-        display: none;
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        width: 60%; max-width: 540px;
-        height: auto; max-height: 80%;
-        background: rgba(11,14,23,0.96);
-        border: 1px solid var(--glass-border-light);
-        border-radius: var(--radius-lg);
-        backdrop-filter: blur(40px);
-        box-shadow: 0 32px 100px rgba(0,0,0,0.8);
-        z-index: 300;
-        overflow: hidden;
-    }
-</style>
-
-
+        * {
+            user-select: none;
+            box-sizing: border-box;
+            touch-action: none;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse 60% 40% at 15% 0%, rgba(0,212,255,0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 30% at 85% 100%, rgba(0,230,118,0.03) 0%, transparent 70%),
+                var(--bg-deep);
+            color: var(--text-bright);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #header {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            height: 46px;
+            background: rgba(11,14,23,0.9);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            flex-shrink: 0;
+            gap: 16px;
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, var(--cyan) 0%, #0088aa 100%);
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800;
+            color: #07090f;
+            font-family: 'Syne', sans-serif;
+            letter-spacing: -1px;
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: var(--text-bright);
+        }
+
+        .logo-version {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            padding: 2px 6px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-surface);
+            font-weight: 300;
+        }
+
+        .header-divider {
+            width: 1px; height: 20px;
+            background: var(--glass-border);
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            background: var(--bg-surface);
+        }
+
+        .status-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            animation: blink 3s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .status-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            color: var(--text-mid);
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+
+        .header-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hdr-btn {
+            height: 28px;
+            padding: 0 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .hdr-btn:hover { background: var(--bg-hover); border-color: var(--glass-border-light); color: var(--text-bright); }
+
+        .hdr-btn-mode { color: var(--cyan-dim); border-color: rgba(0,136,170,0.3); }
+        .hdr-btn-mode:hover { color: var(--cyan); border-color: var(--glass-border-cyan); background: var(--bg-active); }
+
+        .hdr-btn-danger { color: var(--red); border-color: rgba(255,71,87,0.2); background: var(--red-dim); }
+        .hdr-btn-danger:hover { background: rgba(255,71,87,0.18); border-color: rgba(255,71,87,0.4); }
+
+        .btn-draw-mode {
+            width: 32px; height: 28px; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.08);
+            transition: all 0.18s;
+        }
+        .btn-draw-mode svg { transition: all 0.18s; }
+        .btn-draw-mode:hover { color: rgba(255,255,255,0.5); border-color: rgba(255,255,255,0.2); background: var(--bg-hover); }
+        .btn-draw-mode.active-draw {
+            color: rgba(0,212,255,0.9);
+            border-color: rgba(0,212,255,0.4);
+            background: rgba(0,212,255,0.08);
+            box-shadow: 0 0 8px rgba(0,212,255,0.2);
+        }
+        .btn-draw-mode.active-draw:hover { background: rgba(0,212,255,0.14); }
+
+        #ui-top {
+            position: relative;
+            z-index: 9;
+            display: flex;
+            align-items: stretch;
+            height: 38px;
+            background: rgba(11,14,23,0.7);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+
+        #ui-top::-webkit-scrollbar { height: 0; }
+
+        .cat-group {
+            display: flex;
+            align-items: stretch;
+            padding: 0 6px;
+            gap: 2px;
+            border-right: 1px solid var(--glass-border);
+        }
+
+        .cat-group:last-child { border-right: none; margin-left: auto; }
+
+        .cat-btn {
+            padding: 0 14px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            border-radius: var(--radius-sm);
+            position: relative;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .cat-btn:hover { color: var(--text-mid); background: var(--bg-surface); }
+
+        .cat-btn.active {
+            color: var(--cyan);
+            background: var(--bg-active);
+        }
+
+        .cat-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 12px; right: 12px;
+            height: 1.5px;
+            background: var(--cyan);
+            border-radius: 1px;
+        }
+
+        .cat-btn-demo { color: rgba(167,139,250,0.5); }
+        .cat-btn-demo:hover { color: var(--purple); }
+        .cat-btn-demo.active { color: var(--purple); background: rgba(167,139,250,0.08); }
+        .cat-btn-demo.active::after { background: var(--purple); }
+
+        .cat-btn-manual { color: rgba(255,183,0,0.5); }
+        .cat-btn-manual:hover { color: var(--amber); }
+
+        #ui-sub {
+            position: relative;
+            z-index: 8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0 14px;
+            height: 38px;
+            background: rgba(7,9,15,0.6);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+
+        #ui-sub::-webkit-scrollbar { height: 0; }
+
+        .sub-hint {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+
+        .spawn-btn {
+            height: 24px;
+            padding: 0 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.12s;
+        }
+
+        .spawn-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--glass-border-light);
+            color: var(--text-bright);
+        }
+
+        .spawn-btn:active {
+            background: var(--bg-active);
+            border-color: var(--glass-border-cyan);
+            color: var(--cyan);
+            transform: scale(0.97);
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-deep);
+            cursor: crosshair;
+            z-index: 1;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: var(--bg-deep);
+        }
+
+        #zoom-controls {
+            position: absolute;
+            right: 14px;
+            top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            z-index: 20;
+            background: rgba(11,14,23,0.75);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            backdrop-filter: blur(20px);
+            padding: 4px;
+        }
+
+        .zoom-btn {
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+            font-size: 14px;
+            transition: all 0.12s;
+        }
+
+        .zoom-btn:hover { background: var(--bg-hover); color: var(--cyan); }
+        .zoom-btn:active { transform: scale(0.9); }
+
+        .zoom-divider { height: 1px; background: var(--glass-border); margin: 0 4px; }
+
+        #hud-coords {
+            position: absolute;
+            left: 14px;
+            top: 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
+            background: rgba(11,14,23,0.75);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 7px 12px;
+            line-height: 1.8;
+            backdrop-filter: blur(20px);
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        #hud-coords span { color: var(--text-mid); }
+
+        #virtual-controls { display: none !important; }
+
+        #touch-ctx-menu {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            background: rgba(11,14,23,0.96);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 6px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            flex-direction: column;
+            gap: 2px;
+            min-width: 160px;
+            animation: tcm-in 0.15s ease;
+        }
+        #touch-ctx-menu.visible { display: flex; }
+
+        @keyframes tcm-in {
+            from { opacity:0; transform: scale(0.88) translateY(6px); }
+            to   { opacity:1; transform: scale(1)    translateY(0); }
+        }
+
+        .tcm-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 14px;
+            border-radius: 9px;
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            color: rgba(255,255,255,0.75);
+            cursor: pointer;
+            transition: background 0.1s;
+            user-select: none;
+        }
+        .tcm-item:active { background: rgba(255,255,255,0.08); }
+        .tcm-item .tcm-icon { font-size: 15px; width: 20px; text-align: center; }
+        .tcm-item.tcm-danger { color: rgba(255,71,87,0.85); }
+        .tcm-item.tcm-danger:active { background: rgba(255,71,87,0.1); }
+        .tcm-sep { height: 1px; background: rgba(255,255,255,0.06); margin: 3px 0; }
+
+        #fx-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+            background: transparent;
+        }
+
+        .touch-ripple {
+            position: fixed;
+            pointer-events: none;
+            border-radius: 50%;
+            border: 1.5px solid rgba(0,212,255,0.5);
+            background: transparent;
+            animation: ripple-anim 0.4s ease-out forwards;
+            z-index: 100;
+            will-change: transform, opacity;
+            transform: translate(-50%, -50%);
+        }
+        @keyframes ripple-anim {
+            from { width:20px; height:20px; opacity:0.5; transform:translate(-50%,-50%); }
+            to   { width:60px; height:60px; opacity:0;   transform:translate(-50%,-50%); }
+        }
+
+        .hold-ring {
+            position: fixed;
+            pointer-events: none;
+            border-radius: 50%;
+            border: 2px solid rgba(0,230,118,0.6);
+            width: 48px; height: 48px;
+            z-index: 100;
+            will-change: transform, opacity;
+            animation: hold-ring-anim 0.45s ease-out forwards;
+        }
+        @keyframes hold-ring-anim {
+            from { transform: translate(-50%,-50%) scale(0.3); opacity:0.9; }
+            to   { transform: translate(-50%,-50%) scale(1);   opacity:0; }
+        }
+
+        .hold-progress {
+            position: fixed;
+            pointer-events: none;
+            width: 52px; height: 52px;
+            z-index: 101;
+            will-change: transform;
+            background: transparent;
+            overflow: visible;
+        }
+        .hold-progress circle {
+            fill: none;
+            stroke: rgba(0,212,255,0.8);
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-dasharray: 138;
+            stroke-dashoffset: 138;
+            transform-origin: 26px 26px;
+            transform: rotate(-90deg);
+            animation: hold-progress-anim 0.44s linear forwards;
+        }
+        @keyframes hold-progress-anim {
+            from { stroke-dashoffset: 138; }
+            to   { stroke-dashoffset: 0; }
+        }
+
+        #cable-badge {
+            display: none;
+            position: fixed;
+            top: 60px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,212,255,0.15);
+            border: 1px solid rgba(0,212,255,0.4);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: rgba(0,212,255,0.9);
+            z-index: 150;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            animation: badge-in 0.2s ease;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        #cable-badge.visible { display: flex; }
+        #cable-badge-cancel {
+            background: rgba(255,80,80,0.2);
+            border: 1px solid rgba(255,80,80,0.5);
+            border-radius: 10px;
+            color: rgba(255,100,100,0.95);
+            font-size: 10px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+        }
+        @keyframes badge-in {
+            from { opacity:0; transform: translateX(-50%) translateY(-8px); }
+            to   { opacity:1; transform: translateX(-50%) translateY(0); }
+        }
+
+        #oscilloscope {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 200px;
+            background: rgba(7,9,15,0.97);
+            border-top: 1px solid rgba(0,212,255,0.2);
+            backdrop-filter: blur(20px);
+            z-index: 200;
+            flex-direction: column;
+        }
+        #oscilloscope.visible { display: flex; }
+        #osc-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px;
+            border-bottom: 1px solid rgba(0,212,255,0.1);
+            flex-shrink: 0;
+        }
+        #osc-title {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            color: var(--cyan);
+            letter-spacing: 2px;
+        }
+        #osc-controls { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+        .osc-btn {
+            height: 22px; padding: 0 10px;
+            background: rgba(0,212,255,0.06);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 3px;
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            transition: all 0.12s;
+        }
+        .osc-btn:hover { background: rgba(0,212,255,0.12); color: var(--cyan); }
+        .osc-btn.active { background: rgba(0,212,255,0.15); color: var(--cyan); border-color: rgba(0,212,255,0.5); }
+        #osc-body { flex: 1; display: flex; overflow: hidden; }
+        #osc-canvas { flex: 1; display: block; }
+        #osc-sidebar {
+            width: 160px;
+            border-left: 1px solid rgba(0,212,255,0.1);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        .osc-probe-item {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 6px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+            font-size: 8px;
+            color: var(--text-mid);
+        }
+        .osc-probe-item:hover { background: rgba(0,212,255,0.06); }
+        .osc-probe-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .osc-probe-item.active { border-color: rgba(0,212,255,0.3); }
+        #osc-hint { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text-dim); padding: 4px; }
+
+        #save-panel {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 380px;
+            max-width: 95vw;
+            background: rgba(11,14,23,0.98);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(40px);
+            z-index: 300;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.8);
+        }
+        #save-panel.visible { display: block; }
+        .sp-header {
+            display: flex; align-items: center; padding: 14px 16px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .sp-title { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--cyan); letter-spacing: 2px; }
+        .sp-close { margin-left: auto; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; }
+        .sp-close:hover { color: var(--red); }
+        .sp-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+        .sp-section-title { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 4px; }
+        .sp-save-row { display: flex; gap: 8px; }
+        .sp-input {
+            flex: 1; height: 30px; padding: 0 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-bright);
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            touch-action: auto;
+        }
+        .sp-input:focus { outline: none; border-color: rgba(0,212,255,0.4); }
+        .sp-btn {
+            height: 30px; padding: 0 14px;
+            background: rgba(0,212,255,0.08);
+            border: 1px solid rgba(0,212,255,0.3);
+            border-radius: var(--radius-sm);
+            color: var(--cyan);
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+        .sp-btn:hover { background: rgba(0,212,255,0.15); }
+        .sp-btn-red { background: var(--red-dim); border-color: rgba(255,71,87,0.3); color: var(--red); }
+        .sp-btn-red:hover { background: rgba(255,71,87,0.18); }
+        #sp-slots { display: flex; flex-direction: column; gap: 5px; max-height: 220px; overflow-y: auto; }
+        .sp-slot {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+        }
+        .sp-slot-name { flex: 1; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-bright); }
+        .sp-slot-date { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text-dim); }
+        .sp-slot-load { background: none; border: 1px solid rgba(0,212,255,0.25); border-radius: 3px; padding: 2px 8px; color: var(--cyan); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 9px; }
+        .sp-slot-load:hover { background: rgba(0,212,255,0.1); }
+        .sp-slot-del { background: none; border: none; color: rgba(255,71,87,0.4); cursor: pointer; font-size: 13px; padding: 0 4px; }
+        .sp-slot-del:hover { color: var(--red); }
+        .sp-empty { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text-dim); text-align: center; padding: 16px; }
+        #sp-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 299; }
+        #sp-overlay.visible { display: block; }
+
+        #undo-toast {
+            display: none;
+            position: fixed;
+            bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(11,14,23,0.95);
+            border: 1px solid rgba(0,212,255,0.3);
+            border-radius: 20px;
+            padding: 6px 18px;
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            color: var(--cyan);
+            z-index: 500;
+            pointer-events: none;
+            letter-spacing: 1px;
+            animation: toast-in 0.2s ease;
+        }
+        @keyframes toast-in {
+            from { opacity:0; transform: translateX(-50%) translateY(8px); }
+            to   { opacity:1; transform: translateX(-50%) translateY(0); }
+        }
+
+        .cable-label-input {
+            position: fixed;
+            background: rgba(11,14,23,0.95);
+            border: 1px solid rgba(0,212,255,0.4);
+            border-radius: 4px;
+            color: var(--cyan);
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            padding: 3px 8px;
+            width: 100px;
+            z-index: 400;
+            touch-action: auto;
+        }
+        .cable-label-input:focus { outline: none; }
+
+        #modal {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(11,14,23,0.92);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(40px);
+            box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px var(--glass-border);
+            z-index: 100;
+            width: 320px;
+            overflow: hidden;
+            transition: width 0.2s ease;
+        }
+
+        #modal.code-mode {
+            width: 520px;
+        }
+
+        .code-editor-wrap {
+            display: none;
+            flex-direction: column;
+            margin-bottom: 12px;
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: rgba(0,0,0,0.55);
+        }
+
+        .code-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 8px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .code-toolbar-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            margin-right: auto;
+        }
+
+        .code-snippet-btn {
+            padding: 2px 7px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 3px;
+            color: var(--text-dim);
+            font-family: 'DM Mono', monospace;
+            font-size: 8px;
+            cursor: pointer;
+            transition: all 0.1s;
+            white-space: nowrap;
+        }
+        .code-snippet-btn:hover { background: var(--bg-active); border-color: var(--glass-border-cyan); color: var(--cyan); }
+
+        .code-body {
+            display: flex;
+            height: 180px;
+            overflow: hidden;
+        }
+
+        .code-lines {
+            width: 32px;
+            flex-shrink: 0;
+            background: rgba(0,0,0,0.3);
+            border-right: 1px solid var(--glass-border);
+            padding: 10px 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding-right: 6px;
+        }
+
+        .line-num {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            color: var(--text-dim);
+            line-height: 1.7em;
+            min-height: 1.7em;
+            font-weight: 300;
+            opacity: 0.5;
+        }
+
+        #m-code-area {
+            flex: 1;
+            height: 100%;
+            background: transparent;
+            color: #a8d8c8;
+            border: none;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            font-weight: 300;
+            line-height: 1.7;
+            padding: 10px 10px;
+            resize: none;
+            display: block;
+            outline: none;
+            tab-size: 2;
+            caret-color: var(--cyan);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.08) transparent;
+        }
+
+        #m-code-area::placeholder { color: var(--text-dim); }
+
+        .code-statusbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 4px 10px;
+            background: rgba(0,0,0,0.3);
+            border-top: 1px solid var(--glass-border);
+            font-family: 'DM Mono', monospace;
+            font-size: 8px;
+            color: var(--text-dim);
+        }
+
+        .code-status-item { display: flex; align-items: center; gap: 4px; }
+        .code-status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+
+        #log-console {
+            background: rgba(0,0,0,0.6);
+            border-top: 1px solid var(--glass-border);
+            height: 100px;
+            overflow-y: auto;
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            font-weight: 300;
+            line-height: 1.7;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.06) transparent;
+        }
+
+        .console-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 3px 10px;
+            background: rgba(0,0,0,0.4);
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .console-header-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 8px;
+            color: var(--text-dim);
+            letter-spacing: 1.5px;
+        }
+
+        .console-clear-btn {
+            font-family: 'DM Mono', monospace;
+            font-size: 8px;
+            color: rgba(255,71,87,0.5);
+            background: none;
+            border: 1px solid rgba(255,71,87,0.2);
+            border-radius: 3px;
+            padding: 1px 6px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .console-clear-btn:hover { color: var(--red); border-color: rgba(255,71,87,0.5); background: rgba(255,71,87,0.06); }
+
+        .console-line {
+            padding: 0 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .console-line.log-init   { color: rgba(0,212,255,0.5); }
+        .console-line.log-info   { color: rgba(0,230,118,0.8); }
+        .console-line.log-warn   { color: rgba(255,183,0,0.85); }
+        .console-line.log-error  { color: rgba(255,71,87,0.9); }
+        .console-line.log-print  { color: #c8e6c9; }
+        .console-line.log-dim    { color: var(--text-dim); }
+
+        .modal-titlebar {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--glass-border);
+            gap: 10px;
+        }
+
+        .modal-accent {
+            width: 2px; height: 14px;
+            background: var(--cyan);
+            border-radius: 2px;
+        }
+
+        #m-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--text-bright);
+        }
+
+        .modal-body { padding: 16px; }
+
+        .modal-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 12px;
+        }
+
+        #m-val {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--cyan);
+            font-family: 'DM Mono', monospace;
+            font-size: 18px;
+            font-weight: 300;
+            text-align: center;
+            outline: none;
+            width: 80px;
+        }
+
+        #m-unit {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .modal-btn {
+            height: 28px;
+            padding: 0 14px;
+            background: var(--bg-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            transition: all 0.12s;
+        }
+
+        .modal-btn:hover { background: var(--bg-hover); color: var(--text-bright); border-color: var(--glass-border-light); }
+
+        .modal-btn-save { color: var(--cyan); border-color: rgba(0,212,255,0.25); background: var(--bg-active); }
+        .modal-btn-save:hover { background: rgba(0,212,255,0.15); border-color: var(--glass-border-cyan); }
+
+        .modal-btn-rep { color: var(--amber); border-color: rgba(255,183,0,0.25); }
+        .modal-btn-rep:hover { background: rgba(255,183,0,0.1); border-color: rgba(255,183,0,0.4); }
+
+        .modal-btn-toggle { color: var(--cyan-dim); border-color: rgba(0,136,170,0.3); }
+
+        #manual-screen {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 86%; height: 88%;
+            background: rgba(11,14,23,0.96);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(40px);
+            box-shadow: 0 32px 100px rgba(0,0,0,0.8);
+            z-index: 300;
+            overflow: hidden;
+        }
+
+        .manual-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .manual-title-wrap { display: flex; align-items: center; gap: 10px; }
+
+        .manual-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--text-bright);
+        }
+
+        .manual-badge {
+            font-family: 'DM Mono', monospace;
+            font-size: 8px;
+            color: var(--amber);
+            border: 1px solid rgba(255,183,0,0.3);
+            border-radius: 3px;
+            padding: 1px 6px;
+            letter-spacing: 1px;
+        }
+
+        .close-manual {
+            height: 26px;
+            padding: 0 12px;
+            background: var(--red-dim);
+            border: 1px solid rgba(255,71,87,0.25);
+            border-radius: var(--radius-sm);
+            color: var(--red);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+            transition: all 0.12s;
+        }
+
+        .close-manual:hover { background: rgba(255,71,87,0.2); border-color: rgba(255,71,87,0.45); }
+
+        .manual-inner {
+            height: calc(100% - 56px);
+            overflow-y: auto;
+            padding: 24px 28px;
+        }
+
+        .manual-inner::-webkit-scrollbar { width: 3px; }
+        .manual-inner::-webkit-scrollbar-track { background: transparent; }
+        .manual-inner::-webkit-scrollbar-thumb { background: var(--glass-border-light); border-radius: 2px; }
+
+        #manual-screen h4 {
+            font-family: 'Syne', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--cyan);
+            margin: 22px 0 10px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #manual-screen h4::before {
+            content: '';
+            width: 16px; height: 1px;
+            background: var(--cyan);
+            opacity: 0.5;
+        }
+
+        #manual-screen p, #manual-screen li {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            line-height: 1.9;
+            color: var(--text-mid);
+            font-weight: 300;
+        }
+
+        #manual-screen strong { color: var(--text-bright); font-weight: 500; }
+        #manual-screen ul { padding-left: 16px; }
+
+        #manual-screen pre {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border);
+            border-left: 2px solid rgba(255,183,0,0.4);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            color: #a3c4a3;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            font-weight: 300;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        #manual-screen code {
+            background: rgba(0,212,255,0.07);
+            border: 1px solid rgba(0,212,255,0.15);
+            border-radius: 3px;
+            padding: 1px 5px;
+            color: var(--cyan);
+            font-family: 'DM Mono', monospace;
+            font-size: 10.5px;
+        }
+
+        #context-menu {
+            display: none;
+            position: absolute;
+            background: rgba(11,14,23,0.95);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-md);
+            backdrop-filter: blur(30px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+            z-index: 200;
+            min-width: 150px;
+            overflow: hidden;
+        }
+
+        .ctx-section {
+            padding: 6px 8px 2px;
+            font-family: 'DM Mono', monospace;
+            font-size: 8px;
+            color: var(--text-dim);
+            letter-spacing: 1.5px;
+        }
+
+        .ctx-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 12px;
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+            transition: all 0.1s;
+        }
+
+        .ctx-item:hover { background: var(--bg-hover); color: var(--text-bright); }
+
+        .ctx-icon {
+            width: 14px; text-align: center;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .ctx-item:hover .ctx-icon { color: var(--cyan); }
+
+        .ctx-item.danger:hover { background: var(--red-dim); color: var(--red); }
+        .ctx-item.danger:hover .ctx-icon { color: var(--red); }
+
+        .ctx-separator { height: 1px; background: var(--glass-border); margin: 3px 0; }
+
+        .desktop-mode #virtual-controls { display: none !important; }
+        .desktop-mode #zoom-controls { top: auto; bottom: 16px; right: 16px; }
+
+        #about-screen {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%; max-width: 540px;
+            height: auto; max-height: 80%;
+            background: rgba(11,14,23,0.96);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(40px);
+            box-shadow: 0 32px 100px rgba(0,0,0,0.8);
+            z-index: 300;
+            overflow: hidden;
+        }
+    </style>
 </head>
-<body><!-- HEADER --><div id="header">
+<body>
+
+<!-- HEADER -->
+<div id="header">
     <div class="logo-wrap">
         <div class="logo-icon">SP</div>
         <span class="logo-text">SIMULIC</span>
@@ -1158,12 +1178,18 @@
         <span class="status-label">SIMULATION ACTIVE</span>
     </div>
     <div class="header-right">
-        <button class="hdr-btn" onclick="openSavePanel()" title="Guardar / Cargar circuitos">💾 Guardar</button>
+        <button class="hdr-btn" onclick="openSavePanel()" title="Guardar / Cargar circuitos"> Guardar</button>
+        <button id="btnDraw" class="hdr-btn btn-draw-mode active-draw" onclick="toggleDrawMode()" title="Modo conexión (lápiz) — click para alternar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        </button>
         <button class="hdr-btn" onclick="toggleOscilloscope()" title="Oscilloscope" id="btnOsc" style="color:var(--cyan);border-color:rgba(0,212,255,0.25);">⚡ Osciloscópio</button>
-        <button class="hdr-btn hdr-btn-mode" onclick="toggleMode()" id="btnMode">📱 Mobile</button>
+        <button class="hdr-btn hdr-btn-mode" onclick="toggleMode()" id="btnMode"> Mobile</button>
         <button class="hdr-btn hdr-btn-danger" onclick="clearAll()">Clear All</button>
     </div>
-</div><!-- NAV TABS --><div id="ui-top">
+</div>
+
+<!-- NAV TABS -->
+<div id="ui-top">
     <div class="cat-group">
         <button class="cat-btn" onclick="selectCategory('active', this)">Activos</button>
         <button class="cat-btn" onclick="selectCategory('passive', this)">Pasivos</button>
@@ -1177,20 +1203,35 @@
         <button class="cat-btn cat-btn-manual" onclick="toggleManual()">Manual</button>
         <button class="cat-btn cat-btn-manual" onclick="toggleAbout()">About</button>
     </div>
-</div><!-- SPAWN BAR --><div id="ui-sub">
+</div>
+
+<!-- SPAWN BAR -->
+<div id="ui-sub">
     <span class="sub-hint">↑ Selecciona una categoría</span>
-</div><div id="canvas-container" oncontextmenu="return false;"><div id="hud-coords">
+</div>
+
+<div id="canvas-container" oncontextmenu="return false;">
+
+<div id="hud-coords">
     <div>X <span id="cx">0</span></div>
     <div>Y <span id="cy">0</span></div>
     <div>Z <span id="cz">1.0</span>×</div>
-</div><div id="zoom-controls">
+</div>
+
+<div id="zoom-controls">
     <button class="zoom-btn" onclick="camera.zoom = Math.min(3.0, camera.zoom + 0.2)" title="Zoom In">+</button>
     <div class="zoom-divider"></div>
     <button class="zoom-btn" onclick="camera.zoom = 1.0" style="font-size:9px; letter-spacing:-0.5px;" title="Reset">1:1</button>
     <div class="zoom-divider"></div>
     <button class="zoom-btn" onclick="camera.zoom = Math.max(0.4, camera.zoom - 0.2)" title="Zoom Out">−</button>
-</div><canvas id="circuitCanvas"></canvas>
-<div id="fx-overlay"></div><!-- MODAL --><div id="modal">
+</div>
+
+<canvas id="circuitCanvas"></canvas>
+
+<div id="fx-overlay"></div>
+
+<!-- MODAL -->
+<div id="modal">
     <div class="modal-titlebar">
         <div class="modal-accent"></div>
         <div id="m-title">CONFIGURE</div>
@@ -1239,8 +1280,10 @@
     </div>
 </div>
 
+</div>
 
-</div><!-- MANUAL --><div id="manual-screen">
+<!-- MANUAL -->
+<div id="manual-screen">
     <div class="manual-header">
         <div class="manual-title-wrap">
             <span class="manual-title">MANUAL</span>
@@ -1283,14 +1326,12 @@
         <li><code>delay velocidad</code> — Usar variable numérica como tiempo de delay.</li>
     </ul>
     <pre>start&lt;
-
-
 pin1=D1
 pinBtn=D2
 contador=0
 velocidad=300
 oled.init
-oled.println “RADION 1.1”
+oled.println "RADION 1.1"
 loop{
 pinBtn=D2
 if pinBtn==HIGH {
@@ -1302,10 +1343,10 @@ pin1;LOW
 if contador > 9 {
 contador=0
 oled.clear
-oled.println “RESET!”
+oled.println "RESET!"
 }
 oled.clear
-oled.print “COUNT: “
+oled.print "COUNT: "
 oled.print contador
 delay velocidad
 }
@@ -1320,7 +1361,11 @@ end></pre>
 <li><code>oled.clear</code> — Limpia la pantalla.</li>
 </ul>
 </div>
-</div><!-- ABOUT --><div id="about-screen">
+
+</div>
+
+<!-- ABOUT -->
+<div id="about-screen">
     <div class="manual-header">
         <div class="manual-title-wrap">
             <span class="manual-title">ABOUT</span>
@@ -1339,42 +1384,59 @@ end></pre>
     <h4>From the developer</h4>
     <p>Hi! Simulic Pro is a solo project, built and maintained by a single developer. Every feature, fix, and improvement comes from genuine passion for making electronics more accessible and fun to learn.</p>
     <p>If you enjoy using it and would like to contribute — whether that's ideas, feedback, bug reports, or collaboration — you're more than welcome to reach out. The official contact email is listed on the <strong>GitHub repository</strong>.</p>
-    <p style="margin-top: 16px; color: var(--cyan); font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 1px;">Thank you for your support! 💙</p>
+    <p style="margin-top: 16px; color: var(--cyan); font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 1px;">Thank you for your support! </p>
 </div>
 
+</div>
 
-</div><!-- CONTEXT MENU --><div id="context-menu">
+<!-- CONTEXT MENU -->
+<div id="context-menu">
     <div class="ctx-section">ACTIONS</div>
     <div class="ctx-item" onclick="ctxAction('use')"><span class="ctx-icon">▶</span>Usar</div>
     <div class="ctx-item" onclick="ctxAction('cfg')"><span class="ctx-icon">⚙</span>Ajustar</div>
     <div class="ctx-item" onclick="ctxAction('rot')"><span class="ctx-icon">↻</span>Rotar</div>
     <div class="ctx-separator"></div>
-    <div class="ctx-item danger" onclick="ctxAction('del')"><span class="ctx-icon">✕</span>Borrar</div>
-</div></div><!-- Badge de cable activo (móvil) --><div id="cable-badge">〜 Toca un nodo para conectar <span id="cable-badge-cancel">✕ cancelar</span></div><!-- MENÚ CONTEXTUAL TOUCH NATIVO --><div id="touch-ctx-menu">
+    <div class="ctx-item danger" onclick="ctxAction('del')" id="ctx-del"><span class="ctx-icon">✕</span>Borrar</div>
+</div>
+
+</div>
+
+<!-- Badge de cable activo (móvil) -->
+<div id="cable-badge">〜 Toca un nodo para conectar <span id="cable-badge-cancel">✕ cancelar</span></div>
+
+<!-- MENÚ CONTEXTUAL TOUCH NATIVO -->
+<div id="touch-ctx-menu">
     <div class="tcm-item" id="tcm-use">    <span class="tcm-icon">▶</span> Usar</div>
     <div class="tcm-item" id="tcm-cable">  <span class="tcm-icon">〜</span> Cable</div>
     <div class="tcm-sep"></div>
     <div class="tcm-item" id="tcm-cfg">    <span class="tcm-icon">⚙</span> Ajustar</div>
     <div class="tcm-item" id="tcm-rot">    <span class="tcm-icon">↻</span> Rotar</div>
     <div class="tcm-sep"></div>
-    <div class="tcm-item tcm-danger" id="tcm-del"><span class="tcm-icon">✕</span> Borrar</div>
-</div><div id="virtual-controls"></div><!-- OSCILLOSCOPE --><div id="oscilloscope">
+    <div class="tcm-item tcm-danger" id="tcm-del"><span class="tcm-icon">✕</span> <span id="tcm-del-label">Borrar</span></div>
+</div>
+
+<div id="virtual-controls"></div>
+
+<!-- OSCILLOSCOPE -->
+<div id="oscilloscope">
     <div id="osc-header">
         <span id="osc-title">▸ OSCILLOSCOPE</span>
         <div id="osc-controls">
-            <button class="osc-btn" id="osc-btn-d1" onclick="oscToggleProbe('D1')">D1</button>
-            <button class="osc-btn" id="osc-btn-d2" onclick="oscToggleProbe('D2')">D2</button>
-            <button class="osc-btn" id="osc-btn-d3" onclick="oscToggleProbe('D3')">D3</button>
-            <button class="osc-btn" id="osc-btn-d4" onclick="oscToggleProbe('D4')">D4</button>
-            <button class="osc-btn" id="osc-btn-a1" onclick="oscToggleProbe('A1')">A1</button>
-            <button class="osc-btn" onclick="oscClear()" style="margin-left:8px;">Clear</button>
+            <button class="osc-btn" onclick="oscClear()">Clear</button>
             <button class="osc-btn" onclick="toggleOscilloscope()" style="color:var(--red);border-color:rgba(255,71,87,0.3);">✕</button>
         </div>
     </div>
     <div id="osc-body">
         <canvas id="osc-canvas"></canvas>
+        <div id="osc-sidebar">
+            <div id="osc-probe-list"></div>
+            <div id="osc-hint">Selecciona nodos para sondear</div>
+        </div>
     </div>
-</div><!-- SAVE/LOAD PANEL --><div id="sp-overlay" onclick="closeSavePanel()"></div>
+</div>
+
+<!-- SAVE/LOAD PANEL -->
+<div id="sp-overlay" onclick="closeSavePanel()"></div>
 <div id="save-panel">
     <div class="sp-header">
         <span class="sp-title">CIRCUITOS GUARDADOS</span>
@@ -1400,7 +1462,12 @@ end></pre>
             </label>
         </div>
     </div>
-</div><!-- UNDO TOAST --><div id="undo-toast"></div><script>
+</div>
+
+<!-- UNDO TOAST -->
+<div id="undo-toast"></div>
+
+<script>
     let isDesktopMode = false;
 
     // ═══════════════════════════════════════════════════════════════
@@ -1432,7 +1499,8 @@ end></pre>
             if (c.type === 'DHT11') { o.temperature = c.temperature; o.humidity = c.humidity; }
             if (c.type === 'SEG7') { o.digit = c.digit; o.showDot = c.showDot; }
             if (c.type === 'BUZZER') o.freq = c.freq;
-            if (c.type === 'LED') o.color = c.color; // guardar color
+            if (c.type === 'LED') o.ledColor = c.ledColor || '#ffdd40';
+            if (c.type === 'LED_RGB') { o.colorR = c.colorR||0; o.colorG = c.colorG||0; o.colorB = c.colorB||0; }
             return o;
         });
     }
@@ -1479,7 +1547,8 @@ end></pre>
                 if (c.type === 'DHT11') { c.temperature = o.temperature || 24; c.humidity = o.humidity || 60; }
                 if (c.type === 'SEG7') { c.digit = o.digit || 0; c.showDot = !!o.showDot; }
                 if (c.type === 'BUZZER') c.freq = o.freq || 440;
-                if (c.type === 'LED' && o.color) c.color = o.color;
+                if (c.type === 'LED') c.ledColor = o.ledColor || '#ffdd40';
+                if (c.type === 'LED_RGB') { c.colorR = o.colorR||0; c.colorG = o.colorG||0; c.colorB = o.colorB||0; }
             });
             // Restore connections (after all components exist)
             data.connections.forEach(o => {
@@ -1594,7 +1663,7 @@ end></pre>
         localStorage.setItem(SAVE_KEY, JSON.stringify(slots));
         nameInput.value = '';
         renderSaveSlots();
-        showToast('💾 Guardado: ' + name);
+        showToast(' Guardado: ' + name);
     }
 
     function loadCircuit(i) {
@@ -1603,7 +1672,7 @@ end></pre>
         pushUndo();
         restoreState(slots[i].state);
         closeSavePanel();
-        showToast('📂 Cargado: ' + slots[i].name);
+        showToast(' Cargado: ' + slots[i].name);
     }
 
     function deleteCircuit(i) {
@@ -1632,7 +1701,7 @@ end></pre>
                 pushUndo();
                 restoreState(data.state);
                 closeSavePanel();
-                showToast('📂 Importado: ' + (data.name || 'circuito'));
+                showToast(' Importado: ' + (data.name || 'circuito'));
             } catch(err) { showToast('⚠ Error al importar JSON'); }
         };
         reader.readAsText(file);
@@ -1640,13 +1709,13 @@ end></pre>
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // OSCILLOSCOPE SYSTEM
+    // OSCILLOSCOPE SYSTEM MEJORADO
     // ═══════════════════════════════════════════════════════════════
     const OSC_SAMPLES = 400;
-    const OSC_COLORS = { D1:'#00d4ff', D2:'#00e676', D3:'#ffb700', D4:'#a78bfa', A1:'#ff6b8a' };
     let oscActive = false;
-    let oscProbes = { D1:false, D2:false, D3:false, D4:false, A1:false };
-    let oscData = { D1:[], D2:[], D3:[], D4:[], A1:[] };
+    // Lista de sondas: cada sonda es un objeto { id: string (único), comp, node, color, active }
+    let oscProbes = [];
+    let oscData = {}; // clave: id de sonda, valor: array de muestras
     let oscCanvas, oscCtx;
 
     function toggleOscilloscope() {
@@ -1657,6 +1726,7 @@ end></pre>
             oscCanvas = document.getElementById('osc-canvas');
             oscCtx = oscCanvas.getContext('2d');
             resizeOscCanvas();
+            refreshProbeList();
         }
     }
 
@@ -1666,35 +1736,98 @@ end></pre>
         oscCanvas.height = oscCanvas.offsetHeight;
     }
 
-    function oscToggleProbe(pin) {
-        oscProbes[pin] = !oscProbes[pin];
-        const btn = document.getElementById('osc-btn-' + pin.toLowerCase());
-        if (btn) btn.classList.toggle('active', oscProbes[pin]);
-        if (oscProbes[pin]) oscData[pin] = [];
+    // Refresca la lista de nodos disponibles en el panel lateral
+    function refreshProbeList() {
+        const listDiv = document.getElementById('osc-probe-list');
+        if (!listDiv) return;
+        listDiv.innerHTML = '';
+        // Recopilar todos los nodos de todos los componentes (excluyendo WAYPOINT)
+        components.forEach(comp => {
+            if (comp.type === 'WAYPOINT') return;
+            comp.nodes.forEach((node, idx) => {
+                const probeId = `${comp._id}_${idx}`; // ID único
+                // Color basado en el tipo de nodo (podría mejorarse)
+                let color = 'rgba(0,212,255,0.7)';
+                if (node.id === 'GND' || node.id === '-' || node.id === 'C') color = 'rgba(255,71,87,0.7)';
+                else if (node.id === 'VCC' || node.id === '+' || node.id === 'A') color = 'rgba(0,230,118,0.7)';
+                else if (node.id.startsWith('D')) color = 'rgba(0,230,118,0.7)';
+                else if (node.id.startsWith('A')) color = 'rgba(255,183,0,0.7)';
+                // Crear elemento
+                const item = document.createElement('div');
+                item.className = 'osc-probe-item';
+                item.dataset.probeId = probeId;
+                const dot = document.createElement('span');
+                dot.className = 'osc-probe-dot';
+                dot.style.background = color;
+                item.appendChild(dot);
+                const label = document.createTextNode(`${comp.type} ${node.id}`);
+                item.appendChild(label);
+                // Marcar si ya está activo
+                const existing = oscProbes.find(p => p.id === probeId);
+                if (existing && existing.active) item.classList.add('active');
+                item.onclick = () => toggleProbe(probeId, comp, node, color);
+                listDiv.appendChild(item);
+            });
+        });
+    }
+
+    function toggleProbe(id, comp, node, color) {
+        let probe = oscProbes.find(p => p.id === id);
+        if (probe) {
+            probe.active = !probe.active;
+            if (!probe.active) {
+                delete oscData[id];
+            } else {
+                oscData[id] = [];
+            }
+        } else {
+            probe = { id, comp, node, color, active: true };
+            oscProbes.push(probe);
+            oscData[id] = [];
+        }
+        // Actualizar clase active en el elemento de la lista
+        const item = document.querySelector(`.osc-probe-item[data-probe-id="${id}"]`);
+        if (item) item.classList.toggle('active', probe.active);
     }
 
     function oscClear() {
-        Object.keys(oscData).forEach(k => oscData[k] = []);
+        oscProbes.forEach(p => p.active = false);
+        oscProbes = [];
+        oscData = {};
+        refreshProbeList();
     }
 
     function oscSample() {
         if (!oscActive) return;
-        // Find radion to sample from
-        const radion = components.find(c => c.type === 'RADION' && !c.burned);
-        if (!radion) return;
-        const d1 = radion.memory.d1 ? 1 : 0;
-        const d2 = radion.memory.d2 ? 1 : 0;
-        const d3 = radion.memory.d3 ? 1 : 0;
-        const d4 = radion.memory.d4 ? 1 : 0;
-        // A1 - read from POT if connected
-        const pot = components.find(c => c.type === 'POT' && c.active);
-        const a1 = pot ? (pot.value / 1023) : (radion.analog ? radion.analog.a1 / 1023 : 0);
+        // Muestrear todas las sondas activas
+        oscProbes.filter(p => p.active).forEach(probe => {
+            const node = probe.node;
+            // Determinar el valor de la señal (0-1)
+            // Si el nodo tiene señal (node.signal) -> 1, si no -> 0
+            // Para nodos analógicos, podríamos mejorar esto
+            let value = node.signal ? 1 : 0;
+            // Si el componente es un POT y este es su nodo OUT, podríamos obtener valor analógico
+            if (probe.comp.type === 'POT' && node.id === 'OUT') {
+                value = probe.comp.value / 1023; // 0-1
+            }
+            // Si es un pin analógico de RADION (A1) conectado a un POT, ya se actualiza en physics
+            // Podríamos leer de ahí
+            if (probe.comp.type === 'RADION' && node.id === 'A1') {
+                value = (probe.comp.analog && probe.comp.analog.a1 !== undefined) ? probe.comp.analog.a1 / 1023 : 0;
+            }
+            // Para DHT11, podríamos mostrar temperatura o humedad
+            if (probe.comp.type === 'DHT11' && node.id === 'DATA') {
+                // Simulación: alternar entre temp y hum? Mejor mostrar una combinación
+                value = (probe.comp.temperature / 50) * 0.5 + (probe.comp.humidity / 100) * 0.5;
+            }
+            // Para HC-SR04 en ECHO, podríamos mostrar distancia
+            if (probe.comp.type === 'HC_SR04' && node.id === 'ECHO') {
+                value = probe.comp.simDist / 400; // 0-1 escalado a 400cm máx
+            }
 
-        if (oscProbes.D1) { oscData.D1.push(d1); if(oscData.D1.length > OSC_SAMPLES) oscData.D1.shift(); }
-        if (oscProbes.D2) { oscData.D2.push(d2); if(oscData.D2.length > OSC_SAMPLES) oscData.D2.shift(); }
-        if (oscProbes.D3) { oscData.D3.push(d3); if(oscData.D3.length > OSC_SAMPLES) oscData.D3.shift(); }
-        if (oscProbes.D4) { oscData.D4.push(d4); if(oscData.D4.length > OSC_SAMPLES) oscData.D4.shift(); }
-        if (oscProbes.A1) { oscData.A1.push(a1); if(oscData.A1.length > OSC_SAMPLES) oscData.A1.shift(); }
+            oscData[probe.id].push(value);
+            if (oscData[probe.id].length > OSC_SAMPLES) oscData[probe.id].shift();
+        });
     }
 
     function drawOscilloscope() {
@@ -1708,30 +1841,30 @@ end></pre>
         for (let x = 0; x < W; x += W/8) { oscCtx.beginPath(); oscCtx.moveTo(x,0); oscCtx.lineTo(x,H); oscCtx.stroke(); }
         for (let y = 0; y < H; y += H/4) { oscCtx.beginPath(); oscCtx.moveTo(0,y); oscCtx.lineTo(W,y); oscCtx.stroke(); }
 
-        const activeProbes = Object.entries(oscProbes).filter(([,v]) => v);
+        const activeProbes = oscProbes.filter(p => p.active);
         if (!activeProbes.length) {
             oscCtx.fillStyle = 'rgba(0,212,255,0.2)';
             oscCtx.font = "11px 'DM Mono', monospace";
             oscCtx.textAlign = 'center';
-            oscCtx.fillText('Selecciona un pin (D1-D4, A1) para ver la señal', W/2, H/2);
+            oscCtx.fillText('Selecciona nodos en el panel derecho para ver la señal', W/2, H/2);
             oscCtx.textAlign = 'left';
             return;
         }
 
         const trackH = H / activeProbes.length;
-        activeProbes.forEach(([pin,], idx) => {
-            const data = oscData[pin];
-            if (!data.length) return;
-            const color = OSC_COLORS[pin];
+        activeProbes.forEach((probe, idx) => {
+            const data = oscData[probe.id];
+            if (!data || !data.length) return;
+            const color = probe.color;
             const yBase = idx * trackH;
-            const isAnalog = pin === 'A1';
+            const isAnalog = true; // Todos los valores están en 0-1
             const margin = 8;
             const drawH = trackH - margin * 2;
 
             // Lane label
             oscCtx.fillStyle = color;
             oscCtx.font = "9px 'DM Mono', monospace";
-            oscCtx.fillText(pin, 6, yBase + 14);
+            oscCtx.fillText(`${probe.comp.type} ${probe.node.id}`, 6, yBase + 14);
 
             // Signal line
             oscCtx.strokeStyle = color;
@@ -1741,7 +1874,7 @@ end></pre>
             oscCtx.beginPath();
             data.forEach((v, i) => {
                 const x = (i / (OSC_SAMPLES - 1)) * W;
-                const y = yBase + margin + (isAnalog ? (1 - v) * drawH : (v === 0 ? drawH * 0.8 : drawH * 0.1));
+                const y = yBase + margin + (1 - v) * drawH;
                 i === 0 ? oscCtx.moveTo(x, y) : oscCtx.lineTo(x, y);
             });
             oscCtx.stroke();
@@ -1805,11 +1938,11 @@ end></pre>
         const btn = document.getElementById('btnMode');
         if (isDesktopMode) {
             body.classList.add('desktop-mode');
-            btn.innerText = "🖥️ Desktop";
+            btn.innerText = "️ Desktop";
             btn.style.color = "#00e676";
         } else {
             body.classList.remove('desktop-mode');
-            btn.innerText = "📱 Mobile";
+            btn.innerText = " Mobile";
             btn.style.color = "";
         }
         resize();
@@ -1844,7 +1977,7 @@ end></pre>
             { id: 'OLED_I2C', label: 'OLED Display' },
             { id: 'SEG7', label: 'Display 7 Seg' },
             { id: 'BUZZER', label: 'Buzzer' },
-            { id: 'RGB_LED', label: 'RGB LED' }   // <-- NUEVO COMPONENTE
+            { id: 'LED_RGB', label: 'LED RGB' }
         ],
         'dev_plus': [
             { id: 'L298N', label: 'L298N Motor Driver' },
@@ -1896,7 +2029,6 @@ end></pre>
                 if (comp.id === 'RADION') { btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(0,230,118,0.3)'; }
                 if (comp.id === 'OLED_I2C') { btn.style.color = 'var(--amber)'; btn.style.borderColor = 'rgba(255,183,0,0.3)'; }
                 if (comp.id === 'L298N') { btn.style.color = 'var(--purple)'; btn.style.borderColor = 'rgba(167,139,250,0.3)'; }
-                if (comp.id === 'RGB_LED') { btn.style.color = 'var(--cyan)'; btn.style.borderColor = 'rgba(0,212,255,0.3)'; }
                 sub.appendChild(btn);
             });
         }
@@ -1936,7 +2068,18 @@ end></pre>
         const led2 = spawn('LED',150,20); const bat = spawn('BATTERY',-200,0);
         connect(bat,0,radion,0); connect(bat,1,radion,1); connect(radion,3,led1,0);
         connect(led1,1,radion,2); connect(radion,4,led2,0); connect(led2,1,radion,2);
-        radion.code = `start<\npin1=D1\npin2=D2\nloop{\n  pin1;HIGH\n  delay 200\n  pin1;LOW\n  pin2;HIGH\n  delay 200\n  pin2;LOW\n}\nend>`;
+        radion.code = `start<\
+pin1=D1\
+pin2=D2\
+loop{\
+  pin1;HIGH\
+  delay 200\
+  pin1;LOW\
+  pin2;HIGH\
+  delay 200\
+  pin2;LOW\
+}\
+end>`;
         radion.intState = { pc:0, wait:0, vars:{}, parsed:null };
     }
 
@@ -1946,7 +2089,18 @@ end></pre>
         const btn = spawn('PUSH_BTN',-180,20); const bat = spawn('BATTERY',-250,-100);
         connect(bat,0,radion,0); connect(bat,1,radion,1); connect(bat,0,btn,0);
         connect(btn,1,radion,4); connect(radion,3,led,0); connect(led,1,radion,2);
-        radion.code = `start<\npinLed=D1\npinBtn=D2\nloop{\n  if pinBtn==HIGH {\n    pinLed;HIGH\n  }\n  if pinBtn==LOW {\n    pinLed;LOW\n  }\n}\nend>`;
+        radion.code = `start<\
+pinLed=D1\
+pinBtn=D2\
+loop{\
+  if pinBtn==HIGH {\
+    pinLed;HIGH\
+  }\
+  if pinBtn==LOW {\
+    pinLed;LOW\
+  }\
+}\
+end>`;
         radion.intState = { pc:0, wait:0, vars:{}, parsed:null };
     }
 
@@ -1963,7 +2117,18 @@ end></pre>
         const oledSDA = oled.nodes.findIndex(n=>n.id==='SDA');
         connect(radion,radSCL,oled,oledSCL);
         connect(radion,radSDA,oled,oledSDA);
-        radion.code = `start<\noled.init\noled.println "HELLO WORLD!"\ndelay 1000\noled.println "RADION 1.1 I2C"\ndelay 1000\noled.println "STATUS: OK"\nloop{\n  delay 500\n  oled.print "."\n}\nend>`;
+        radion.code = `start<\
+oled.init\
+oled.println "HELLO WORLD!"\
+delay 1000\
+oled.println "RADION 1.1 I2C"\
+delay 1000\
+oled.println "STATUS: OK"\
+loop{\
+  delay 500\
+  oled.print "."\
+}\
+end>`;
         radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
     }
 
@@ -1979,7 +2144,22 @@ end></pre>
         connect(radion,3,driver,2); connect(radion,4,driver,3);
         connect(bat,0,driver,0); connect(bat,1,driver,1);
         connect(driver,4,motor,0); connect(driver,5,motor,1);
-        radion.code = `start<\npinBtn=D3\npin1=D1\npin2=D2\nloop{\n  pinBtn=D3\n  if pinBtn==HIGH {\n    pin1;HIGH\n    pin2;LOW\n  }\n  if pinBtn==LOW {\n    pin1;LOW\n    pin2;HIGH\n  }\n}\nend>`;
+        radion.code = `start<\
+pinBtn=D3\
+pin1=D1\
+pin2=D2\
+loop{\
+  pinBtn=D3\
+  if pinBtn==HIGH {\
+    pin1;HIGH\
+    pin2;LOW\
+  }\
+  if pinBtn==LOW {\
+    pin1;LOW\
+    pin2;HIGH\
+  }\
+}\
+end>`;
         radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
     }
 
@@ -2063,7 +2243,24 @@ end>`;
         const radSCL=radion.nodes.findIndex(n=>n.id==='SCL'), radSDA=radion.nodes.findIndex(n=>n.id==='SDA');
         const oledSCL=oled.nodes.findIndex(n=>n.id==='SCL'), oledSDA=oled.nodes.findIndex(n=>n.id==='SDA');
         connect(radion,radSCL,oled,oledSCL); connect(radion,radSDA,oled,oledSDA);
-        radion.code = `start<\n// Potenciómetro controla servo y OLED\noled.init\noled.println "POT → SERVO"\nloop{\n  val=pin.analog(A1)\n  ang=math.map(val,0,1023,0,180)\n  servo.write(D4,ang)\n  oled.clear\n  oled.println "POT CTRL"\n  oled.print "Val: "\n  oled.println val\n  oled.print "Ang: "\n  oled.println ang\n  oled.draw.bar(val,0,1023)\n  delay 30\n}\nend>`;
+        radion.code = `start<\
+// Potenciómetro controla servo y OLED\
+oled.init\
+oled.println "POT → SERVO"\
+loop{\
+  val=pin.analog(A1)\
+  ang=math.map(val,0,1023,0,180)\
+  servo.write(D4,ang)\
+  oled.clear\
+  oled.println "POT CTRL"\
+  oled.print "Val: "\
+  oled.println val\
+  oled.print "Ang: "\
+  oled.println ang\
+  oled.draw.bar(val,0,1023)\
+  delay 30\
+}\
+end>`;
         radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
     }
 
@@ -2084,7 +2281,22 @@ end>`;
         const radSCL=radion.nodes.findIndex(n=>n.id==='SCL'), radSDA=radion.nodes.findIndex(n=>n.id==='SDA');
         const oledSCL=oled.nodes.findIndex(n=>n.id==='SCL'), oledSDA=oled.nodes.findIndex(n=>n.id==='SDA');
         connect(radion,radSCL,oled,oledSCL); connect(radion,radSDA,oled,oledSDA);
-        radion.code = `start<\n// HC-SR04 mide distancia\noled.init\noled.println "HC-SR04"\nloop{\n  dist=sensor.distance(D3,D4)\n  oled.clear\n  oled.println "DISTANCIA"\n  oled.print dist\n  oled.println " cm"\n  if dist < 10 {\n    oled.println "!CERCA!"\n  }\n  delay 200\n}\nend>`;
+        radion.code = `start<\
+// HC-SR04 mide distancia\
+oled.init\
+oled.println "HC-SR04"\
+loop{\
+  dist=sensor.distance(D3,D4)\
+  oled.clear\
+  oled.println "DISTANCIA"\
+  oled.print dist\
+  oled.println " cm"\
+  if dist < 10 {\
+    oled.println "!CERCA!"\
+  }\
+  delay 200\
+}\
+end>`;
         radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
     }
 
@@ -2100,7 +2312,24 @@ end>`;
         const d1idx = radion.nodes.findIndex(n=>n.id==='D1');
         const bpIdx = buzz.nodes.findIndex(n=>n.id==='+');
         connect(radion,d1idx,buzz,bpIdx);
-        radion.code = `start<\n// Buzzer: melodía al presionar botón\nbtnPin=D2\nloop{\n  if btnPin==HIGH {\n    buzzer.tone(D1,262)\n    delay 200\n    buzzer.tone(D1,330)\n    delay 200\n    buzzer.tone(D1,392)\n    delay 200\n    buzzer.tone(D1,523)\n    delay 400\n    buzzer.off(D1)\n  }\n  delay 50\n}\nend>`;
+        radion.code = `start<\
+// Buzzer: melodía al presionar botón\
+btnPin=D2\
+loop{\
+  if btnPin==HIGH {\
+    buzzer.tone(D1,262)\
+    delay 200\
+    buzzer.tone(D1,330)\
+    delay 200\
+    buzzer.tone(D1,392)\
+    delay 200\
+    buzzer.tone(D1,523)\
+    delay 400\
+    buzzer.off(D1)\
+  }\
+  delay 50\
+}\
+end>`;
         radion.intState = { pc:0, wait:0, vars:{}, timers:{}, pinBlink:{}, parsed:null };
     }
 
@@ -2113,6 +2342,22 @@ end>`;
     let components = [], connections = [];
     const vMouse = { x:0, y:0, speed:4, isDown:false, lastDown:false, moving:{}, selectionMode:false };
     let draggingComp=null, drawingCable=null, rotAnim=0, time=0;
+    let drawMode = true; // true = pencil/wire mode, false = move/select only
+
+    function toggleDrawMode() {
+        drawMode = !drawMode;
+        const btn = document.getElementById('btnDraw');
+        if (drawMode) {
+            btn.classList.add('active-draw');
+            btn.title = 'Modo conexión activo — click para desactivar';
+            canvas.style.cursor = isDesktopMode ? 'crosshair' : '';
+        } else {
+            btn.classList.remove('active-draw');
+            btn.title = 'Modo arrastre activo — click para activar conexiones';
+            canvas.style.cursor = isDesktopMode ? 'default' : '';
+            drawingCable = null;
+        }
+    }
     let targetCfg=null, selectionBox=null, selectedItems=[], camera={x:0,y:0,zoom:1.0};
     let contextTarget=null, isPanning=false;
 
@@ -2181,7 +2426,7 @@ end>`;
         document.getElementById('context-menu').style.display = 'none';
         let nHit = null;
         components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c,n}; }));
-        if (nHit) { drawingCable = nHit; }
+        if (nHit && drawMode) { drawingCable = nHit; }
         else {
             let compHit = components.find(c => vMouse.x>c.x && vMouse.x<c.x+c.w && vMouse.y>c.y && vMouse.y<c.y+c.h);
             if (compHit) {
@@ -2198,6 +2443,8 @@ end>`;
         if (compHit) {
             contextTarget = compHit;
             const menu = document.getElementById('context-menu');
+            const n = selectedItems.length > 1 && selectedItems.includes(compHit) ? selectedItems.length : 1;
+            document.getElementById('ctx-del').innerHTML = '<span class="ctx-icon">✕</span>' + (n > 1 ? `Borrar elementos (${n})` : 'Borrar elemento');
             menu.style.display = 'block'; menu.style.left = e.clientX+'px'; menu.style.top = e.clientY+'px';
         } else document.getElementById('context-menu').style.display = 'none';
     });
@@ -2220,9 +2467,13 @@ end>`;
         if (!contextTarget) return;
         if (action==='del') {
             pushUndo();
-            components = components.filter(c=>c!==contextTarget);
-            connections = connections.filter(conn=>components.includes(conn.a.c)&&components.includes(conn.b.c));
-            if (selectedItems.includes(contextTarget)) selectedItems=[];
+            // Delete contextTarget + any other selected items
+            const toDelete = new Set(selectedItems.length > 0 && selectedItems.includes(contextTarget)
+                ? selectedItems
+                : [contextTarget]);
+            components = components.filter(c => !toDelete.has(c));
+            connections = connections.filter(conn => components.includes(conn.a.c) && components.includes(conn.b.c));
+            selectedItems = selectedItems.filter(c => !toDelete.has(c));
             stopAllBuzzers();
         } else if (action==='rot') rotateComponent(contextTarget);
         else if (action==='cfg') openCfg(contextTarget);
@@ -2343,6 +2594,8 @@ end>`;
             document.getElementById('tcm-use').style.display =
                 (comp && (comp.type==='SWITCH'||comp.type==='PUSH_BTN')) ? 'flex' : 'none';
             document.getElementById('tcm-cable').style.display = comp ? 'flex' : 'none';
+            const n = selectedItems.length > 1 && selectedItems.includes(comp) ? selectedItems.length : 1;
+            document.getElementById('tcm-del-label').textContent = n > 1 ? `Borrar elementos (${n})` : 'Borrar';
         }
 
         function hideTCM() {
@@ -2375,10 +2628,15 @@ end>`;
         });
         document.getElementById('tcm-del').addEventListener('click', () => {
             if (!touchCtxTarget) return hideTCM();
-            components = components.filter(c => c !== touchCtxTarget);
+            pushUndo();
+            const toDelete = new Set(selectedItems.length > 0 && selectedItems.includes(touchCtxTarget)
+                ? selectedItems
+                : [touchCtxTarget]);
+            components = components.filter(c => !toDelete.has(c));
             connections = connections.filter(conn =>
                 components.includes(conn.a.c) && components.includes(conn.b.c));
-            if (selectedItems.includes(touchCtxTarget)) selectedItems = [];
+            selectedItems = selectedItems.filter(c => !toDelete.has(c));
+            stopAllBuzzers();
             hideTCM();
         });
 
@@ -2462,7 +2720,7 @@ end>`;
                     g.holdProgressTimer = null;
                     cancelHoldProgress();
 
-                    if (g.node && !drawingCable) {
+                    if (g.node && !drawingCable && drawMode) {
                         drawingCable = g.node;
                         updateCableBadge();
                     } else if (g.comp && !g.node) {
@@ -2522,9 +2780,9 @@ end>`;
                     spawnRipple(t.clientX, t.clientY);
 
                     if (g.node) {
-                        if (!drawingCable) {
+                        if (!drawingCable && drawMode) {
                             drawingCable = g.node;
-                        } else if (drawingCable.c !== g.node.c) {
+                        } else if (drawingCable && drawingCable.c !== g.node.c) {
                             connections.push({ a: drawingCable, b: g.node });
                             drawingCable = null;
                         }
@@ -2630,7 +2888,8 @@ end>`;
     function syncLineNums() {
         const ta = document.getElementById('m-code-area');
         const ln = document.getElementById('m-line-nums');
-        const lines = ta.value.split('\n');
+        const lines = ta.value.split('\
+');
         ln.innerHTML = lines.map((_,i) => `<div class="line-num">${i+1}</div>`).join('');
         document.getElementById('m-line-count').textContent = lines.length + ' líneas';
         document.getElementById('m-char-count').textContent = ta.value.length + ' chars';
@@ -2673,31 +2932,70 @@ end>`;
     // ═══════════════════════════════════════════════════════
 
     const LOG_SNIPPETS = [
-        { label:'loop{}',    code:'\nloop{\n  \n}' },
-        { label:'if/else',   code:'\nif condicion {\n  \n} else {\n  \n}' },
-        { label:'while{}',   code:'\nwhile condicion {\n  \n}' },
-        { label:'for',       code:'\nfor i=0 to 10 {\n  \n}' },
-        { label:'delay',     code:'\ndelay 500' },
-        { label:'pin HIGH',  code:'\npin1;HIGH' },
-        { label:'pin LOW',   code:'\npin1;LOW' },
-        { label:'toggle',    code:'\ntoggle pin1' },
-        { label:'print',     code:'\noled.print "Texto"' },
-        { label:'println',   code:'\noled.println "Texto"' },
-        { label:'oled.init', code:'\noled.init\noled.clear\noled.println "RADION 2.0"' },
-        { label:'math.abs',  code:'\nresult=math.abs(valor)' },
-        { label:'math.max',  code:'\nresult=math.max(a,b)' },
-        { label:'math.min',  code:'\nresult=math.min(a,b)' },
-        { label:'math.map',  code:'\nresult=math.map(val,0,100,0,255)' },
-        { label:'timer.set', code:'\ntimer.set(t1,1000)' },
-        { label:'timer.check',code:'\nif timer.check(t1) {\n  \n}' },
-        { label:'str.concat',code:'\nmsg=str.concat("Valor: ",contador)' },
-        { label:'str.len',   code:'\nn=str.len(texto)' },
-        { label:'pin.read',  code:'\nval=pin.read(D1)' },
-        { label:'console.print', code:'\nconsole.print "mensaje"' },
-        { label:'console.warn',  code:'\nconsole.warn "aviso"' },
-        { label:'console.error', code:'\nconsole.error "error"' },
-        { label:'console.info',  code:'\nconsole.info "info"' },
-        { label:'console.clear', code:'\nconsole.clear' },
+        { label:'loop{}',    code:'\
+loop{\
+  \
+}' },
+        { label:'if/else',   code:'\
+if condicion {\
+  \
+} else {\
+  \
+}' },
+        { label:'while{}',   code:'\
+while condicion {\
+  \
+}' },
+        { label:'for',       code:'\
+for i=0 to 10 {\
+  \
+}' },
+        { label:'delay',     code:'\
+delay 500' },
+        { label:'pin HIGH',  code:'\
+pin1;HIGH' },
+        { label:'pin LOW',   code:'\
+pin1;LOW' },
+        { label:'toggle',    code:'\
+toggle pin1' },
+        { label:'print',     code:'\
+oled.print "Texto"' },
+        { label:'println',   code:'\
+oled.println "Texto"' },
+        { label:'oled.init', code:'\
+oled.init\
+oled.clear\
+oled.println "RADION 2.0"' },
+        { label:'math.abs',  code:'\
+result=math.abs(valor)' },
+        { label:'math.max',  code:'\
+result=math.max(a,b)' },
+        { label:'math.min',  code:'\
+result=math.min(a,b)' },
+        { label:'math.map',  code:'\
+result=math.map(val,0,100,0,255)' },
+        { label:'timer.set', code:'\
+timer.set(t1,1000)' },
+        { label:'timer.check',code:'\
+if timer.check(t1) {\
+  \
+}' },
+        { label:'str.concat',code:'\
+msg=str.concat("Valor: ",contador)' },
+        { label:'str.len',   code:'\
+n=str.len(texto)' },
+        { label:'pin.read',  code:'\
+val=pin.read(D1)' },
+        { label:'console.print', code:'\
+console.print "mensaje"' },
+        { label:'console.warn',  code:'\
+console.warn "aviso"' },
+        { label:'console.error', code:'\
+console.error "error"' },
+        { label:'console.info',  code:'\
+console.info "info"' },
+        { label:'console.clear', code:'\
+console.clear' },
     ];
 
     const LOG_LIBS = {
@@ -2705,126 +3003,201 @@ end>`;
             desc: 'Funciones matemáticas avanzadas',
             color: 'rgba(0,212,255,0.7)',
             snippets: [
-                { label:'abs(x)',         code:'\nresult=math.abs(x)' },
-                { label:'max(a,b)',        code:'\nresult=math.max(a,b)' },
-                { label:'min(a,b)',        code:'\nresult=math.min(a,b)' },
-                { label:'pow(b,e)',        code:'\nresult=math.pow(base,exp)' },
-                { label:'sqrt(x)',         code:'\nresult=math.sqrt(x)' },
-                { label:'floor(x)',        code:'\nresult=math.floor(x)' },
-                { label:'ceil(x)',         code:'\nresult=math.ceil(x)' },
-                { label:'round(x)',        code:'\nresult=math.round(x)' },
-                { label:'clamp(v,lo,hi)',  code:'\nresult=math.clamp(valor,0,100)' },
-                { label:'map(v,i0,i1,o0,o1)', code:'\nresult=math.map(val,0,1023,0,255)' },
-                { label:'random(lo,hi)',   code:'\nresult=math.random(1,100)' },
+                { label:'abs(x)',         code:'\
+result=math.abs(x)' },
+                { label:'max(a,b)',        code:'\
+result=math.max(a,b)' },
+                { label:'min(a,b)',        code:'\
+result=math.min(a,b)' },
+                { label:'pow(b,e)',        code:'\
+result=math.pow(base,exp)' },
+                { label:'sqrt(x)',         code:'\
+result=math.sqrt(x)' },
+                { label:'floor(x)',        code:'\
+result=math.floor(x)' },
+                { label:'ceil(x)',         code:'\
+result=math.ceil(x)' },
+                { label:'round(x)',        code:'\
+result=math.round(x)' },
+                { label:'clamp(v,lo,hi)',  code:'\
+result=math.clamp(valor,0,100)' },
+                { label:'map(v,i0,i1,o0,o1)', code:'\
+result=math.map(val,0,1023,0,255)' },
+                { label:'random(lo,hi)',   code:'\
+result=math.random(1,100)' },
             ]
         },
         'str': {
             desc: 'Manipulación de strings',
             color: 'rgba(0,230,118,0.7)',
             snippets: [
-                { label:'concat(a,b)',     code:'\nmsg=str.concat("Val:",numero)' },
-                { label:'len(s)',          code:'\nn=str.len(texto)' },
-                { label:'upper(s)',        code:'\nmsg=str.upper(texto)' },
-                { label:'lower(s)',        code:'\nmsg=str.lower(texto)' },
-                { label:'repeat(s,n)',     code:'\nmsg=str.repeat("*",10)' },
-                { label:'substr(s,i,n)',   code:'\nmsg=str.substr(texto,0,4)' },
+                { label:'concat(a,b)',     code:'\
+msg=str.concat("Val:",numero)' },
+                { label:'len(s)',          code:'\
+n=str.len(texto)' },
+                { label:'upper(s)',        code:'\
+msg=str.upper(texto)' },
+                { label:'lower(s)',        code:'\
+msg=str.lower(texto)' },
+                { label:'repeat(s,n)',     code:'\
+msg=str.repeat("*",10)' },
+                { label:'substr(s,i,n)',   code:'\
+msg=str.substr(texto,0,4)' },
             ]
         },
         'timer': {
             desc: 'Temporizadores no bloqueantes',
             color: 'rgba(255,183,0,0.7)',
             snippets: [
-                { label:'timer.set(id,ms)',   code:'\ntimer.set(t1,1000)' },
-                { label:'timer.check(id)',    code:'\nif timer.check(t1) {\n  // se dispara cada 1000ms\n}' },
-                { label:'timer.reset(id)',    code:'\ntimer.reset(t1)' },
-                { label:'timer.elapsed(id)',  code:'\nms=timer.elapsed(t1)' },
+                { label:'timer.set(id,ms)',   code:'\
+timer.set(t1,1000)' },
+                { label:'timer.check(id)',    code:'\
+if timer.check(t1) {\
+  // se dispara cada 1000ms\
+}' },
+                { label:'timer.reset(id)',    code:'\
+timer.reset(t1)' },
+                { label:'timer.elapsed(id)',  code:'\
+ms=timer.elapsed(t1)' },
             ]
         },
         'pin': {
             desc: 'Control avanzado de pines',
             color: 'rgba(167,139,250,0.7)',
             snippets: [
-                { label:'pin.read(D1)',       code:'\nval=pin.read(D1)' },
-                { label:'pin.write(D1,H)',    code:'\npin.write(D1,HIGH)' },
-                { label:'pin.toggle(D1)',     code:'\npin.toggle(D1)' },
-                { label:'pin.pulse(D1,ms)',   code:'\npin.pulse(D1,100)' },
-                { label:'pin.blink(D1,ms)',   code:'\npin.blink(D1,200)' },
-                { label:'pin.off(D1)',        code:'\npin.off(D1)' },
+                { label:'pin.read(D1)',       code:'\
+val=pin.read(D1)' },
+                { label:'pin.write(D1,H)',    code:'\
+pin.write(D1,HIGH)' },
+                { label:'pin.toggle(D1)',     code:'\
+pin.toggle(D1)' },
+                { label:'pin.pulse(D1,ms)',   code:'\
+pin.pulse(D1,100)' },
+                { label:'pin.blink(D1,ms)',   code:'\
+pin.blink(D1,200)' },
+                { label:'pin.off(D1)',        code:'\
+pin.off(D1)' },
             ]
         },
         'oled': {
             desc: 'Control completo de pantalla OLED',
             color: 'rgba(255,100,100,0.7)',
             snippets: [
-                { label:'oled.init',          code:'\noled.init' },
-                { label:'oled.clear',         code:'\noled.clear' },
-                { label:'oled.print "txt"',   code:'\noled.print "Texto"' },
-                { label:'oled.println "txt"', code:'\noled.println "Texto"' },
-                { label:'oled.print var',     code:'\noled.print variable' },
-                { label:'oled.draw.bar',      code:'\noled.draw.bar(valor,0,100)' },
-                { label:'oled.setCursor',     code:'\noled.setCursor(0,1)' },
-                { label:'oled.printAt',       code:'\noled.printAt(0,2,"Linea 3")' },
+                { label:'oled.init',          code:'\
+oled.init' },
+                { label:'oled.clear',         code:'\
+oled.clear' },
+                { label:'oled.print "txt"',   code:'\
+oled.print "Texto"' },
+                { label:'oled.println "txt"', code:'\
+oled.println "Texto"' },
+                { label:'oled.print var',     code:'\
+oled.print variable' },
+                { label:'oled.draw.bar',      code:'\
+oled.draw.bar(valor,0,100)' },
+                { label:'oled.setCursor',     code:'\
+oled.setCursor(0,1)' },
+                { label:'oled.printAt',       code:'\
+oled.printAt(0,2,"Linea 3")' },
             ]
         },
         'console': {
             desc: 'Salida a la consola LOG del editor',
             color: 'rgba(0,212,255,0.7)',
             snippets: [
-                { label:'console.print "s"',   code:'\nconsole.print "mensaje"' },
-                { label:'console.print var',   code:'\nconsole.print variable' },
-                { label:'console.println "s"', code:'\nconsole.println "mensaje"' },
-                { label:'console.info "s"',    code:'\nconsole.info "info"' },
-                { label:'console.warn "s"',    code:'\nconsole.warn "advertencia"' },
-                { label:'console.error "s"',   code:'\nconsole.error "error"' },
-                { label:'console.clear',       code:'\nconsole.clear' },
+                { label:'console.print "s"',   code:'\
+console.print "mensaje"' },
+                { label:'console.print var',   code:'\
+console.print variable' },
+                { label:'console.println "s"', code:'\
+console.println "mensaje"' },
+                { label:'console.info "s"',    code:'\
+console.info "info"' },
+                { label:'console.warn "s"',    code:'\
+console.warn "advertencia"' },
+                { label:'console.error "s"',   code:'\
+console.error "error"' },
+                { label:'console.clear',       code:'\
+console.clear' },
             ]
         },
         'servo': {
             desc: 'Control de servomotor SG90 vía D4',
             color: 'rgba(0,212,255,0.85)',
             snippets: [
-                { label:'servo.write(D4,90)',  code:'\nservo.write(D4,90)' },
-                { label:'servo.write(D4,0)',   code:'\nservo.write(D4,0)' },
-                { label:'servo.write(D4,180)', code:'\nservo.write(D4,180)' },
-                { label:'servo.read(D4)',      code:'\nang=servo.read(D4)' },
-                { label:'servo sweep',         code:'\nfor ang=0 to 180 {\n  servo.write(D4,ang)\n  delay 15\n}' },
+                { label:'servo.write(D4,90)',  code:'\
+servo.write(D4,90)' },
+                { label:'servo.write(D4,0)',   code:'\
+servo.write(D4,0)' },
+                { label:'servo.write(D4,180)', code:'\
+servo.write(D4,180)' },
+                { label:'servo.read(D4)',      code:'\
+ang=servo.read(D4)' },
+                { label:'servo sweep',         code:'\
+for ang=0 to 180 {\
+  servo.write(D4,ang)\
+  delay 15\
+}' },
             ]
         },
         'sensor': {
             desc: 'Sensores HC-SR04, DHT11, Potenciómetro',
             color: 'rgba(255,183,0,0.8)',
             snippets: [
-                { label:'sensor.distance()',   code:'\ndist=sensor.distance(D3,D4)' },
-                { label:'sensor.temp()',        code:'\ntemp=sensor.temp(D3)' },
-                { label:'sensor.humidity()',    code:'\nhum=sensor.humidity(D3)' },
-                { label:'pin.analog(A1)',       code:'\nval=pin.analog(A1)' },
-                { label:'pot → servo',          code:'\nval=pin.analog(A1)\\nang=math.map(val,0,1023,0,180)\\nservo.write(D4,ang)' },
+                { label:'sensor.distance()',   code:'\
+dist=sensor.distance(D3,D4)' },
+                { label:'sensor.temp()',        code:'\
+temp=sensor.temp(D3)' },
+                { label:'sensor.humidity()',    code:'\
+hum=sensor.humidity(D3)' },
+                { label:'pin.analog(A1)',       code:'\
+val=pin.analog(A1)' },
+                { label:'pot → servo',          code:'\
+val=pin.analog(A1)\
+ang=math.map(val,0,1023,0,180)\
+servo.write(D4,ang)' },
             ]
         },
         'buzzer': {
             desc: 'Control de buzzer con tonos reales',
             color: 'rgba(255,107,138,0.8)',
             snippets: [
-                { label:'buzzer.tone(D1,440)',  code:'\nbuzzer.tone(D1,440)' },
-                { label:'buzzer.off(D1)',        code:'\nbuzzer.off(D1)' },
-                { label:'buzzer.beep(D1,200)',   code:'\nbuzzer.beep(D1,200)' },
-                { label:'Do Re Mi',              code:'\nbuzzer.tone(D1,262)\\ndelay 300\\nbuzzer.tone(D1,294)\\ndelay 300\\nbuzzer.tone(D1,330)\\ndelay 300\\nbuzzer.off(D1)' },
+                { label:'buzzer.tone(D1,440)',  code:'\
+buzzer.tone(D1,440)' },
+                { label:'buzzer.off(D1)',        code:'\
+buzzer.off(D1)' },
+                { label:'buzzer.beep(D1,200)',   code:'\
+buzzer.beep(D1,200)' },
+                { label:'Do Re Mi',              code:'\
+buzzer.tone(D1,262)\
+delay 300\
+buzzer.tone(D1,294)\
+delay 300\
+buzzer.tone(D1,330)\
+delay 300\
+buzzer.off(D1)' },
             ]
         },
         'seg7': {
             desc: 'Display de 7 segmentos',
             color: 'rgba(255,71,87,0.8)',
             snippets: [
-                { label:'seg7.show(D1,5)',    code:'\nseg7.show(D1,5)' },
-                { label:'seg7.count 0-9',    code:'\nfor n=0 to 9 {\\n  seg7.show(D1,n)\\n  delay 500\\n}' },
-                { label:'seg7.dot(D1,true)', code:'\nseg7.dot(D1,true)' },
+                { label:'seg7.show(D1,5)',    code:'\
+seg7.show(D1,5)' },
+                { label:'seg7.count 0-9',    code:'\
+for n=0 to 9 {\
+  seg7.show(D1,n)\
+  delay 500\
+}' },
+                { label:'seg7.dot(D1,true)', code:'\
+seg7.dot(D1,true)' },
             ]
         },
     };
 
     const LOG_DEMOS = [
         {
-            label: '🔴 Blink simple',
+            label: ' Blink simple',
             code: `start<
 pin1=D1
 loop{
@@ -2836,7 +3209,7 @@ loop{
 end>`
         },
         {
-            label: '🟢 Blink doble alternado',
+            label: ' Blink doble alternado',
             code: `start<
 pin1=D1
 pin2=D2
@@ -2851,7 +3224,7 @@ loop{
 end>`
         },
         {
-            label: '🔵 Contador OLED',
+            label: ' Contador OLED',
             code: `start<
 pin1=D1
 contador=0
@@ -2873,7 +3246,7 @@ loop{
 end>`
         },
         {
-            label: '🟡 Semáforo',
+            label: ' Semáforo',
             code: `start<
 pinR=D1
 pinG=D2
@@ -2931,7 +3304,7 @@ loop{
 end>`
         },
         {
-            label: '📊 Barra de progreso OLED',
+            label: ' Barra de progreso OLED',
             code: `start<
 progreso=0
 oled.init
@@ -2978,7 +3351,7 @@ loop{
 end>`
         },
         {
-            label: '🔢 Fibonacci',
+            label: ' Fibonacci',
             code: `start<
 oled.init
 a=0
@@ -3004,7 +3377,7 @@ loop{
 end>`
         },
         {
-            label: '🎛 PWM simulado (blink variable)',
+            label: ' PWM simulado (blink variable)',
             code: `start<
 pin1=D1
 velocidad=100
@@ -3031,7 +3404,7 @@ loop{
 end>`
         },
         {
-            label: '🔐 Código secreto (3 pines)',
+            label: ' Código secreto (3 pines)',
             code: `start<
 pinA=D1
 pinB=D2
@@ -3071,7 +3444,7 @@ loop{
 end>`
         },
         {
-            label: '📈 Rampa de conteo',
+            label: ' Rampa de conteo',
             code: `start<
 pin1=D1
 pin2=D2
@@ -3101,7 +3474,7 @@ loop{
 end>`
         },
         {
-            label: '🌡 Simulador de temperatura',
+            label: ' Simulador de temperatura',
             code: `start<
 temp=20
 oled.init
@@ -3127,7 +3500,7 @@ loop{
 end>`
         },
         {
-            label: '🖥 Debug con consola',
+            label: ' Debug con consola',
             code: `start<
 console.print "=== RADION BOOT ==="
 console.info "LOG v2.0 iniciado"
@@ -3231,8 +3604,27 @@ end>`
     }
 
     function insertSnippet(type) {
-        const map = { 'loop':'\nloop{\n  \n}', 'delay':'\ndelay 500', 'if':'\nif condicion {\n  \n}', 'oled':'\noled.init\noled.clear\noled.println "Hola"' };
+        const map = { 'loop':'\
+loop{\
+  \
+}', 'delay':'\
+delay 500', 'if':'\
+if condicion {\
+  \
+}', 'oled':'\
+oled.init\
+oled.clear\
+oled.println "Hola"' };
         insertCode(map[type] || '');
+    }
+
+    function updateRGBPreview() {
+        const prev = document.getElementById('rgb-preview');
+        if (!prev || !targetCfg) return;
+        const r = targetCfg.colorR||0, g = targetCfg.colorG||0, b = targetCfg.colorB||0;
+        const col = `rgb(${r},${g},${b})`;
+        prev.style.background = col;
+        prev.style.boxShadow = `0 0 12px ${col}`;
     }
 
     function openCfg(c) {
@@ -3241,11 +3633,10 @@ end>`
         modal.style.display='block';
         document.getElementById('m-title').innerText=c.type;
         const isBRC=c.type==='BATTERY'||c.type==='RESISTOR'||c.type==='CAPACITOR';
-        const isSensor = c.type==='POT'||c.type==='HC_SR04'||c.type==='DHT11'||c.type==='BUZZER'||c.type==='SEG7';
-        const isLED = c.type==='LED';   // <-- para cambiar color
-        document.getElementById('m-val-row').style.display=(isBRC&&!isSensor&&!isLED)?'flex':'none';
-        document.getElementById('m-val').style.display=(isBRC&&!isSensor&&!isLED)?'block':'none';
-        if(isBRC&&!isSensor&&!isLED)document.getElementById('m-val').value=c.val||0;
+        const isSensor = c.type==='POT'||c.type==='HC_SR04'||c.type==='DHT11'||c.type==='BUZZER'||c.type==='SEG7'||c.type==='LED'||c.type==='LED_RGB';
+        document.getElementById('m-val-row').style.display=(isBRC&&!isSensor)?'flex':'none';
+        document.getElementById('m-val').style.display=(isBRC&&!isSensor)?'block':'none';
+        if(isBRC&&!isSensor)document.getElementById('m-val').value=c.val||0;
         let unit=''; if(c.type==='BATTERY')unit='V'; else if(c.type==='RESISTOR')unit='Ω'; else if(c.type==='CAPACITOR')unit='µF';
         document.getElementById('m-unit').innerText=unit;
         document.getElementById('m-repair').style.display=c.burned?'inline-flex':'none';
@@ -3287,19 +3678,31 @@ end>`
                 <label style="display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">
                   <input type="checkbox" ${c.showDot?'checked':''} onchange="targetCfg.showDot=this.checked"> PUNTO DECIMAL
                 </label>`;
+            } else if(c.type==='LED'){
+                const cur = c.ledColor || '#ffdd40';
+                const presetColors = ['#ffdd40','#ff4444','#44ff44','#4488ff','#ffffff','#ff8800','#ff44ff','#00ffff'];
+                const swatches = presetColors.map(function(col){
+                    return '<div onclick="targetCfg.ledColor=\''+col+'\';document.querySelector(\'#m-extra-row input[type=color]\').value=\''+col+'\';document.getElementById(\'led-color-preview\').style.background=\''+col+'\';document.getElementById(\'led-color-preview\').style.boxShadow=\'0 0 12px '+col+'\'" style="width:22px;height:22px;border-radius:50%;background:'+col+';cursor:pointer;border:2px solid rgba(255,255,255,0.2);box-shadow:0 0 6px '+col+';"></div>';
+                }).join('');
+                row.innerHTML = '<label style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text-mid)">COLOR DEL LED</label>'
+                    +'<div style="display:flex;align-items:center;gap:10px;margin:6px 0;">'
+                    +'<input type="color" value="'+cur+'" oninput="targetCfg.ledColor=this.value;document.getElementById(\'led-color-preview\').style.background=this.value;document.getElementById(\'led-color-preview\').style.boxShadow=\'0 0 12px \'+this.value" style="width:44px;height:30px;border:none;background:transparent;cursor:pointer;border-radius:4px;">'
+                    +'<div id="led-color-preview" style="width:28px;height:28px;border-radius:50%;background:'+cur+';box-shadow:0 0 12px '+cur+';border:1px solid rgba(255,255,255,0.2);"></div>'
+                    +'<span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text-mid)">Predefinidos:</span>'
+                    +'</div>'
+                    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">'+swatches+'</div>';
+            } else if(c.type==='LED_RGB'){
+                const cr=c.colorR||0, cg=c.colorG||0, cb=c.colorB||0;
+                row.innerHTML = '<label style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--text-mid)">CANALES RGB (0-255)</label>'
+                    +'<div id="rgb-preview" style="width:36px;height:36px;border-radius:50%;background:rgb('+cr+','+cg+','+cb+');box-shadow:0 0 12px rgb('+cr+','+cg+','+cb+');border:1px solid rgba(255,255,255,0.2);margin:6px 0;"></div>'
+                    +'<label style="font-family:\'DM Mono\',monospace;font-size:9px;color:#ff6666;">R: <span id="rgb-r-val">'+cr+'</span></label>'
+                    +'<input type="range" min="0" max="255" value="'+cr+'" oninput="targetCfg.colorR=+this.value;document.getElementById(\'rgb-r-val\').textContent=this.value;updateRGBPreview()" style="width:100%;accent-color:#ff4444">'
+                    +'<label style="font-family:\'DM Mono\',monospace;font-size:9px;color:#66ff66;">G: <span id="rgb-g-val">'+cg+'</span></label>'
+                    +'<input type="range" min="0" max="255" value="'+cg+'" oninput="targetCfg.colorG=+this.value;document.getElementById(\'rgb-g-val\').textContent=this.value;updateRGBPreview()" style="width:100%;accent-color:#44ff44">'
+                    +'<label style="font-family:\'DM Mono\',monospace;font-size:9px;color:#6666ff;">B: <span id="rgb-b-val">'+cb+'</span></label>'
+                    +'<input type="range" min="0" max="255" value="'+cb+'" oninput="targetCfg.colorB=+this.value;document.getElementById(\'rgb-b-val\').textContent=this.value;updateRGBPreview()" style="width:100%;accent-color:#4488ff">';
             }
             const valRow=document.getElementById('m-val-row');
-            valRow.parentNode.insertBefore(row, valRow.nextSibling);
-        } else if (isLED) {
-            // Selector de color para LED normal
-            const row = document.createElement('div');
-            row.id = 'm-extra-row';
-            row.style.cssText = 'display:flex;flex-direction:column;gap:8px;padding:10px 0;';
-            row.innerHTML = `
-                <label style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-mid)">COLOR DEL LED</label>
-                <input type="color" id="led-color" value="${c.color || '#ffff00'}" style="width:100%; height:40px; background:transparent; border:1px solid var(--glass-border); border-radius:4px;">
-            `;
-            const valRow = document.getElementById('m-val-row');
             valRow.parentNode.insertBefore(row, valRow.nextSibling);
         }
 
@@ -3339,12 +3742,13 @@ end>`
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // LOG VALIDATOR (corregido: añadidas funciones de buzzer, sensor, seg7)
+    // LOG VALIDATOR
     // ═══════════════════════════════════════════════════════════════
     function validateLOG(code) {
         const errors   = [];
         const warnings = [];
-        const lines    = code.split('\n');
+        const lines    = code.split('\
+');
 
         const KNOWN_LIBS   = ['math','str','timer','pin','oled','console','servo','buzzer','sensor','seg7'];
         const KNOWN_MATH   = ['abs','max','min','pow','sqrt','floor','ceil','round','clamp','map','random','sin','cos','pi'];
@@ -3357,7 +3761,6 @@ end>`
         const KNOWN_BUZZER = ['tone','off','beep'];
         const KNOWN_SENSOR = ['distance','temp','humidity'];
         const KNOWN_SEG7   = ['show','dot'];
-
         const KNOWN_LIB_FNS = { math:KNOWN_MATH, str:KNOWN_STR, timer:KNOWN_TIMER, pin:KNOWN_PIN, oled:KNOWN_OLED, console:KNOWN_CONS, servo:KNOWN_SERVO, buzzer:KNOWN_BUZZER, sensor:KNOWN_SENSOR, seg7:KNOWN_SEG7 };
 
         const KEYWORDS     = ['loop','while','for','if','else','delay','toggle','print','println','start<','end>','console','oled','pin','math','str','timer'];
@@ -3512,13 +3915,6 @@ end>`
             return;
         }
 
-        if(targetCfg.type==='LED'){
-            const colorInput = document.getElementById('led-color');
-            if(colorInput) targetCfg.color = colorInput.value;
-            closeCfg();
-            return;
-        }
-
         if(targetCfg.type==='RADION'){
             const code = document.getElementById('m-code-area').value;
             const { errors, warnings } = validateLOG(code);
@@ -3574,19 +3970,7 @@ end>`
         const tx=(xOpt!==undefined)?xOpt:vMouse.x, ty=(yOpt!==undefined)?yOpt:vMouse.y;
         const comp={type,x:tx-50,y:ty-30,w:100,h:60,nodes:[],state:0,active:false,burned:false,rotation:0,selected:false,_id:_spawnId++};
         if(type==='BATTERY'){comp.nodes=[{id:'+',x:0,y:30},{id:'-',x:100,y:30}];comp.val=9;}
-        else if(type==='LED'){comp.nodes=[{id:'A',x:0,y:30},{id:'C',x:100,y:30}]; comp.color = '#ffff00';} // color por defecto
-        else if(type==='RGB_LED'){   // <-- NUEVO COMPONENTE
-            comp.w=80; comp.h=80;
-            comp.nodes = [
-                {id:'C', x:40, y:0},   // cátodo común
-                {id:'R', x:15, y:30},
-                {id:'G', x:40, y:30},
-                {id:'B', x:65, y:30}
-            ];
-            comp.rState = false;
-            comp.gState = false;
-            comp.bState = false;
-        }
+        else if(type==='LED'){comp.nodes=[{id:'A',x:0,y:30},{id:'C',x:100,y:30}];comp.ledColor='#ffdd40';}
         else if(type==='MOTOR')comp.nodes=[{id:'M1',x:0,y:30},{id:'M2',x:100,y:30}];
         else if(type==='SWITCH'||type==='PUSH_BTN'){comp.closed=false;comp.nodes=[{id:'1',x:0,y:30},{id:'2',x:100,y:30}];}
         else if(type==='CAPACITOR'){comp.nodes=[{id:'+',x:0,y:30},{id:'-',x:100,y:30}];comp.charge=0;comp.val=10;}
@@ -3606,7 +3990,15 @@ end>`
                 {id:'A1',x:15,y:75},
                 {id:'SCL',x:95,y:95},{id:'SDA',x:95,y:115}
             ];
-            comp.code=`start<\npin1=D1\nloop{\n  pin1;HIGH\n  delay 500\n  pin1;LOW\n  delay 500\n}\nend>`;
+            comp.code=`start<\
+pin1=D1\
+loop{\
+  pin1;HIGH\
+  delay 500\
+  pin1;LOW\
+  delay 500\
+}\
+end>`;
             comp.memory={d1:false,d2:false,d3:false,d4:false};
             comp.analog={a1:0};
             comp.intState={pc:0,wait:0,vars:{},timers:{},pinBlink:{},parsed:null};
@@ -3698,11 +4090,24 @@ end>`
             comp.digit = 0;
             comp.showDot = false;
         }
+        else if(type==='LED_RGB'){
+            comp.w=80; comp.h=70;
+            comp.nodes=[
+                {id:'R',   x:10, y:70},
+                {id:'G',   x:30, y:70},
+                {id:'B',   x:50, y:70},
+                {id:'GND', x:70, y:70},
+            ];
+            comp.colorR = 0;
+            comp.colorG = 0;
+            comp.colorB = 0;
+        }
         components.push(comp); return comp;
     }
 
     function preprocessCode(code){
-        const lines=code.split('\n');let blocks={};let stack=[];
+        const lines=code.split('\
+');let blocks={};let stack=[];
         for(let i=0;i<lines.length;i++){
             let l=lines[i].trim();
             if(l.endsWith('{'))stack.push(i);
@@ -4443,7 +4848,7 @@ end>`
     }
 
     function updatePhysics(){
-        components.forEach(c=>{c.state=0;if(c.type!=='CAPACITOR')c.active=false;if(c.type==='RELAY')c.coilActiveThisFrame=false;});
+        components.forEach(c=>{c.state=0;if(c.type!=='CAPACITOR')c.active=false;if(c.type==='RELAY')c.coilActiveThisFrame=false;if(c.type==='LED_RGB'){c._rOn=false;c._gOn=false;c._bOn=false;}});
         connections.forEach(conn=>{conn.active=false;conn.flowDir=1;});
         components.filter(c=>c.type==='CAPACITOR').forEach(cap=>{if(cap.charge>0)cap.isSource=true;else{cap.isSource=false;cap.active=false;}});
         components.forEach(c=>c.nodes.forEach(n=>n.signal=false));
@@ -4464,12 +4869,22 @@ end>`
                         if(comp.type==='RELAY'){if((curr===comp.nodes[2]||curr===comp.nodes[3])&&!comp.coilState)continue;}
                         if(comp.type==='MUX'){const sel=comp.selState;if(curr===comp.nodes[0]){if(!sel&&!comp.nodes[3].signal){comp.nodes[3].signal=true;q.push(comp.nodes[3]);}}else if(curr===comp.nodes[1]){if(sel&&!comp.nodes[3].signal){comp.nodes[3].signal=true;q.push(comp.nodes[3]);}}else if(curr===comp.nodes[3]){let dest=sel?comp.nodes[1]:comp.nodes[0];if(!dest.signal){dest.signal=true;q.push(dest);}}continue;}
                         if(comp.type==='LED'&&curr!==comp.nodes[0])continue;
-                        if(comp.type==='RGB_LED' && !(curr===comp.nodes[1]||curr===comp.nodes[2]||curr===comp.nodes[3])) continue;
                         if(comp.type==='CAPACITOR'&&curr!==comp.nodes[0])continue;
                         if(comp.type==='TRANSISTOR')continue;
                         if(['AND','OR','NOT','XOR','RSK90','RADION','OLED_I2C'].includes(comp.type))continue;
                         if(comp.type==='L298N')continue;
                         if(comp.type==='SERVO')continue;
+                        if(comp.type==='LED_RGB'){
+                            // Signal enters through R/G/B and exits through GND (or vice versa)
+                            const gndNode=comp.nodes[3];
+                            const isColorNode = curr===comp.nodes[0]||curr===comp.nodes[1]||curr===comp.nodes[2];
+                            if(isColorNode){
+                                if(!gndNode.signal){gndNode.signal=true;q.push(gndNode);}
+                            } else if(curr===gndNode){
+                                comp.nodes.slice(0,3).forEach(n=>{if(!n.signal){n.signal=true;q.push(n);}});
+                            }
+                            continue;
+                        }
                         comp.nodes.forEach(n=>{if(!n.signal){n.signal=true;q.push(n);}});
                     }
                 }
@@ -4501,6 +4916,15 @@ end>`
                         if(comp.memory.d4){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[6]);if(currentNode===comp.nodes[6])outNodes.push(comp.nodes[0]);}
                     }
                     else if(comp.type==='OLED_I2C'){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);}
+                    else if(comp.type==='LED_RGB'){
+                        // R→GND, G→GND, B→GND (each channel independent)
+                        const gnd=comp.nodes[3];
+                        if(currentNode===comp.nodes[0]||currentNode===comp.nodes[1]||currentNode===comp.nodes[2]){
+                            outNodes.push(gnd);
+                        } else if(currentNode===gnd){
+                            comp.nodes.slice(0,3).forEach(n=>outNodes.push(n));
+                        }
+                    }
                     else if(comp.type==='L298N'){
                         if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);
                         if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);
@@ -4522,13 +4946,6 @@ end>`
                         if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);
                         if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);
                     }
-                    else if(comp.type==='RGB_LED'){
-                        // Permitir flujo solo de ánodo a cátodo común
-                        if(currentNode===comp.nodes[1] && comp.nodes[0]) outNodes.push(comp.nodes[0]); // R a C
-                        if(currentNode===comp.nodes[2] && comp.nodes[0]) outNodes.push(comp.nodes[0]); // G a C
-                        if(currentNode===comp.nodes[3] && comp.nodes[0]) outNodes.push(comp.nodes[0]); // B a C
-                        // No permitir de cátodo a ánodos (diodo)
-                    }
                     else{outNodes.push(comp.nodes.find(n=>n!==currentNode));}
                     outNodes.forEach(otherNode=>{
                         if(otherNode&&!visitedNodes.includes(otherNode)){
@@ -4539,7 +4956,12 @@ end>`
                             if(comp.type==='RELAY'){if((currentNode===comp.nodes[0]&&otherNode===comp.nodes[1])||(currentNode===comp.nodes[1]&&otherNode===comp.nodes[0]))canCross=true;if((currentNode===comp.nodes[2]&&otherNode===comp.nodes[3])||(currentNode===comp.nodes[3]&&otherNode===comp.nodes[2])){if(comp.coilState)canCross=true;}}
                             if(comp.type==='MUX')canCross=true;
                             if(comp.type==='LED'&&direction===1)canCross=true;
-                            if(comp.type==='RGB_LED' && ( (currentNode===comp.nodes[1] && otherNode===comp.nodes[0]) || (currentNode===comp.nodes[2] && otherNode===comp.nodes[0]) || (currentNode===comp.nodes[3] && otherNode===comp.nodes[0]) )) canCross=true;
+                            if(comp.type==='LED_RGB'){
+                                const gnd=comp.nodes[3];
+                                const isColorIn=currentNode===comp.nodes[0]||currentNode===comp.nodes[1]||currentNode===comp.nodes[2];
+                                if(isColorIn&&otherNode===gnd)canCross=true;
+                                if(currentNode===gnd&&(otherNode===comp.nodes[0]||otherNode===comp.nodes[1]||otherNode===comp.nodes[2]))canCross=true;
+                            }
                             if(comp.type==='CAPACITOR'&&bat.type==='BATTERY')canCross=true;
                             if(comp.type==='AND'&&comp.nodes[0].signal&&comp.nodes[1].signal)canCross=true;
                             if(comp.type==='OR'&&(comp.nodes[0].signal||comp.nodes[1].signal))canCross=true;
@@ -4585,7 +5007,7 @@ end>`
                             if(step.comp.type==='L298N')rSum+=800;
                             if(step.comp.type==='SERVO')rSum+=600;
                             if(step.comp.type==='LED')ledCount++;
-                            if(step.comp.type==='RGB_LED') { ledCount++; rSum+=20; } // cada LED interno suma
+                            if(step.comp.type==='LED_RGB')ledCount+=0.5; // each channel ~2V forward voltage
                             if(['AND','OR','NOT','XOR','MUX'].includes(step.comp.type))rSum+=10;
                             if(step.comp.type==='CAPACITOR'&&bat.type==='BATTERY'){let cr=50/(step.comp.val||10);step.comp.charge=Math.min(100,step.comp.charge+cr);step.comp.active=true;}
                         }
@@ -4595,7 +5017,7 @@ end>`
                         if(bat.type==='BATTERY'&&current>5.0){bat.burned=true;popped=true;}
                         pathComps.forEach(c=>{
                             if(c.type==='LED'&&current>0.035){c.burned=true;popped=true;}
-                            if(c.type==='RGB_LED'&&current>0.035){c.burned=true;popped=true;} // RGB también puede quemarse
+                            if(c.type==='LED_RGB'&&current>0.08){c.burned=true;popped=true;}
                             if(c.type==='RESISTOR'&&(current*current*c.val)>0.5){c.burned=true;popped=true;}
                             if(['AND','OR','NOT','XOR','MUX'].includes(c.type)&&current>0.2){c.burned=true;popped=true;}
                             if(c.type==='TRANSISTOR'&&current>1.0){c.burned=true;popped=true;}
@@ -4606,7 +5028,21 @@ end>`
                         bat.active=true;
                         path.forEach(step=>{
                             if(step.t==='wire'){step.c.active=true;step.c.flowDir=step.dir;}
-                            if(step.t==='comp'){step.comp.active=true;if(step.comp.type==='LED')step.comp.state=1;if(step.comp.type==='MOTOR')step.comp.state=step.dir;if(step.comp.type==='RELAY')step.comp.coilActiveThisFrame=true;}
+                            if(step.t==='comp'){step.comp.active=true;if(step.comp.type==='LED')step.comp.state=1;if(step.comp.type==='MOTOR')step.comp.state=step.dir;if(step.comp.type==='RELAY')step.comp.coilActiveThisFrame=true;
+                                if(step.comp.type==='LED_RGB'){
+                                    // Find which color node of THIS LED is connected in this path
+                                    const rgbComp = step.comp;
+                                    for(let pi=0;pi<path.length;pi++){
+                                        const s=path[pi];
+                                        if(s.t==='wire'){
+                                            const an=s.c.a.n, bn=s.c.b.n;
+                                            if(an===rgbComp.nodes[0]||bn===rgbComp.nodes[0]) rgbComp._rOn=true;
+                                            if(an===rgbComp.nodes[1]||bn===rgbComp.nodes[1]) rgbComp._gOn=true;
+                                            if(an===rgbComp.nodes[2]||bn===rgbComp.nodes[2]) rgbComp._bOn=true;
+                                        }
+                                    }
+                                }
+                            }
                         });
                     }
                 });
@@ -4645,14 +5081,6 @@ end>`
                 if(b.playing){ stopBuzzerPin('BZ_'+b._id); b.playing=false; }
             }
         });
-        // RGB LED: actualizar estados según señales en los nodos
-        components.filter(c=>c.type==='RGB_LED').forEach(rgb=>{
-            rgb.rState = rgb.nodes[1].signal || false;
-            rgb.gState = rgb.nodes[2].signal || false;
-            rgb.bState = rgb.nodes[3].signal || false;
-            rgb.active = rgb.rState || rgb.gState || rgb.bState;
-        });
-
         components.filter(c=>c.type==='RADION').forEach(c=>runRadionLogic(c));
     }
 
@@ -4780,69 +5208,20 @@ end>`
             let dW=(c.rotation%2===0)?c.w:c.h, dH=(c.rotation%2===0)?c.h:c.w;
 
             if(c.type==='LED'){
+                const lc = c.ledColor || '#ffdd40';
+                // Convert hex to rgba for glow
+                const r=parseInt(lc.slice(1,3),16), g=parseInt(lc.slice(3,5),16), b=parseInt(lc.slice(5,7),16);
                 baseRect(c,dW,dH);
-                let r=255,g=255,b=0; // default amarillo
-                if(c.color){
-                    const hex = c.color.replace('#','');
-                    r = parseInt(hex.substring(0,2),16);
-                    g = parseInt(hex.substring(2,4),16);
-                    b = parseInt(hex.substring(4,6),16);
-                }
                 if(c.state&&!c.burned){
-                    ctx.fillStyle = `rgba(${r},${g},${b},0.06)`;
-                    ctx.fillRect(c.x,c.y,dW,dH);
-                    ctx.shadowBlur=14;
-                    ctx.shadowColor = `rgba(${r},${g},${b},0.5)`;
+                    ctx.fillStyle=`rgba(${r},${g},${b},0.06)`; ctx.fillRect(c.x,c.y,dW,dH);
+                    ctx.shadowBlur=14; ctx.shadowColor=`rgba(${r},${g},${b},0.5)`;
                 }
-                ctx.strokeStyle=c.state&&!c.burned ? `rgba(${r},${g},${b},0.9)` : (c.burned?C_RED:'rgba(255,255,255,0.2)');
+                ctx.strokeStyle=c.state&&!c.burned?lc:(c.burned?C_RED:'rgba(255,255,255,0.2)');
                 ctx.lineWidth=1.2;
                 ctx.beginPath(); ctx.moveTo(c.x+38,c.y+16); ctx.lineTo(c.x+38,c.y+44); ctx.lineTo(c.x+62,c.y+30); ctx.closePath(); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(c.x+62,c.y+16); ctx.lineTo(c.x+62,c.y+44); ctx.stroke();
                 ctx.shadowBlur=0;
                 label('LED',c.x+43,c.y+56);
-            }
-            else if(c.type==='RGB_LED'){
-                const powered = c.active && !c.burned;
-                ctx.fillStyle = powered ? 'rgba(20,26,46,0.95)' : 'rgba(16,20,36,0.9)';
-                ctx.strokeStyle = powered ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)';
-                ctx.lineWidth = 1;
-                ctx.fillRect(c.x,c.y,c.w,c.h);
-                ctx.strokeRect(c.x,c.y,c.w,c.h);
-
-                // Dibujar tres círculos para R,G,B
-                const centerX = c.x + 40;
-                const centerY = c.y + 40;
-                const radius = 12;
-                // Rojo
-                ctx.beginPath();
-                ctx.arc(centerX-20, centerY, radius, 0, 2*Math.PI);
-                ctx.fillStyle = c.rState && powered ? 'rgba(255,0,0,0.9)' : 'rgba(80,0,0,0.3)';
-                if(c.rState && powered) { ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(255,0,0,0.8)'; }
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-                ctx.stroke();
-                // Verde
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, 2*Math.PI);
-                ctx.fillStyle = c.gState && powered ? 'rgba(0,255,0,0.9)' : 'rgba(0,80,0,0.3)';
-                if(c.gState && powered) { ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(0,255,0,0.8)'; }
-                ctx.fill();
-                ctx.stroke();
-                // Azul
-                ctx.beginPath();
-                ctx.arc(centerX+20, centerY, radius, 0, 2*Math.PI);
-                ctx.fillStyle = c.bState && powered ? 'rgba(0,0,255,0.9)' : 'rgba(0,0,80,0.3)';
-                if(c.bState && powered) { ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(0,0,255,0.8)'; }
-                ctx.fill();
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-                // Etiquetas
-                ctx.fillStyle = 'rgba(255,255,255,0.5)';
-                ctx.font = "8px 'DM Mono',monospace";
-                ctx.fillText('R', centerX-24, centerY-8);
-                ctx.fillText('G', centerX-4, centerY-8);
-                ctx.fillText('B', centerX+16, centerY-8);
-                label('C', c.x+35, c.y+8, 'rgba(255,71,87,0.6)', 7);
             }
             else if(c.type==='MOTOR'){
                 baseRect(c,dW,dH);
@@ -5177,6 +5556,54 @@ end>`
                 ctx.fillStyle='rgba(255,71,87,0.3)'; ctx.font="6px 'DM Mono',monospace";
                 ctx.fillText('7-SEG',c.x+18,c.y+97);
             }
+            else if(c.type==='LED_RGB'){
+                const rOn = c.active && c._rOn, gOn = c.active && c._gOn, bOn = c.active && c._bOn;
+                const rV = c.colorR||0, gV = c.colorG||0, bV = c.colorB||0;
+                // Use fallback color per channel if value is 0 but channel is on
+                const r = rOn ? (rV > 0 ? rV : 200) : 0;
+                const g = gOn ? (gV > 0 ? gV : 200) : 0;
+                const b = bOn ? (bV > 0 ? bV : 200) : 0;
+                const powered = c.active && !c.burned && (rOn||gOn||bOn);
+                // Always reset shadow before drawing body
+                ctx.shadowBlur=0; ctx.shadowColor='transparent';
+                // Body
+                ctx.fillStyle='rgba(10,12,20,0.92)';
+                ctx.strokeStyle=powered?'rgba(167,139,250,0.6)':'rgba(100,80,180,0.25)';
+                ctx.lineWidth=1;
+                ctx.fillRect(c.x,c.y,c.w,c.h-14); ctx.strokeRect(c.x,c.y,c.w,c.h-14);
+                // LED circle
+                const cx2=c.x+40, cy2=c.y+24;
+                if(powered){
+                    ctx.shadowBlur=18;
+                    ctx.shadowColor=`rgb(${r},${g},${b})`;
+                }
+                ctx.fillStyle=powered?`rgb(${r},${g},${b})`:'rgba(40,30,60,0.8)';
+                ctx.beginPath(); ctx.arc(cx2,cy2,16,0,Math.PI*2); ctx.fill();
+                ctx.strokeStyle=powered?`rgba(${r},${g},${b},0.7)`:'rgba(100,80,180,0.3)';
+                ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(cx2,cy2,16,0,Math.PI*2); ctx.stroke();
+                ctx.shadowBlur=0; ctx.shadowColor='transparent';
+                // Channel indicators
+                const chans=[
+                    {on:rOn,col:'rgba(255,60,60,0.9)',dim:'rgba(255,60,60,0.15)',v:rV,xi:c.x+6},
+                    {on:gOn,col:'rgba(60,200,60,0.9)',dim:'rgba(60,200,60,0.15)',v:gV,xi:c.x+20},
+                    {on:bOn,col:'rgba(60,100,255,0.9)',dim:'rgba(60,100,255,0.15)',v:bV,xi:c.x+34}
+                ];
+                chans.forEach(ch=>{
+                    const barH=Math.round((ch.v/255)*10)||2;
+                    ctx.fillStyle=ch.on?ch.col:ch.dim;
+                    ctx.fillRect(ch.xi,c.y+44-barH,8,barH);
+                });
+                ctx.font="7px 'DM Mono',monospace";
+                ctx.fillStyle=rOn?'rgba(255,100,100,1)':'rgba(255,80,80,0.4)'; ctx.fillText('R',c.x+7,c.y+48);
+                ctx.fillStyle=gOn?'rgba(100,255,100,1)':'rgba(80,200,80,0.4)'; ctx.fillText('G',c.x+21,c.y+48);
+                ctx.fillStyle=bOn?'rgba(100,140,255,1)':'rgba(80,120,255,0.4)'; ctx.fillText('B',c.x+35,c.y+48);
+                ctx.fillStyle='rgba(167,139,250,0.5)'; ctx.fillText('RGB',c.x+50,c.y+28);
+                if(c.burned){ ctx.fillStyle=C_RED; ctx.font="bold 8px 'DM Mono',monospace"; ctx.fillText('✕',c.x+36,c.y+26); }
+                label('R',c.x+4,c.y+66,'rgba(255,80,80,0.7)',7);
+                label('G',c.x+24,c.y+66,'rgba(80,200,80,0.7)',7);
+                label('B',c.x+44,c.y+66,'rgba(80,120,255,0.7)',7);
+                label('GND',c.x+58,c.y+66,'rgba(255,71,87,0.5)',7);
+            }
             else if(c.type==='L298N'){
                 ctx.fillStyle='rgba(20,14,36,0.9)';
                 ctx.strokeStyle=c.active&&!c.burned?'rgba(167,139,250,0.55)':'rgba(167,139,250,0.2)';
@@ -5299,10 +5726,10 @@ end>`
                 if(c.type==='POT'&&n.id==='OUT')nc='rgba(0,212,255,0.6)';
                 if(c.type==='BUZZER'&&n.id==='+')nc='rgba(255,107,138,0.7)';
                 if(c.type==='SEG7'&&['A','B','C','D','E','F','G'].includes(n.id))nc='rgba(255,71,87,0.5)';
-                if(c.type==='RGB_LED'&&n.id==='C')nc='rgba(255,71,87,0.6)';
-                if(c.type==='RGB_LED'&&n.id==='R')nc='rgba(255,0,0,0.7)';
-                if(c.type==='RGB_LED'&&n.id==='G')nc='rgba(0,255,0,0.7)';
-                if(c.type==='RGB_LED'&&n.id==='B')nc='rgba(0,0,255,0.7)';
+                if(c.type==='LED_RGB'&&n.id==='R')nc='rgba(255,80,80,0.8)';
+                if(c.type==='LED_RGB'&&n.id==='G')nc='rgba(80,200,80,0.8)';
+                if(c.type==='LED_RGB'&&n.id==='B')nc='rgba(80,120,255,0.8)';
+                if(c.type==='LED_RGB'&&n.id==='GND')nc='rgba(255,71,87,0.5)';
 
                 ctx.fillStyle=nc;
                 ctx.beginPath(); ctx.arc(c.x+n.x,c.y+n.y,4,0,Math.PI*2); ctx.fill();
@@ -5344,5 +5771,7 @@ end>`
     }
 
     draw();
-</script></body>
+</script>
+
+</body>
 </html>
