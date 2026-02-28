@@ -2748,7 +2748,7 @@ end>`;
                 { label:'pow(b,e)',        code:'\nresult=math.pow(base,exp)' },
                 { label:'sqrt(x)',         code:'\nresult=math.sqrt(x)' },
                 { label:'floor(x)',        code:'\nresult=math.floor(x)' },
-                { label:'ceil(x)',         code:'\nresult=math.ceil(x)' },
+                { label:'ceil(x)',        code:'\nresult=math.ceil(x)' },
                 { label:'round(x)',        code:'\nresult=math.round(x)' },
                 { label:'clamp(v,lo,hi)',  code:'\nresult=math.clamp(valor,0,100)' },
                 { label:'map(v,i0,i1,o0,o1)', code:'\nresult=math.map(val,0,1023,0,255)' },
@@ -2857,6 +2857,22 @@ end>`;
                 { label:'seg7.dot(D1,true)', code:'\nseg7.dot(D1,true)' },
             ]
         },
+        // Nuevas librerías solicitadas: Analog y Buzz
+        'Analog': {
+            desc: 'Lectura analógica (alias de pin.analog)',
+            color: 'rgba(0,212,255,0.7)',
+            snippets: [
+                { label:'Analog.read(A1)', code:'\nval=Analog.read(A1)' },
+            ]
+        },
+        'Buzz': {
+            desc: 'Control de buzzer (alias de buzzer)',
+            color: 'rgba(255,107,138,0.8)',
+            snippets: [
+                { label:'Buzz.tone(D1,440)', code:'\nBuzz.tone(D1,440)' },
+                { label:'Buzz.off(D1)',      code:'\nBuzz.off(D1)' },
+            ]
+        }
     };
 
     const LOG_DEMOS = [
@@ -3401,22 +3417,41 @@ end>`
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // LOG VALIDATOR
+    // LOG VALIDATOR (modificado para incluir Analog y Buzz)
     // ═══════════════════════════════════════════════════════════════
     function validateLOG(code) {
         const errors   = [];
         const warnings = [];
         const lines    = code.split('\n');
 
-        const KNOWN_LIBS   = ['math','str','timer','pin','oled','console','servo','buzzer','sensor','seg7'];
+        // Añadimos Analog y Buzz a las librerías conocidas
+        const KNOWN_LIBS   = ['math','str','timer','pin','oled','console','servo','buzzer','sensor','seg7','Analog','Buzz'];
         const KNOWN_MATH   = ['abs','max','min','pow','sqrt','floor','ceil','round','clamp','map','random','sin','cos','pi'];
         const KNOWN_STR    = ['concat','len','upper','lower','repeat','substr','indexOf','replace','trim','num'];
         const KNOWN_TIMER  = ['set','check','reset','elapsed','remaining'];
-        const KNOWN_PIN    = ['read','write','toggle','pulse','blink','stopBlink','off'];
+        const KNOWN_PIN    = ['read','write','toggle','pulse','blink','stopBlink','off','analog'];
         const KNOWN_OLED   = ['init','clear','print','println','draw','setCursor','printAt','scroll','invert'];
         const KNOWN_CONS   = ['print','println','warn','error','info','clear'];
         const KNOWN_SERVO  = ['write','read'];
-        const KNOWN_LIB_FNS = { math:KNOWN_MATH, str:KNOWN_STR, timer:KNOWN_TIMER, pin:KNOWN_PIN, oled:KNOWN_OLED, console:KNOWN_CONS, servo:KNOWN_SERVO };
+        const KNOWN_SENSOR = ['distance','temp','humidity'];
+        const KNOWN_SEG7   = ['show','dot'];
+        const KNOWN_ANALOG = ['read'];        // funciones para Analog
+        const KNOWN_BUZZ   = ['tone','off'];  // funciones para Buzz
+
+        const KNOWN_LIB_FNS = { 
+            math:KNOWN_MATH, 
+            str:KNOWN_STR, 
+            timer:KNOWN_TIMER, 
+            pin:KNOWN_PIN, 
+            oled:KNOWN_OLED, 
+            console:KNOWN_CONS, 
+            servo:KNOWN_SERVO,
+            buzzer:KNOWN_BUZZ,   // buzzer tiene tone y off
+            sensor:KNOWN_SENSOR,
+            seg7:KNOWN_SEG7,
+            Analog:KNOWN_ANALOG,  // nueva
+            Buzz:KNOWN_BUZZ       // nueva (mismas que buzzer)
+        };
 
         const KEYWORDS     = ['loop','while','for','if','else','delay','toggle','print','println','start<','end>','console','oled','pin','math','str','timer'];
         const VALID_PINS   = ['D1','D2','D3','D4','A1'];
@@ -3487,7 +3522,7 @@ end>`
                 continue;
             }
 
-            const libCallMatch = l.match(/^(math|str|timer|pin|oled|console|servo)\.([\w.]+)\(?/);
+            const libCallMatch = l.match(/^(math|str|timer|pin|oled|console|servo|buzzer|sensor|seg7|Analog|Buzz)\.([\w.]+)\(?/);
             if (libCallMatch) {
                 const lib = libCallMatch[1];
                 const fn  = libCallMatch[2].split('(')[0].split('.')[0];
@@ -3530,7 +3565,7 @@ end>`
                     continue;
                 }
 
-                const exprLibMatch = expr.match(/^(math|str|timer|pin|console|servo)\.([\w]+)\(/);
+                const exprLibMatch = expr.match(/^(math|str|timer|pin|console|servo|buzzer|sensor|seg7|Analog|Buzz)\.([\w]+)\(/);
                 if (exprLibMatch) {
                     const lib = exprLibMatch[1];
                     const fn  = exprLibMatch[2];
@@ -3746,6 +3781,8 @@ end>`
             ];
             comp.digit = 0;
             comp.showDot = false;
+            // Añadimos una pequeña resistencia interna para que se active al conectar VCC y GND
+            comp.internalResistance = 1000; // 1kΩ interna para completar circuito
         }
         components.push(comp); return comp;
     }
@@ -3785,7 +3822,7 @@ end>`
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // RADION LOG v2.0 — Intérprete completo (CORREGIDO)
+    // RADION LOG v2.0 — Intérprete completo (modificado para Analog y Buzz)
     // ═══════════════════════════════════════════════════════════════
     function runRadionLogic(c) {
         if (!c.active || c.burned) {
@@ -3841,10 +3878,32 @@ end>`
         }
 
         function callLibFunc(expr) {
-            const m = expr.match(/^(math|str|timer|pin|oled|servo|console|buzzer|sensor|seg7)\.([\w]+)\((.*)?\)$/);
+            const m = expr.match(/^(math|str|timer|pin|oled|servo|console|buzzer|sensor|seg7|Analog|Buzz)\.([\w]+)\((.*)?\)$/);
             if (!m) return undefined;
             const [, lib, fn, rawArgs] = m;
             const args = rawArgs ? rawArgs.split(',').map(a => evalExpr(a.trim())) : [];
+
+            // Manejo de las nuevas librerías Analog y Buzz
+            if (lib === 'Analog') {
+                if (fn === 'read') {
+                    const pinName = args[0] !== undefined ? args[0] : 'A1';
+                    // Reutilizamos la función pin.analog
+                    return evalExpr(`pin.analog(${pinName})`);
+                }
+                return 0;
+            }
+            if (lib === 'Buzz') {
+                if (fn === 'tone') {
+                    const pinName = args[0] !== undefined ? args[0] : 'D1';
+                    const freq = parseFloat(args[1]) || 440;
+                    return evalExpr(`buzzer.tone(${pinName}, ${freq})`);
+                }
+                if (fn === 'off') {
+                    const pinName = args[0] !== undefined ? args[0] : 'D1';
+                    return evalExpr(`buzzer.off(${pinName})`);
+                }
+                return 0;
+            }
 
             if (lib === 'math') {
                 if (fn === 'abs')    return Math.abs(args[0]);
@@ -3931,6 +3990,24 @@ end>`
                 }
                 if (fn === 'stopBlink') {
                     if (c.intState.pinBlink[physPin]) c.intState.pinBlink[physPin].active = false;
+                    return 0;
+                }
+                if (fn === 'analog') {
+                    const pinNameA = rawArgs ? rawArgs.trim() : 'A1';
+                    if (pinNameA === 'A1') {
+                        // Find POT connected to A1
+                        const a1node = c.nodes[7]; // A1 is nodes[7] on RADION
+                        let val = 0;
+                        if (a1node) {
+                            connections.forEach(conn => {
+                                let other = null;
+                                if (conn.a.n === a1node) other = conn.b;
+                                if (conn.b.n === a1node) other = conn.a;
+                                if (other && other.c.type === 'POT') val = other.c.value;
+                            });
+                        }
+                        return Math.round(val);
+                    }
                     return 0;
                 }
             }
@@ -4081,32 +4158,6 @@ end>`
                 }
             }
 
-            if (lib === 'pin' && fn === 'analog') {
-                const pinName3 = rawArgs ? rawArgs.trim() : 'A1';
-                if (pinName3 === 'A1') {
-                    // Find POT connected to A1
-                    const a1node = c.nodes[7]; // A1 is nodes[7] on RADION
-                    let val = 0;
-                    if (a1node) {
-                        connections.forEach(conn => {
-                            let other = null;
-                            if (conn.a.n === a1node) other = conn.b;
-                            if (conn.b.n === a1node) other = conn.a;
-                            if (other && other.c.type === 'POT') val = other.c.value;
-                        });
-                    }
-                    return Math.round(val);
-                }
-                return 0;
-            }
-
-            if (lib === 'math' && fn === 'map') {
-                // math.map(val, inMin, inMax, outMin, outMax)
-                const [v, i0, i1, o0, o1] = args.map(x => parseFloat(x) || 0);
-                if (i1 === i0) return o0;
-                return o0 + (v - i0) * (o1 - o0) / (i1 - i0);
-            }
-
             return undefined;
         }
 
@@ -4114,7 +4165,7 @@ end>`
             if (!expr) return 0;
             expr = expr.trim();
 
-            if (/^(math|str|timer|pin|servo|buzzer|sensor|seg7)\.([\w]+)\(/.test(expr)) {
+            if (/^(math|str|timer|pin|servo|buzzer|sensor|seg7|Analog|Buzz)\.([\w]+)\(/.test(expr)) {
                 const r = callLibFunc(expr);
                 if (r !== undefined) return r;
             }
@@ -4445,7 +4496,7 @@ end>`
                 c.intState.pc++; ix++; continue;
             }
 
-            if (/^(math|str|timer|pin|servo|buzzer|sensor|seg7)\.([\w]+)\(/.test(line)) {
+            if (/^(math|str|timer|pin|servo|buzzer|sensor|seg7|Analog|Buzz)\.([\w]+)\(/.test(line)) {
                 callLibFunc(line);
                 c.intState.pc++; ix++; continue;
             }
@@ -4518,6 +4569,21 @@ end>`
                         if(['AND','OR','NOT','XOR','RSK90','RADION','OLED_I2C'].includes(comp.type))continue;
                         if(comp.type==='L298N')continue;
                         if(comp.type==='SERVO')continue;
+                        // Para el display SEG7, permitimos paso a través de VCC y GND si hay resistencia interna
+                        if(comp.type==='SEG7' && comp.internalResistance) {
+                            // Permitimos conexión entre VCC y GND (índices 0 y 1)
+                            if(curr === comp.nodes[0]) { // VCC
+                                if(!comp.nodes[1].signal) {
+                                    comp.nodes[1].signal = true;
+                                    q.push(comp.nodes[1]);
+                                }
+                            } else if(curr === comp.nodes[1]) { // GND
+                                if(!comp.nodes[0].signal) {
+                                    comp.nodes[0].signal = true;
+                                    q.push(comp.nodes[0]);
+                                }
+                            }
+                        }
                         comp.nodes.forEach(n=>{if(!n.signal){n.signal=true;q.push(n);}});
                     }
                 }
@@ -4570,6 +4636,24 @@ end>`
                         if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);
                         if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);
                     }
+                    else if(comp.type==='SEG7') {
+                        // Si es el display, permitimos paso entre VCC y GND si hay resistencia interna
+                        if(comp.internalResistance) {
+                            if(currentNode === comp.nodes[0] && !visitedNodes.includes(comp.nodes[1])) {
+                                outNodes.push(comp.nodes[1]);
+                            }
+                            if(currentNode === comp.nodes[1] && !visitedNodes.includes(comp.nodes[0])) {
+                                outNodes.push(comp.nodes[0]);
+                            }
+                        }
+                        // También permitimos paso a través de otros pines si se conectan
+                        // (simplificado: todos los pines pueden conducir si están conectados)
+                        comp.nodes.forEach(n => {
+                            if(n !== currentNode && !visitedNodes.includes(n)) {
+                                outNodes.push(n);
+                            }
+                        });
+                    }
                     else{outNodes.push(comp.nodes.find(n=>n!==currentNode));}
                     outNodes.forEach(otherNode=>{
                         if(otherNode&&!visitedNodes.includes(otherNode)){
@@ -4603,6 +4687,10 @@ end>`
                                 }
                             }
                             if(comp.type==='TRANSISTOR'){const bs=comp.nodes[1].signal;if(comp.mode==='NPN'){if(bs)canCross=true;}else{if(!bs)canCross=true;}}
+                            if(comp.type==='SEG7') {
+                                // Permitimos paso a través de cualquier nodo si están conectados
+                                canCross = true; // simplificado: todos los pines pueden conducir
+                            }
                             if(canCross)dfs(otherNode,[...currentPath,{t:'comp',comp,dir:direction}],[...visitedNodes,otherNode]);
                         }
                     });
@@ -4627,6 +4715,7 @@ end>`
                             if(step.comp.type==='LED')ledCount++;
                             if(['AND','OR','NOT','XOR','MUX'].includes(step.comp.type))rSum+=10;
                             if(step.comp.type==='CAPACITOR'&&bat.type==='BATTERY'){let cr=50/(step.comp.val||10);step.comp.charge=Math.min(100,step.comp.charge+cr);step.comp.active=true;}
+                            if(step.comp.type==='SEG7') rSum += step.comp.internalResistance || 1000; // resistencia interna
                         }
                     });
                     let vNet=(bat.val+extraVoltage)-(ledCount*2),current=vNet>0?(vNet/rSum):0,popped=false;
@@ -4638,6 +4727,7 @@ end>`
                             if(['AND','OR','NOT','XOR','MUX'].includes(c.type)&&current>0.2){c.burned=true;popped=true;}
                             if(c.type==='TRANSISTOR'&&current>1.0){c.burned=true;popped=true;}
                             if(c.type==='OLED_I2C'&&current>0.5){c.burned=true;popped=true;}
+                            if(c.type==='SEG7'&&current>0.5){c.burned=true;popped=true;}
                         });
                     }
                     if(!popped&&current>0){
