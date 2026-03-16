@@ -4542,238 +4542,382 @@ end>`
         }
     }
 
-    function updatePhysics(){
-        components.forEach(c=>{c.state=0;if(c.type!=='CAPACITOR')c.active=false;if(c.type==='RELAY')c.coilActiveThisFrame=false;});
-        connections.forEach(conn=>{conn.active=false;conn.flowDir=1;});
-        components.filter(c=>c.type==='CAPACITOR').forEach(cap=>{if(cap.charge>0)cap.isSource=true;else{cap.isSource=false;cap.active=false;}});
-        components.forEach(c=>c.nodes.forEach(n=>n.signal=false));
-        const sources=components.filter(c=>(c.type==='BATTERY'||(c.type==='CAPACITOR'&&c.isSource)||(c.type==='RSK90'&&c.clockState)||(c.type==='RADION'&&(c.memory.d1||c.memory.d2||c.memory.d3||c.memory.d4)))&&!c.burned);
-        sources.forEach(src=>{
-            let startNodes=[];
-            if(src.type==='BATTERY'||src.type==='CAPACITOR')startNodes.push(src.nodes[0]);
-            else if(src.type==='RSK90')startNodes.push(src.nodes[2]);
-            else if(src.type==='RADION'){if(src.memory.d1)startNodes.push(src.nodes[3]);if(src.memory.d2)startNodes.push(src.nodes[4]);if(src.memory.d3)startNodes.push(src.nodes[5]);if(src.memory.d4)startNodes.push(src.nodes[6]);}
-            startNodes.forEach(sn=>{
-                let q=[sn];sn.signal=true;
-                while(q.length>0){
-                    let curr=q.shift();
-                    connections.forEach(conn=>{let next=null;if(conn.a.n===curr)next=conn.b.n;if(conn.b.n===curr)next=conn.a.n;if(next&&!next.signal){next.signal=true;q.push(next);}});
-                    const comp=components.find(c=>c.nodes.includes(curr));
-                    if(comp&&!comp.burned){
-                        if((comp.type==='SWITCH'||comp.type==='PUSH_BTN')&&!comp.closed)continue;
-                        if(comp.type==='RELAY'){if((curr===comp.nodes[2]||curr===comp.nodes[3])&&!comp.coilState)continue;}
-                        if(comp.type==='MUX'){const sel=comp.selState;if(curr===comp.nodes[0]){if(!sel&&!comp.nodes[3].signal){comp.nodes[3].signal=true;q.push(comp.nodes[3]);}}else if(curr===comp.nodes[1]){if(sel&&!comp.nodes[3].signal){comp.nodes[3].signal=true;q.push(comp.nodes[3]);}}else if(curr===comp.nodes[3]){let dest=sel?comp.nodes[1]:comp.nodes[0];if(!dest.signal){dest.signal=true;q.push(dest);}}continue;}
-                        if(comp.type==='LED'&&curr!==comp.nodes[0])continue;
-                        if(comp.type==='CAPACITOR'&&curr!==comp.nodes[0])continue;
-                        if(comp.type==='TRANSISTOR')continue;
-                        if(['AND','OR','NOT','XOR','RSK90','RADION','OLED_I2C'].includes(comp.type))continue;
-                        if(comp.type==='L298N')continue;
-                        if(comp.type==='SERVO')continue;
-                        // Para el display SEG7, permitimos paso a través de VCC y GND si hay resistencia interna
-                        if(comp.type==='SEG7' && comp.internalResistance) {
-                            // Permitimos conexión entre VCC y GND (índices 0 y 1)
-                            if(curr === comp.nodes[0]) { // VCC
-                                if(!comp.nodes[1].signal) {
-                                    comp.nodes[1].signal = true;
-                                    q.push(comp.nodes[1]);
-                                }
-                            } else if(curr === comp.nodes[1]) { // GND
-                                if(!comp.nodes[0].signal) {
-                                    comp.nodes[0].signal = true;
-                                    q.push(comp.nodes[0]);
-                                }
-                            }
+    // =========================================================================
+    // SIMULACIÓN ELÉCTRICA CORREGIDA (LOS LEDs SOLO SE ENCIENDEN CON CORRIENTE)
+    // =========================================================================
+
+    // Identifica si un componente es una puerta lógica digital
+    function isDigitalGate(comp) {
+        return ['AND', 'OR', 'XOR', 'NOT', 'MUX'].includes(comp.type);
+    }
+
+    // Propaga señales digitales (para puertas lógicas) - NO AFECTA A LEDs
+    function propagateDigitalSignals() {
+        let queue = [];
+        // Inicializar cola con todos los nodos que ya tienen señal
+        components.forEach(c => c.nodes.forEach(n => { if (n.signal) queue.push(n); }));
+        let visited = new Set();
+        while (queue.length) {
+            let node = queue.shift();
+            if (visited.has(node)) continue;
+            visited.add(node);
+
+            // Propagar por conexiones (cables)
+            connections.forEach(conn => {
+                let other = null;
+                if (conn.a.n === node) other = conn.b.n;
+                if (conn.b.n === node) other = conn.a.n;
+                if (other && !other.signal) {
+                    other.signal = true;
+                    queue.push(other);
+                }
+            });
+
+            // Propagar dentro del mismo componente si es conductor (para señales)
+            let comp = components.find(c => c.nodes.includes(node));
+            if (comp && !comp.burned && !isDigitalGate(comp)) {
+                let canPropagate = false;
+                // Componentes que siempre propagan señal (considerados cables)
+                if (comp.type === 'RESISTOR' || comp.type === 'CAPACITOR' || comp.type === 'WAYPOINT') {
+                    canPropagate = true;
+                } else if (comp.type === 'SWITCH' || comp.type === 'PUSH_BTN') {
+                    canPropagate = comp.closed; // solo si está cerrado
+                } else if (comp.type === 'BATTERY') {
+                    // La batería propaga señal desde su ánodo a todos los nodos (incluido cátodo)
+                    canPropagate = true;
+                } else if (comp.type === 'LED') {
+                    // Los LEDs NO propagan señal digital (no deben encenderse por una señal)
+                    canPropagate = false; // CRUCIAL: LA SEÑAL NO ENCIENDE EL LED
+                } else {
+                    canPropagate = false;
+                }
+                if (canPropagate) {
+                    comp.nodes.forEach(otherNode => {
+                        if (otherNode !== node && !otherNode.signal) {
+                            otherNode.signal = true;
+                            queue.push(otherNode);
                         }
-                        comp.nodes.forEach(n=>{if(!n.signal){n.signal=true;q.push(n);}});
-                    }
+                    });
+                }
+            }
+        }
+    }
+
+    // Evaluación de todas las puertas lógicas (cálculo de salidas)
+    function evaluateGates() {
+        let changed = false;
+        components.filter(isDigitalGate).forEach(gate => {
+            if (gate.burned) return;
+            let outIdx, newOut;
+            if (gate.type === 'AND' || gate.type === 'OR' || gate.type === 'XOR') {
+                const in0 = gate.nodes[0].signal;
+                const in1 = gate.nodes[1].signal;
+                if (gate.type === 'AND') newOut = in0 && in1;
+                else if (gate.type === 'OR')  newOut = in0 || in1;
+                else newOut = in0 != in1;
+                outIdx = 2;
+            } else if (gate.type === 'NOT') {
+                const in1 = gate.nodes[1].signal;
+                newOut = !in1;
+                outIdx = 2;
+            } else if (gate.type === 'MUX') {
+                const a = gate.nodes[0].signal;
+                const b = gate.nodes[1].signal;
+                const s = gate.nodes[2].signal;
+                newOut = s ? b : a;
+                outIdx = 3;
+            }
+            if (gate.nodes[outIdx].signal !== newOut) {
+                gate.nodes[outIdx].signal = newOut;
+                changed = true;
+            }
+        });
+        return changed;
+    }
+
+    // Versión final y correcta de updatePhysics
+    function updatePhysics() {
+        // Reiniciar estados
+        components.forEach(c => { c.state = 0; if (c.type !== 'CAPACITOR') c.active = false; if (c.type === 'RELAY') c.coilActiveThisFrame = false; });
+        connections.forEach(conn => { conn.active = false; conn.flowDir = 1; });
+        components.filter(c => c.type === 'CAPACITOR').forEach(cap => {
+            if (cap.charge > 0) cap.isSource = true;
+            else { cap.isSource = false; cap.active = false; }
+        });
+        // Las señales digitales se reinician (pero las usaremos para lógica, no para LEDs)
+        components.forEach(c => c.nodes.forEach(n => n.signal = false));
+
+        // --- PASO 1: Propagación inicial de señales digitales desde fuentes (baterías, etc.) ---
+        const sources = components.filter(c => (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource) || (c.type === 'RSK90' && c.clockState) || (c.type === 'RADION' && (c.memory.d1 || c.memory.d2 || c.memory.d3 || c.memory.d4))) && !c.burned);
+        sources.forEach(src => {
+            let startNodes = [];
+            if (src.type === 'BATTERY' || src.type === 'CAPACITOR') startNodes.push(src.nodes[0]); // ánodo
+            else if (src.type === 'RSK90') startNodes.push(src.nodes[2]); // OUT
+            else if (src.type === 'RADION') {
+                if (src.memory.d1) startNodes.push(src.nodes[3]);
+                if (src.memory.d2) startNodes.push(src.nodes[4]);
+                if (src.memory.d3) startNodes.push(src.nodes[5]);
+                if (src.memory.d4) startNodes.push(src.nodes[6]);
+            }
+            startNodes.forEach(sn => {
+                if (!sn.signal) {
+                    sn.signal = true;
                 }
             });
         });
-        components.filter(c=>(c.type==='BATTERY'||(c.type==='CAPACITOR'&&c.isSource))&&!c.burned).forEach(bat=>{
-            let foundPaths=[];
-            function dfs(currentNode,currentPath,visitedNodes){
-                if(currentNode===bat.nodes[1]){foundPaths.push([...currentPath]);return;}
-                connections.forEach(conn=>{
-                    if(conn.a.n===currentNode&&!visitedNodes.includes(conn.b.n))dfs(conn.b.n,[...currentPath,{t:'wire',c:conn,dir:1}],[...visitedNodes,conn.b.n]);
-                    if(conn.b.n===currentNode&&!visitedNodes.includes(conn.a.n))dfs(conn.a.n,[...currentPath,{t:'wire',c:conn,dir:-1}],[...visitedNodes,conn.a.n]);
+        // Propagamos las señales iniciales (solo para lógica digital)
+        propagateDigitalSignals();
+
+        // --- PASO 2: Bucle de punto fijo para lógica digital ---
+        const MAX_ITER = 10;
+        let iter = 0;
+        let changed = true;
+        while (changed && iter < MAX_ITER) {
+            changed = false;
+            if (evaluateGates()) changed = true;
+            propagateDigitalSignals();
+            iter++;
+        }
+
+        // --- PASO 3: Análisis de caminos de corriente (DFS) para encender LEDs y motores ---
+        // (Las puertas lógicas NO participan en este análisis)
+        const batts = components.filter(c => (c.type === 'BATTERY' || (c.type === 'CAPACITOR' && c.isSource)) && !c.burned);
+        batts.forEach(bat => {
+            let foundPaths = [];
+            function dfs(currentNode, currentPath, visitedNodes) {
+                if (currentNode === bat.nodes[1]) { // llegamos al cátodo
+                    foundPaths.push([...currentPath]);
+                    return;
+                }
+                // Propagar por cables
+                connections.forEach(conn => {
+                    if (conn.a.n === currentNode && !visitedNodes.includes(conn.b.n)) {
+                        dfs(conn.b.n, [...currentPath, { t: 'wire', c: conn, dir: 1 }], [...visitedNodes, conn.b.n]);
+                    }
+                    if (conn.b.n === currentNode && !visitedNodes.includes(conn.a.n)) {
+                        dfs(conn.a.n, [...currentPath, { t: 'wire', c: conn, dir: -1 }], [...visitedNodes, conn.a.n]);
+                    }
                 });
-                const comp=components.find(c=>c.nodes.includes(currentNode));
-                if(comp&&comp!==bat&&!comp.burned){
-                    let outNodes=[];let direction=(currentNode===comp.nodes[0])?1:-1;
-                    if(comp.type==='TRANSISTOR'){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[2]);else if(currentNode===comp.nodes[2])outNodes.push(comp.nodes[0]);}
-                    else if(['AND','OR','NOT','XOR'].includes(comp.type)){if(currentNode===comp.nodes[0]||currentNode===comp.nodes[1])outNodes.push(comp.nodes[2]);}
-                    else if(comp.type==='RELAY'){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);if(currentNode===comp.nodes[2])outNodes.push(comp.nodes[3]);if(currentNode===comp.nodes[3])outNodes.push(comp.nodes[2]);}
-                    else if(comp.type==='MUX'){const sel=comp.selState;if(currentNode===comp.nodes[0]&&!sel)outNodes.push(comp.nodes[3]);if(currentNode===comp.nodes[1]&&sel)outNodes.push(comp.nodes[3]);if(currentNode===comp.nodes[3]){if(sel)outNodes.push(comp.nodes[1]);else outNodes.push(comp.nodes[0]);}}
-                    else if(comp.type==='RSK90'){if(currentNode===comp.nodes[0]){outNodes.push(comp.nodes[1]);outNodes.push(comp.nodes[2]);}if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);if(currentNode===comp.nodes[2])outNodes.push(comp.nodes[0]);}
-                    else if(comp.type==='RADION'){
-                        if(currentNode===comp.nodes[0]){outNodes.push(comp.nodes[1]);outNodes.push(comp.nodes[2]);}
-                        if(currentNode===comp.nodes[1]){outNodes.push(comp.nodes[2]);outNodes.push(comp.nodes[0]);}
-                        if(currentNode===comp.nodes[2]){outNodes.push(comp.nodes[1]);outNodes.push(comp.nodes[0]);}
-                        if(comp.memory.d1){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[3]);if(currentNode===comp.nodes[3])outNodes.push(comp.nodes[0]);}
-                        if(comp.memory.d2){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[4]);if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[0]);}
-                        if(comp.memory.d3){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[5]);if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[0]);}
-                        if(comp.memory.d4){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[6]);if(currentNode===comp.nodes[6])outNodes.push(comp.nodes[0]);}
+                // Propagar a través de componentes (excluyendo puertas lógicas)
+                const comp = components.find(c => c.nodes.includes(currentNode));
+
+                // FIX: puertas lógicas conducen corriente cuando su salida tiene señal
+                if (comp && comp !== bat && !comp.burned && isDigitalGate(comp)) {
+                    const outNode = comp.nodes[comp.nodes.length - 1];
+                    if (currentNode !== outNode && outNode && outNode.signal && !visitedNodes.includes(outNode)) {
+                        dfs(outNode, [...currentPath, { t: 'comp', comp, dir: 1 }], [...visitedNodes, outNode]);
                     }
-                    else if(comp.type==='OLED_I2C'){if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);}
-                    else if(comp.type==='L298N'){
-                        if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);
-                        if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);
-                        const in1=comp.nodes[2].signal, in2=comp.nodes[3].signal;
-                        if(in1&&!in2){
-                            if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[4]);
-                            if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[0]);
-                            if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[1]);
-                            if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[5]);
+                }
+
+                if (comp && comp !== bat && !comp.burned && !isDigitalGate(comp)) {
+                    let outNodes = [];
+                    let direction = (currentNode === comp.nodes[0]) ? 1 : -1;
+                    if (comp.type === 'TRANSISTOR') {
+                        if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[2]);
+                        else if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]);
+                    } else if (comp.type === 'RELAY') {
+                        if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[1]);
+                        if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
+                        if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[3]);
+                        if (currentNode === comp.nodes[3]) outNodes.push(comp.nodes[2]);
+                    } else if (comp.type === 'RSK90') {
+                        if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); }
+                        if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
+                        if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]);
+                    } else if (comp.type === 'RADION') {
+                        if (currentNode === comp.nodes[0]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[2]); }
+                        if (currentNode === comp.nodes[1]) { outNodes.push(comp.nodes[2]); outNodes.push(comp.nodes[0]); }
+                        if (currentNode === comp.nodes[2]) { outNodes.push(comp.nodes[1]); outNodes.push(comp.nodes[0]); }
+                        if (comp.memory.d1) { if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[3]); if (currentNode === comp.nodes[3]) outNodes.push(comp.nodes[0]); }
+                        if (comp.memory.d2) { if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[4]); if (currentNode === comp.nodes[4]) outNodes.push(comp.nodes[0]); }
+                        if (comp.memory.d3) { if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[5]); if (currentNode === comp.nodes[5]) outNodes.push(comp.nodes[0]); }
+                        if (comp.memory.d4) { if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[6]); if (currentNode === comp.nodes[6]) outNodes.push(comp.nodes[0]); }
+                    } else if (comp.type === 'OLED_I2C') {
+                        if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[1]);
+                        if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
+                    } else if (comp.type === 'L298N') {
+                        if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[1]);
+                        if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
+                        const in1 = comp.nodes[2].signal, in2 = comp.nodes[3].signal;
+                        if (in1 && !in2) {
+                            if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[4]);
+                            if (currentNode === comp.nodes[4]) outNodes.push(comp.nodes[0]);
+                            if (currentNode === comp.nodes[5]) outNodes.push(comp.nodes[1]);
+                            if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[5]);
                         }
-                        if(!in1&&in2){
-                            if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[5]);
-                            if(currentNode===comp.nodes[5])outNodes.push(comp.nodes[0]);
-                            if(currentNode===comp.nodes[4])outNodes.push(comp.nodes[1]);
-                            if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[4]);
+                        if (!in1 && in2) {
+                            if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[5]);
+                            if (currentNode === comp.nodes[5]) outNodes.push(comp.nodes[0]);
+                            if (currentNode === comp.nodes[4]) outNodes.push(comp.nodes[1]);
+                            if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[4]);
                         }
-                    }
-                    else if(comp.type==='BATTERY'&&comp!==bat){
-                        if(currentNode===comp.nodes[1])outNodes.push(comp.nodes[0]);
-                        if(currentNode===comp.nodes[0])outNodes.push(comp.nodes[1]);
-                    }
-                    else if(comp.type==='SEG7') {
-                        // Si es el display, permitimos paso entre VCC y GND si hay resistencia interna
-                        if(comp.internalResistance) {
-                            if(currentNode === comp.nodes[0] && !visitedNodes.includes(comp.nodes[1])) {
-                                outNodes.push(comp.nodes[1]);
-                            }
-                            if(currentNode === comp.nodes[1] && !visitedNodes.includes(comp.nodes[0])) {
-                                outNodes.push(comp.nodes[0]);
-                            }
+                    } else if (comp.type === 'SERVO') {
+                        if (currentNode === comp.nodes[0] || currentNode === comp.nodes[1]) {
+                            outNodes.push(comp.nodes[0] === currentNode ? comp.nodes[1] : comp.nodes[0]);
                         }
-                        // También permitimos paso a través de otros pines si se conectan
-                        // (simplificado: todos los pines pueden conducir si están conectados)
+                    } else if (comp.type === 'BATTERY' && comp !== bat) {
+                        if (currentNode === comp.nodes[1]) outNodes.push(comp.nodes[0]);
+                        if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[1]);
+                    } else if (comp.type === 'SEG7') {
+                        if (comp.internalResistance) {
+                            if (currentNode === comp.nodes[0] && !visitedNodes.includes(comp.nodes[1])) outNodes.push(comp.nodes[1]);
+                            if (currentNode === comp.nodes[1] && !visitedNodes.includes(comp.nodes[0])) outNodes.push(comp.nodes[0]);
+                        }
                         comp.nodes.forEach(n => {
-                            if(n !== currentNode && !visitedNodes.includes(n)) {
-                                outNodes.push(n);
-                            }
+                            if (n !== currentNode && !visitedNodes.includes(n)) outNodes.push(n);
                         });
+                    } else {
+                        // Para resistores, capacitores, motores, etc.
+                        let other = comp.nodes.find(n => n !== currentNode);
+                        if (other) outNodes.push(other);
                     }
-                    else{outNodes.push(comp.nodes.find(n=>n!==currentNode));}
-                    outNodes.forEach(otherNode=>{
-                        if(otherNode&&!visitedNodes.includes(otherNode)){
-                            let canCross=false;
-                            if(comp.type==='RESISTOR'||comp.type==='MOTOR'||comp.type==='WAYPOINT')canCross=true;
-                            if(comp.type==='BATTERY'&&comp!==bat)canCross=true;
-                            if((comp.type==='SWITCH'||comp.type==='PUSH_BTN')&&comp.closed)canCross=true;
-                            if(comp.type==='RELAY'){if((currentNode===comp.nodes[0]&&otherNode===comp.nodes[1])||(currentNode===comp.nodes[1]&&otherNode===comp.nodes[0]))canCross=true;if((currentNode===comp.nodes[2]&&otherNode===comp.nodes[3])||(currentNode===comp.nodes[3]&&otherNode===comp.nodes[2])){if(comp.coilState)canCross=true;}}
-                            if(comp.type==='MUX')canCross=true;
-                            if(comp.type==='LED'&&direction===1)canCross=true;
-                            if(comp.type==='CAPACITOR'&&bat.type==='BATTERY')canCross=true;
-                            if(comp.type==='AND'&&comp.nodes[0].signal&&comp.nodes[1].signal)canCross=true;
-                            if(comp.type==='OR'&&(comp.nodes[0].signal||comp.nodes[1].signal))canCross=true;
-                            if(comp.type==='XOR'&&((comp.nodes[0].signal&&!comp.nodes[1].signal)||(!comp.nodes[0].signal&&comp.nodes[1].signal)))canCross=true;
-                            if(comp.type==='NOT'&&currentNode===comp.nodes[0]&&!comp.nodes[1].signal)canCross=true;
-                            if(comp.type==='RSK90'){if((currentNode===comp.nodes[0]&&otherNode===comp.nodes[1])||(currentNode===comp.nodes[1]&&otherNode===comp.nodes[0]))canCross=true;if(comp.clockState&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[2])||(currentNode===comp.nodes[2]&&otherNode===comp.nodes[0])))canCross=true;}
-                            if(comp.type==='RADION'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1]||n===comp.nodes[2];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;if(comp.memory.d1&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[3])||(currentNode===comp.nodes[3]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d2&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[4])||(currentNode===comp.nodes[4]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d3&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[5])||(currentNode===comp.nodes[5]&&otherNode===comp.nodes[0])))canCross=true;if(comp.memory.d4&&((currentNode===comp.nodes[0]&&otherNode===comp.nodes[6])||(currentNode===comp.nodes[6]&&otherNode===comp.nodes[0])))canCross=true;}
-                            if(comp.type==='SERVO'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;}
-                            if(comp.type==='OLED_I2C'){const isPwr=(n)=>n===comp.nodes[0]||n===comp.nodes[1];if(isPwr(currentNode)&&isPwr(otherNode))canCross=true;}
-                            if(comp.type==='L298N'){
-                                const in1=comp.nodes[2].signal, in2=comp.nodes[3].signal;
-                                const vcc=comp.nodes[0], gnd=comp.nodes[1], o1=comp.nodes[4], o2=comp.nodes[5];
-                                if((currentNode===vcc&&otherNode===gnd)||(currentNode===gnd&&otherNode===vcc))canCross=true;
-                                if(in1&&!in2){
-                                    if((currentNode===vcc&&otherNode===o1)||(currentNode===o1&&otherNode===vcc))canCross=true;
-                                    if((currentNode===o2&&otherNode===gnd)||(currentNode===gnd&&otherNode===o2))canCross=true;
+
+                    outNodes.forEach(otherNode => {
+                        if (otherNode && !visitedNodes.includes(otherNode)) {
+                            let canCross = false;
+                            if (comp.type === 'RESISTOR' || comp.type === 'MOTOR' || comp.type === 'WAYPOINT') canCross = true;
+                            if (comp.type === 'BATTERY' && comp !== bat) canCross = true;
+                            if ((comp.type === 'SWITCH' || comp.type === 'PUSH_BTN') && comp.closed) canCross = true;
+                            if (comp.type === 'RELAY') {
+                                if ((currentNode === comp.nodes[0] && otherNode === comp.nodes[1]) || (currentNode === comp.nodes[1] && otherNode === comp.nodes[0])) canCross = true;
+                                if ((currentNode === comp.nodes[2] && otherNode === comp.nodes[3]) || (currentNode === comp.nodes[3] && otherNode === comp.nodes[2])) { if (comp.coilState) canCross = true; }
+                            }
+                            if (comp.type === 'LED' && direction === 1) canCross = true; // El LED permite corriente de ánodo a cátodo
+                            if (comp.type === 'CAPACITOR' && bat.type === 'BATTERY') canCross = true;
+                            if (comp.type === 'RSK90') {
+                                if ((currentNode === comp.nodes[0] && otherNode === comp.nodes[1]) || (currentNode === comp.nodes[1] && otherNode === comp.nodes[0])) canCross = true;
+                                if (comp.clockState && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[2]) || (currentNode === comp.nodes[2] && otherNode === comp.nodes[0]))) canCross = true;
+                            }
+                            if (comp.type === 'RADION') {
+                                const isPwr = (n) => n === comp.nodes[0] || n === comp.nodes[1] || n === comp.nodes[2];
+                                if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
+                                if (comp.memory.d1 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[3]) || (currentNode === comp.nodes[3] && otherNode === comp.nodes[0]))) canCross = true;
+                                if (comp.memory.d2 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[4]) || (currentNode === comp.nodes[4] && otherNode === comp.nodes[0]))) canCross = true;
+                                if (comp.memory.d3 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[5]) || (currentNode === comp.nodes[5] && otherNode === comp.nodes[0]))) canCross = true;
+                                if (comp.memory.d4 && ((currentNode === comp.nodes[0] && otherNode === comp.nodes[6]) || (currentNode === comp.nodes[6] && otherNode === comp.nodes[0]))) canCross = true;
+                            }
+                            if (comp.type === 'SERVO') {
+                                const isPwr = (n) => n === comp.nodes[0] || n === comp.nodes[1];
+                                if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
+                            }
+                            if (comp.type === 'OLED_I2C') {
+                                const isPwr = (n) => n === comp.nodes[0] || n === comp.nodes[1];
+                                if (isPwr(currentNode) && isPwr(otherNode)) canCross = true;
+                            }
+                            if (comp.type === 'L298N') {
+                                const in1 = comp.nodes[2].signal, in2 = comp.nodes[3].signal;
+                                const vcc = comp.nodes[0], gnd = comp.nodes[1], o1 = comp.nodes[4], o2 = comp.nodes[5];
+                                if ((currentNode === vcc && otherNode === gnd) || (currentNode === gnd && otherNode === vcc)) canCross = true;
+                                if (in1 && !in2) {
+                                    if ((currentNode === vcc && otherNode === o1) || (currentNode === o1 && otherNode === vcc)) canCross = true;
+                                    if ((currentNode === o2 && otherNode === gnd) || (currentNode === gnd && otherNode === o2)) canCross = true;
                                 }
-                                if(!in1&&in2){
-                                    if((currentNode===vcc&&otherNode===o2)||(currentNode===o2&&otherNode===vcc))canCross=true;
-                                    if((currentNode===o1&&otherNode===gnd)||(currentNode===gnd&&otherNode===o1))canCross=true;
+                                if (!in1 && in2) {
+                                    if ((currentNode === vcc && otherNode === o2) || (currentNode === o2 && otherNode === vcc)) canCross = true;
+                                    if ((currentNode === o1 && otherNode === gnd) || (currentNode === gnd && otherNode === o1)) canCross = true;
                                 }
                             }
-                            if(comp.type==='TRANSISTOR'){const bs=comp.nodes[1].signal;if(comp.mode==='NPN'){if(bs)canCross=true;}else{if(!bs)canCross=true;}}
-                            if(comp.type==='SEG7') {
-                                // Permitimos paso a través de cualquier nodo si están conectados
-                                canCross = true; // simplificado: todos los pines pueden conducir
+                            if (comp.type === 'TRANSISTOR') {
+                                const bs = comp.nodes[1].signal;
+                                if (comp.mode === 'NPN') { if (bs) canCross = true; } else { if (!bs) canCross = true; }
                             }
-                            if(canCross)dfs(otherNode,[...currentPath,{t:'comp',comp,dir:direction}],[...visitedNodes,otherNode]);
+                            if (comp.type === 'SEG7') {
+                                canCross = true; // simplificado
+                            }
+                            if (canCross) dfs(otherNode, [...currentPath, { t: 'comp', comp, dir: direction }], [...visitedNodes, otherNode]);
                         }
                     });
                 }
             }
-            dfs(bat.nodes[0],[],[bat.nodes[0]]);
-            if(foundPaths.length>0){
-                if(bat.type==='CAPACITOR')bat.charge-=2.0;
-                foundPaths.forEach(path=>{
-                    let rSum=0.1,ledCount=0,pathComps=[],extraVoltage=0;
-                    path.forEach(step=>{
-                        if(step.t==='comp'){
+            dfs(bat.nodes[0], [], [bat.nodes[0]]);
+            if (foundPaths.length > 0) {
+                if (bat.type === 'CAPACITOR') bat.charge -= 2.0;
+                foundPaths.forEach(path => {
+                    let rSum = 0.1, ledCount = 0, pathComps = [], extraVoltage = 0;
+                    path.forEach(step => {
+                        if (step.t === 'comp') {
                             pathComps.push(step.comp);
-                            if(step.comp.type==='BATTERY'&&step.comp!==bat)extraVoltage+=step.comp.val;
-                            if(step.comp.type==='RESISTOR')rSum+=step.comp.val;
-                            if(step.comp.type==='RELAY')rSum+=50;
-                            if(step.comp.type==='RSK90')rSum+=1000;
-                            if(step.comp.type==='RADION')rSum+=1200;
-                            if(step.comp.type==='OLED_I2C')rSum+=1000;
-                            if(step.comp.type==='L298N')rSum+=800;
-                            if(step.comp.type==='SERVO')rSum+=600;
-                            if(step.comp.type==='LED')ledCount++;
-                            if(['AND','OR','NOT','XOR','MUX'].includes(step.comp.type))rSum+=10;
-                            if(step.comp.type==='CAPACITOR'&&bat.type==='BATTERY'){let cr=50/(step.comp.val||10);step.comp.charge=Math.min(100,step.comp.charge+cr);step.comp.active=true;}
-                            if(step.comp.type==='SEG7') rSum += step.comp.internalResistance || 1000; // resistencia interna
+                            if (step.comp.type === 'BATTERY' && step.comp !== bat) extraVoltage += step.comp.val;
+                            if (step.comp.type === 'RESISTOR') rSum += step.comp.val;
+                            if (step.comp.type === 'RELAY') rSum += 50;
+                            if (step.comp.type === 'RSK90') rSum += 1000;
+                            if (step.comp.type === 'RADION') rSum += 1200;
+                            if (step.comp.type === 'OLED_I2C') rSum += 1000;
+                            if (step.comp.type === 'L298N') rSum += 800;
+                            if (step.comp.type === 'SERVO') rSum += 600;
+                            if (step.comp.type === 'LED') ledCount++;
+                            if (step.comp.type === 'CAPACITOR' && bat.type === 'BATTERY') { let cr = 50 / (step.comp.val || 10); step.comp.charge = Math.min(100, step.comp.charge + cr); step.comp.active = true; }
+                            if (step.comp.type === 'SEG7') rSum += step.comp.internalResistance || 1000;
+                            if (isDigitalGate(step.comp)) rSum += 2000;
                         }
                     });
-                    let vNet=(bat.val+extraVoltage)-(ledCount*2),current=vNet>0?(vNet/rSum):0,popped=false;
-                    if(current>0){
-                        if(bat.type==='BATTERY'&&current>5.0){bat.burned=true;popped=true;}
-                        pathComps.forEach(c=>{
-                            if(c.type==='LED'&&current>0.035){c.burned=true;popped=true;}
-                            if(c.type==='RESISTOR'&&(current*current*c.val)>0.5){c.burned=true;popped=true;}
-                            if(['AND','OR','NOT','XOR','MUX'].includes(c.type)&&current>0.2){c.burned=true;popped=true;}
-                            if(c.type==='TRANSISTOR'&&current>1.0){c.burned=true;popped=true;}
-                            if(c.type==='OLED_I2C'&&current>0.5){c.burned=true;popped=true;}
-                            if(c.type==='SEG7'&&current>0.5){c.burned=true;popped=true;}
+                    let vNet = (bat.val + extraVoltage) - (ledCount * 2);
+                    let current = vNet > 0 ? (vNet / rSum) : 0;
+                    let popped = false;
+                    if (current > 0) {
+                        if (bat.type === 'BATTERY' && current > 5.0) { bat.burned = true; popped = true; }
+                        pathComps.forEach(c => {
+                            if (isDigitalGate(c)) return; // gates never burn
+                            if (c.type === 'LED' && current > 0.035) { c.burned = true; popped = true; }
+                            if (c.type === 'RESISTOR' && (current * current * c.val) > 0.5) { c.burned = true; popped = true; }
+                            if (c.type === 'TRANSISTOR' && current > 1.0) { c.burned = true; popped = true; }
+                            if (c.type === 'OLED_I2C' && current > 0.5) { c.burned = true; popped = true; }
+                            if (c.type === 'SEG7' && current > 0.5) { c.burned = true; popped = true; }
                         });
                     }
-                    if(!popped&&current>0){
-                        bat.active=true;
-                        path.forEach(step=>{
-                            if(step.t==='wire'){step.c.active=true;step.c.flowDir=step.dir;}
-                            if(step.t==='comp'){step.comp.active=true;if(step.comp.type==='LED')step.comp.state=1;if(step.comp.type==='MOTOR')step.comp.state=step.dir;if(step.comp.type==='RELAY')step.comp.coilActiveThisFrame=true;}
+                    if (!popped && current > 0) {
+                        bat.active = true;
+                        path.forEach(step => {
+                            if (step.t === 'wire') { step.c.active = true; step.c.flowDir = step.dir; }
+                            if (step.t === 'comp') {
+                                step.comp.active = true;
+                                if (step.comp.type === 'LED') step.comp.state = 1;
+                                if (step.comp.type === 'MOTOR') step.comp.state = step.dir;
+                                if (step.comp.type === 'RELAY') step.comp.coilActiveThisFrame = true;
+                            }
                         });
                     }
                 });
             }
         });
-        components.filter(c=>c.type==='RELAY').forEach(r=>r.coilState=r.coilActiveThisFrame);
-        components.filter(c=>c.type==='MUX').forEach(m=>{m.selState=m.nodes[2].signal;});
-        components.filter(c=>c.type==='L298N').forEach(d=>{
-            const in1=d.nodes[2].signal, in2=d.nodes[3].signal;
-            if(in1&&!in2) d.motorDir=1;
-            else if(!in1&&in2) d.motorDir=-1;
-            else d.motorDir=0;
+
+        // Actualizar componentes según la corriente
+        components.filter(c => c.type === 'RELAY').forEach(r => r.coilState = r.coilActiveThisFrame);
+        components.filter(c => c.type === 'MUX').forEach(m => { m.selState = m.nodes[2].signal; });
+        components.filter(c => c.type === 'L298N').forEach(d => {
+            const in1 = d.nodes[2].signal, in2 = d.nodes[3].signal;
+            if (in1 && !in2) d.motorDir = 1;
+            else if (!in1 && in2) d.motorDir = -1;
+            else d.motorDir = 0;
         });
-        components.filter(c=>c.type==='SERVO').forEach(s=>{
-            if(!s.active||s.burned){s.angle=90;s.targetAngle=90;return;}
-            const diff=s.targetAngle-s.angle;
-            if(Math.abs(diff)>0.5) s.angle+=diff*0.12;
-            else s.angle=s.targetAngle;
+        components.filter(c => c.type === 'SERVO').forEach(s => {
+            if (!s.active || s.burned) { s.angle = 90; s.targetAngle = 90; return; }
+            const diff = s.targetAngle - s.angle;
+            if (Math.abs(diff) > 0.5) s.angle += diff * 0.12;
+            else s.angle = s.targetAngle;
         });
-        components.filter(c=>c.type==='RSK90').forEach(c=>{
-            if(c.active&&!c.burned){const now=Date.now();if(!c.lastTick)c.lastTick=now;if(now-c.lastTick>=1000){c.clockState=!c.clockState;c.lastTick=now;}}
-            else{c.clockState=false;c.lastTick=0;}
+        components.filter(c => c.type === 'RSK90').forEach(c => {
+            if (c.active && !c.burned) {
+                const now = Date.now();
+                if (!c.lastTick) c.lastTick = now;
+                if (now - c.lastTick >= 1000) { c.clockState = !c.clockState; c.lastTick = now; }
+            } else { c.clockState = false; c.lastTick = 0; }
         });
-        // POT: update analog value to connected RADION A1
-        components.filter(c=>c.type==='POT'&&c.active&&!c.burned).forEach(pot=>{
-            connections.forEach(conn=>{
-                let other=null;
-                const outNode=pot.nodes[2];
-                if(conn.a.n===outNode)other=conn.b; if(conn.b.n===outNode)other=conn.a;
-                if(other&&other.c.type==='RADION'){other.c.analog.a1=pot.value;}
+        components.filter(c => c.type === 'POT' && c.active && !c.burned).forEach(pot => {
+            connections.forEach(conn => {
+                let other = null;
+                const outNode = pot.nodes[2];
+                if (conn.a.n === outNode) other = conn.b;
+                if (conn.b.n === outNode) other = conn.a;
+                if (other && other.c.type === 'RADION') { other.c.analog.a1 = pot.value; }
             });
         });
-        // BUZZER: manage audio state
-        components.filter(c=>c.type==='BUZZER').forEach(b=>{
-            if(!b.active||b.burned){
-                if(b.playing){ stopBuzzerPin('BZ_'+b._id); b.playing=false; }
+        components.filter(c => c.type === 'BUZZER').forEach(b => {
+            if (!b.active || b.burned) {
+                if (b.playing) { stopBuzzerPin('BZ_' + b._id); b.playing = false; }
             }
         });
-        components.filter(c=>c.type==='RADION').forEach(c=>runRadionLogic(c));
+        components.filter(c => c.type === 'RADION').forEach(c => runRadionLogic(c));
     }
 
     // ─── DRAW ───
@@ -4915,13 +5059,14 @@ end>`
                 baseRect(c,dW,dH);
                 let ledColor = c.color || '#ffaa00';
                 let rgb = hexToRgb(ledColor);
-                if(c.state&&!c.burned){
+                // El LED se enciende SOLO si hay corriente circulando (c.active)
+                if(c.active && !c.burned){
                     ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.06)`;
                     ctx.fillRect(c.x,c.y,dW,dH);
                     ctx.shadowBlur = 14;
                     ctx.shadowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
                 }
-                ctx.strokeStyle = c.state&&!c.burned ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)` : (c.burned ? C_RED : 'rgba(255,255,255,0.2)');
+                ctx.strokeStyle = c.active && !c.burned ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)` : (c.burned ? C_RED : 'rgba(255,255,255,0.2)');
                 ctx.lineWidth=1.2;
                 ctx.beginPath(); ctx.moveTo(c.x+38,c.y+16); ctx.lineTo(c.x+38,c.y+44); ctx.lineTo(c.x+62,c.y+30); ctx.closePath(); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(c.x+62,c.y+16); ctx.lineTo(c.x+62,c.y+44); ctx.stroke();
