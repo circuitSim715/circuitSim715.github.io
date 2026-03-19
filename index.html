@@ -1352,6 +1352,7 @@ end></pre>
     <div class="ctx-item" onclick="ctxAction('rot')"><span class="ctx-icon">↻</span>Rotar</div>
     <div class="ctx-separator"></div>
     <div class="ctx-item danger" onclick="ctxAction('del')"><span class="ctx-icon">✕</span>Borrar</div>
+    <div class="ctx-item danger" id="ctx-del-cable" onclick="ctxAction('delCable')" style="display:none;"><span class="ctx-icon">✕</span>Borrar cable</div>
 </div></div><!-- Badge de cable activo (móvil) --><div id="cable-badge">〜 Toca un nodo para conectar <span id="cable-badge-cancel">✕ cancelar</span></div><!-- MENÚ CONTEXTUAL TOUCH NATIVO --><div id="touch-ctx-menu">
     <div class="tcm-item" id="tcm-use">    <span class="tcm-icon">▶</span> Usar</div>
     <div class="tcm-item" id="tcm-cable">  <span class="tcm-icon">〜</span> Cable</div>
@@ -1545,13 +1546,19 @@ end></pre>
         if (ctrl && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
         if (ctrl && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
         if (ctrl && e.key === 's') { e.preventDefault(); openSavePanel(); }
-        if (e.key === 'Delete' && selectedItems.length) {
+        if (e.key === 'Delete' && (selectedItems.length || selectedConnections.length)) {
             pushUndo();
+            // Borrar componentes seleccionados
             selectedItems.forEach(c => {
                 components = components.filter(x => x !== c);
                 connections = connections.filter(conn => conn.a.c !== c && conn.b.c !== c);
             });
+            // Borrar cables seleccionados
+            selectedConnections.forEach(conn => {
+                connections = connections.filter(c => c !== conn);
+            });
             selectedItems = [];
+            selectedConnections = [];
         }
     });
 
@@ -2129,10 +2136,11 @@ end>`;
     const ctx = canvas.getContext('2d');
     const container = document.getElementById('canvas-container');
     let components = [], connections = [];
+    let selectedConnections = []; // Nueva lista para cables seleccionados
     const vMouse = { x:0, y:0, speed:4, isDown:false, lastDown:false, moving:{}, selectionMode:false };
     let draggingComp=null, drawingCable=null, rotAnim=0, time=0;
     let targetCfg=null, selectionBox=null, selectedItems=[], camera={x:0,y:0,zoom:1.0};
-    let contextTarget=null, isPanning=false;
+    let contextTarget=null, contextConnection=null, isPanning=false;
 
     function resize() {
         const w = container.clientWidth;
@@ -2197,10 +2205,33 @@ end>`;
         if (e.button === 1) { e.preventDefault(); isPanning = true; canvas.style.cursor = 'grabbing'; return; }
         if (e.button !== 0) return;
         document.getElementById('context-menu').style.display = 'none';
+        contextConnection = null; // reset
+        // Comprobar si se hizo clic en un nodo
         let nHit = null;
         components.forEach(c => c.nodes.forEach(n => { if (Math.hypot(c.x+n.x-vMouse.x, c.y+n.y-vMouse.y) < 20) nHit = {c,n}; }));
         if (nHit) { drawingCable = nHit; }
         else {
+            // Comprobar si se hizo clic en un cable
+            const HIT = 10;
+            const clickedConn = connections.find(conn => {
+                const ax=conn.a.c.x+conn.a.n.x, ay=conn.a.c.y+conn.a.n.y;
+                const bx=conn.b.c.x+conn.b.n.x, by=conn.b.c.y+conn.b.n.y;
+                const dx=bx-ax, dy=by-ay, len=Math.hypot(dx,dy);
+                if(len===0) return false;
+                const t=Math.max(0,Math.min(1,((vMouse.x-ax)*dx+(vMouse.y-ay)*dy)/(len*len)));
+                const px=ax+t*dx-vMouse.x, py=ay+t*dy-vMouse.y;
+                return Math.hypot(px,py)<HIT;
+            });
+            if (clickedConn) {
+                // Seleccionar cable (deseleccionar otros si no se pulsa Ctrl)
+                if (!e.ctrlKey) {
+                    selectedConnections.forEach(c => c.selected = false);
+                    selectedConnections = [];
+                }
+                clickedConn.selected = true;
+                selectedConnections.push(clickedConn);
+                return;
+            }
             let compHit = components.find(c => vMouse.x>c.x && vMouse.x<c.x+c.w && vMouse.y>c.y && vMouse.y<c.y+c.h);
             if (compHit) {
                 if (selectedItems.includes(compHit)) draggingComp = {group:true, ref:compHit, ox:vMouse.x, oy:vMouse.y};
@@ -2215,6 +2246,31 @@ end>`;
         let compHit = components.find(c => vMouse.x>c.x && vMouse.x<c.x+c.w && vMouse.y>c.y && vMouse.y<c.y+c.h);
         if (compHit) {
             contextTarget = compHit;
+            contextConnection = null;
+            document.getElementById('ctx-del-cable').style.display = 'none';
+        } else {
+            // Buscar cable
+            const HIT = 10;
+            const clickedConn = connections.find(conn => {
+                const ax=conn.a.c.x+conn.a.n.x, ay=conn.a.c.y+conn.a.n.y;
+                const bx=conn.b.c.x+conn.b.n.x, by=conn.b.c.y+conn.b.n.y;
+                const dx=bx-ax, dy=by-ay, len=Math.hypot(dx,dy);
+                if(len===0) return false;
+                const t=Math.max(0,Math.min(1,((vMouse.x-ax)*dx+(vMouse.y-ay)*dy)/(len*len)));
+                const px=ax+t*dx-vMouse.x, py=ay+t*dy-vMouse.y;
+                return Math.hypot(px,py)<HIT;
+            });
+            if (clickedConn) {
+                contextConnection = clickedConn;
+                contextTarget = null;
+                document.getElementById('ctx-del-cable').style.display = 'flex';
+            } else {
+                contextTarget = null;
+                contextConnection = null;
+                document.getElementById('ctx-del-cable').style.display = 'none';
+            }
+        }
+        if (contextTarget || contextConnection) {
             const menu = document.getElementById('context-menu');
             menu.style.display = 'block'; menu.style.left = e.clientX+'px'; menu.style.top = e.clientY+'px';
         } else document.getElementById('context-menu').style.display = 'none';
@@ -2235,20 +2291,24 @@ end>`;
 
     function ctxAction(action) {
         document.getElementById('context-menu').style.display = 'none';
-        if (!contextTarget) return;
-        if (action==='del') {
+        if (action === 'del' && contextTarget) {
             pushUndo();
             components = components.filter(c=>c!==contextTarget);
             connections = connections.filter(conn=>components.includes(conn.a.c)&&components.includes(conn.b.c));
             if (selectedItems.includes(contextTarget)) selectedItems=[];
             stopAllBuzzers();
-        } else if (action==='rot') rotateComponent(contextTarget);
-        else if (action==='cfg') openCfg(contextTarget);
-        else if (action==='use' && (contextTarget.type==='SWITCH'||contextTarget.type==='PUSH_BTN')) contextTarget.closed = !contextTarget.closed;
-        else if (action==='use' && contextTarget.type==='POT') {
+        } else if (action === 'delCable' && contextConnection) {
+            pushUndo();
+            connections = connections.filter(c => c !== contextConnection);
+            if (selectedConnections.includes(contextConnection)) selectedConnections = selectedConnections.filter(c => c !== contextConnection);
+        } else if (action === 'rot' && contextTarget) rotateComponent(contextTarget);
+        else if (action === 'cfg' && contextTarget) openCfg(contextTarget);
+        else if (action === 'use' && contextTarget && (contextTarget.type==='SWITCH'||contextTarget.type==='PUSH_BTN')) contextTarget.closed = !contextTarget.closed;
+        else if (action === 'use' && contextTarget && contextTarget.type==='POT') {
             contextTarget.value = contextTarget.value < 512 ? 1023 : 0; // Toggle max/min
         }
         contextTarget = null;
+        contextConnection = null;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -2635,7 +2695,7 @@ end>`;
     function clearAll(force=false) {
         if(force||confirm("¿Borrar todo?")) {
             pushUndo();
-            components=[]; connections=[]; selectedItems=[]; drawingCable=null;
+            components=[]; connections=[]; selectedItems=[]; selectedConnections=[]; drawingCable=null;
             stopAllBuzzers();
         }
     }
@@ -4614,7 +4674,7 @@ end>`
                 const in1 = gate.nodes[1].signal;
                 if (gate.type === 'AND') newOut = in0 && in1;
                 else if (gate.type === 'OR')  newOut = in0 || in1;
-                else newOut = in0 != in1;
+                else newOut = (in0 && !in1) || (!in0 && in1); // XOR corregido
                 outIdx = 2;
             } else if (gate.type === 'NOT') {
                 const in1 = gate.nodes[1].signal;
@@ -4712,6 +4772,12 @@ end>`
                 if (comp && comp !== bat && !comp.burned && !isDigitalGate(comp)) {
                     let outNodes = [];
                     let direction = (currentNode === comp.nodes[0]) ? 1 : -1;
+
+                    // Si el componente está quemado, no conduce corriente
+                    if (comp.burned) {
+                        return;
+                    }
+
                     if (comp.type === 'TRANSISTOR') {
                         if (currentNode === comp.nodes[0]) outNodes.push(comp.nodes[2]);
                         else if (currentNode === comp.nodes[2]) outNodes.push(comp.nodes[0]);
@@ -4855,11 +4921,12 @@ end>`
                     let current = vNet > 0 ? (vNet / rSum) : 0;
                     let popped = false;
                     if (current > 0) {
-                        if (bat.type === 'BATTERY' && current > 5.0) { bat.burned = true; popped = true; }
+                        // Ajuste de umbrales para mayor realismo
+                        if (bat.type === 'BATTERY' && current > 100.0) { bat.burned = true; popped = true; } // antes 5.0
                         pathComps.forEach(c => {
                             if (isDigitalGate(c)) return; // gates never burn
-                            if (c.type === 'LED' && current > 0.035) { c.burned = true; popped = true; }
-                            if (c.type === 'RESISTOR' && (current * current * c.val) > 0.5) { c.burned = true; popped = true; }
+                            if (c.type === 'LED' && current > 0.05) { c.burned = true; popped = true; } // antes 0.035
+                            if (c.type === 'RESISTOR' && (current * current * c.val) > 1.0) { c.burned = true; popped = true; } // antes 0.5
                             if (c.type === 'TRANSISTOR' && current > 1.0) { c.burned = true; popped = true; }
                             if (c.type === 'OLED_I2C' && current > 0.5) { c.burned = true; popped = true; }
                             if (c.type === 'SEG7' && current > 0.5) { c.burned = true; popped = true; }
@@ -5032,6 +5099,13 @@ end>`
                 ctx.textAlign='center'; ctx.fillText(conn.label,mx,my+2);
                 ctx.textAlign='left';
                 ctx.restore();
+            }
+            // Resaltar cable seleccionado
+            if (selectedConnections.includes(conn)) {
+                ctx.strokeStyle = 'rgba(0,212,255,0.9)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([]);
+                ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
             }
         });
 
